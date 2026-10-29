@@ -353,9 +353,10 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
 <div class="modal" id="mDonate"><div class="box"><button class="x" data-close>×</button>
   <h2>Apoya a BoxBox ☕</h2>
   <p class="note" style="margin-top:0">Si te gustó y quieres ayudar a pagar el servidor y a sumar temporadas, puedes invitarme un café. Es opcional: el juego es y seguirá siendo gratis.</p>
-  <div class="opt"><span><b>Cafecito</b><br><small style="color:var(--muted)">Pesos argentinos · tarjeta o Mercado Pago</small></span><a class="nb" href="#" data-demo>Invitar</a></div>
-  <div class="opt"><span><b>Ko-fi</b><br><small style="color:var(--muted)">Internacional · tarjeta o PayPal</small></span><a class="nb" href="#" data-demo>Invitar</a></div>
-  <div class="note">Boceto: los enlaces todavía no apuntan a ninguna cuenta.</div>
+  <!-- Datos de donación: para sumar Cafecito, poner el usuario en CAFECITO_USER (más abajo, en el script) -->
+  <div class="opt"><span><b>Mercado Pago</b><br><small style="color:var(--muted)">Transferencia al alias <b id="mpAlias" style="color:var(--text)">dame.damelamia</b></small></span><button class="nb" id="mpCopy">Copiar alias</button></div>
+  <div class="opt" id="cafOpt" style="display:none"><span><b>Cafecito</b><br><small style="color:var(--muted)">Tarjeta o Mercado Pago, en pesos</small></span><a class="nb" id="cafLink" href="#" target="_blank" rel="noopener">Invitar</a></div>
+  <div class="note">Abre la app de Mercado Pago (o tu banco), elige <b>Transferir</b> y pega el alias. ¡Gracias!</div>
 </div></div>
 
 <div class="modal" id="mSuggest"><div class="box"><button class="x" data-close>×</button>
@@ -690,7 +691,12 @@ $('dReset').onclick=()=>resetChamp(false); $('dNew').onclick=()=>resetChamp(true
 // Modales
 function openM(id){$(id).classList.add('open')}
 document.querySelectorAll('.modal').forEach(m=>{m.onclick=e=>{if(e.target===m||e.target.closest('[data-close]'))m.classList.remove('open')}});
-document.querySelectorAll('[data-demo]').forEach(a=>a.onclick=e=>{e.preventDefault();alert('Boceto: acá irá tu enlace real de donación.')});
+// Donaciones
+const CAFECITO_USER='';   // ej. 'boxbox' → https://cafecito.app/boxbox
+if(CAFECITO_USER){$('cafLink').href='https://cafecito.app/'+encodeURIComponent(CAFECITO_USER);$('cafOpt').style.display=''}
+$('mpCopy').onclick=async()=>{const a=$('mpAlias').textContent;
+  try{await navigator.clipboard.writeText(a)}catch(e){const r=document.createRange();r.selectNodeContents($('mpAlias'));const s=getSelection();s.removeAllRanges();s.addRange(r);document.execCommand('copy')}
+  $('mpCopy').textContent='¡Copiado!';setTimeout(()=>$('mpCopy').textContent='Copiar alias',1800)};
 $('fDonate').onclick=()=>openM('mDonate');
 $('fSuggest').onclick=()=>{$('sType').selectedIndex=0;openM('mSuggest')};
 $('fRating').onclick=()=>{$('sType').selectedIndex=1;openM('mSuggest')};
