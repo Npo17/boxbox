@@ -24,6 +24,12 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<!-- Arranque rápido: conexiones y descargas en paralelo con el HTML -->
+<link rel="preconnect" href="https://vljuhibzzwtcswirunfr.supabase.co" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" href="supabase/functions/_shared/temporadas.json" as="fetch" crossorigin>
+<link rel="modulepreload" href="supabase/functions/_shared/engine.js">
 <!-- Boceto de diseño, no es el juego final. Datos de ejemplo inventados. Sin marcas, logos ni fotos: todo dibujado en SVG. -->
 <link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700;900&display=swap" rel="stylesheet">
 <style>
@@ -514,7 +520,7 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
 </div></div>
 
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
+<script src="vendor/supabase.min.js"></script>
 <script src="tracks.js"></script>
 <script>
 // ---------- Datos y motor ----------
@@ -895,6 +901,20 @@ try{const m=sessionStorage.getItem('boxbox_auto');if(m){sessionStorage.removeIte
 const SALA_URL='https://vljuhibzzwtcswirunfr.supabase.co/functions/v1/sala';
 const ROOM_KEY='boxbox_sala';
 let ROOM=null, RS=null, OFF=0, pollT=null, tickT=null, raceShown=false;
+// Aviso en vivo (Supabase Realtime, canal de difusión): cuando alguien hace algo en la sala avisa a los demás y consultan al instante.
+// Si el canal no conecta, vuelve a consultar cada 3 s como antes.
+let RT=null, RT_OK=false, rtT=null, pollN=0;
+function rtClose(){ clearTimeout(rtT); RT_OK=false; try{ if(RT&&sb) sb.removeChannel(RT) }catch(e){} RT=null }
+function rtOpen(){
+  rtClose(); if(!sb||!ROOM) return;
+  try{
+    RT=sb.channel('sala-'+ROOM.code,{config:{broadcast:{self:false}}});
+    RT.on('broadcast',{event:'ch'},()=>{ clearTimeout(rtT); rtT=setTimeout(()=>{ if(!document.hidden) poll() },Math.random()*200) });
+    RT.subscribe(s=>{ RT_OK=(s==='SUBSCRIBED'); if(RT_OK) rtPing() });
+  }catch(e){ RT=null }
+}
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden&&ROOM&&MODE==='room') poll() });   // al volver a la pestaña se actualiza al instante
+function rtPing(){ try{ if(RT&&RT_OK) RT.send({type:'broadcast',event:'ch',payload:{}}) }catch(e){} }
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function toast(t){const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',3500)}
 async function api(action,extra={}){
@@ -904,11 +924,12 @@ async function api(action,extra={}){
   catch(e){ throw new Error('Sin conexión con el servidor. Revisa tu internet.'); }
   if(!r.ok) throw Object.assign(new Error(j.error||'Error del servidor'),{status:r.status});
   if(j.now) OFF=j.now-Date.now();
+  if(ROOM&&/^(start|roll|pick|leave)$/.test(action)) rtPing();
   return j;
 }
 const srvToLocal=t=>Date.parse(t)-OFF;
 function rememberRoom(){try{localStorage.setItem(ROOM_KEY,JSON.stringify(ROOM))}catch(e){}}
-function forgetRoom(){ROOM=null;clearInterval(pollT);clearInterval(tickT);try{localStorage.removeItem(ROOM_KEY)}catch(e){}}
+function forgetRoom(){rtClose();ROOM=null;clearInterval(pollT);clearInterval(tickT);try{localStorage.removeItem(ROOM_KEY)}catch(e){}}
 function myName(){const n=$('fName').value.trim();try{localStorage.setItem('boxbox_nombre',n)}catch(e){};return n}
 try{$('fName').value=localStorage.getItem('boxbox_nombre')||''}catch(e){}
 
@@ -933,7 +954,8 @@ function enterRoom(state){
   MODE='room'; BLIND=false; rememberRoom();
   document.querySelectorAll('.modal').forEach(m=>m.classList.remove('open'));
   history.replaceState(null,'',location.pathname+'?sala='+encodeURIComponent(ROOM.code));
-  clearInterval(pollT); pollT=setInterval(()=>{ if(!document.hidden) poll() },3000);   // cada 3 s y solo con la pestaña a la vista: cuida el límite gratis de Supabase
+  rtOpen(); pollN=0;
+  clearInterval(pollT); pollT=setInterval(()=>{ if(document.hidden) return; if(!RT_OK||++pollN%3===0) poll() },3000);   // sin canal en vivo: cada 3 s; con canal solo cada 9 s de respaldo (y solo con la pestaña a la vista)
   clearInterval(tickT); tickT=setInterval(paintTimer,500);
   onState(state);
 }
@@ -945,7 +967,7 @@ function onState(s){
   RS=s; const st=s.room.status;
   if(st==='lobby') return renderLobby(s);
   if(st==='building') return renderRoomBuild(s);
-  if(st==='racing' && !raceShown){ raceShown=true; clearInterval(pollT); READY.then(()=>startRoomRace(s)); }
+  if(st==='racing' && !raceShown){ raceShown=true; clearInterval(pollT); rtClose(); READY.then(()=>startRoomRace(s)); }
 }
 
 // --- sala de espera ---
@@ -1160,12 +1182,14 @@ async function saveNick(){
 }
 document.querySelectorAll('.dtab').forEach(b=>b.onclick=()=>{ dRankDay=b.dataset.d; document.querySelectorAll('.dtab').forEach(x=>x.classList.toggle('on',x===b)); loadRank(dRankDay); });
 async function loadRank(dia){
-  $('dRank').innerHTML='<div class="note" style="text-align:center">Cargando…</div>'; $('dRankMe').textContent='';
+  let cached=null; try{ cached=localStorage.getItem('boxbox_rank_'+dia) }catch(e){}
+  $('dRank').innerHTML=cached||'<div class="note" style="text-align:center">Cargando…</div>'; $('dRankMe').textContent='';
   try{
     const j=await dApi('ranking',{dia}), row=r=>`<div class="rk ${r.mine?'me':''}"><span class="n">${r.rank<=3?['🥇','🥈','🥉'][r.rank-1]:'#'+r.rank}</span><span class="nm">${esc(r.nickname)}</span><span class="pt">${r.dnf?'DNF':'P'+r.pos}</span><span class="tm">${r.dnf?'V'+r.laps:fmtRace(r.tiempo)}</span></div>`;
     let h=j.list.map(row).join('');
     if(j.mine&&!j.list.some(r=>r.mine)) h+='<div class="note" style="text-align:center;margin:4px 0">· · ·</div>'+row(j.mine);
     $('dRank').innerHTML=h||`<div class="empty" style="padding:22px 10px">${dia==='hoy'?'Todavía no jugó nadie hoy. ¡Sé el primero!':'Ayer no jugó nadie.'}</div>`;
+    try{ localStorage.setItem('boxbox_rank_'+dia,$('dRank').innerHTML) }catch(e){}   // lo último visto, para mostrarlo al instante la próxima vez
     $('dRankMe').textContent=j.mine?`Estás en el #${j.mine.rank} de ${j.total} ${dia==='hoy'?'hoy':'ayer'}.`:(j.total?`${j.total} jugaron ${dia==='hoy'?'hoy':'ayer'}.`:'');
   }catch(e){ $('dRank').innerHTML=`<div class="note" style="text-align:center">${esc(e.message)}</div>` }
 }
@@ -1239,7 +1263,7 @@ function leaveRoomAndGo(url){
     :'¿Salir de la sala?';
   if(!confirm(txt)) return;
   clearInterval(pollT);
-  api('leave').catch(()=>{}).finally(()=>{ forgetRoom(); location.href=url; });
+  api('leave').catch(()=>{}).finally(()=>{ setTimeout(()=>{ forgetRoom(); location.href=url },200) });   // un respiro para que salga el aviso a los demás
 }
 const inRoom=()=>MODE==='room'&&!!ROOM&&!(RESULT&&RS&&RS.room.status==='racing');
 [['logo',''],['nDaily','?desafio'],['hDaily','?desafio'],['nChamp','?ver=campeonato'],['hChamp','?ver=campeonato'],['nProfile','?ver=perfil']].forEach(([id,q])=>{
