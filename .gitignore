@@ -1,3 +1,4 @@
 .gstack/
 .claude/
 supabase/.temp/
+scripts/.cache/

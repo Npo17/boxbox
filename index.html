@@ -438,6 +438,7 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
 </div></div>
 
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
 <script src="tracks.js"></script>
 <script>
 // ---------- Datos de ejemplo (nombres reales, medias inventadas para el boceto) ----------
@@ -486,6 +487,12 @@ function renderSlots(){
 
 // Cada tirada muestra solo parte de la temporada: las piezas top aparecen menos.
 // Un 99 sale, pero no siempre (≈30% de las tiradas de ese año).
+const MAX_SHOWN=12;   // como máximo 12 opciones por casilla en cada tirada (en 1950 hubo 81 pilotos)
+// Casillas libres y años que tienen alguna pieza para ellas (motor, jefe y estratega solo
+// existen en las temporadas curadas).
+const freeSlots=()=>SLOTS.map(([k])=>k).filter(k=>!picks[k]);
+const yearsFor=free=>Object.keys(DATA).filter(y=>free.some(k=>DATA[y][k]&&DATA[y][k].length));
+const firstCat=()=>(SLOTS.find(([k])=>!picks[k]&&offer[k]&&offer[k].shown.length)||SLOTS.find(([k])=>!picks[k]))[0];
 function makeOffer(y){
   const o={};
   for(const [k] of SLOTS){
@@ -495,13 +502,15 @@ function makeOffer(y){
       const rest=all.filter(it=>!shown.includes(it)).sort((a,b)=>a[2]-b[2]);
       shown=shown.concat(rest.slice(0,2-shown.length));
     }
+    if(shown.length>MAX_SHOWN){ for(let i=0;i<MAX_SHOWN;i++){const j=i+Math.floor(rnd()*(shown.length-i));[shown[i],shown[j]]=[shown[j],shown[i]]} shown=shown.slice(0,MAX_SHOWN); }
     o[k]={shown:shown.sort((a,b)=>b[2]-a[2]), total:all.length};
   }
   return o;
 }
 function renderTabs(){
-  $('tabs').innerHTML=SLOTS.map(([k,l])=>`<div class="tab ${picks[k]?'done':''} ${cat===k?'on':''}" data-k="${k}">${l}</div>`).join('');
-  document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{ if(picks[t.dataset.k]) return; cat=t.dataset.k; renderTabs(); renderList(); });
+  const none=k=>offer[k]&&!offer[k].shown.length;   // ese año no tiene piezas para esa casilla
+  $('tabs').innerHTML=SLOTS.map(([k,l])=>`<div class="tab ${picks[k]||none(k)?'done':''} ${cat===k?'on':''}" data-k="${k}" title="${none(k)&&!picks[k]?'No hay '+l.toLowerCase()+' de '+year:''}">${l}</div>`).join('');
+  document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{ if(picks[t.dataset.k]||none(t.dataset.k)) return; cat=t.dataset.k; renderTabs(); renderList(); });
 }
 function renderList(){
   if(!year) return;
@@ -522,13 +531,13 @@ $('rollBtn').onclick=async()=>{
   await DATA_READY;
   if(year && rerolls<=0) return;
   if(year) rerolls--;
-  const ys=Object.keys(DATA); year=pick(ys); offer=makeOffer(year);
+  const ys=yearsFor(freeSlots()); year=pick(ys); offer=makeOffer(year);
   $('die').classList.remove('spin'); void $('die').offsetWidth; $('die').classList.add('spin');
   $('year').innerHTML=`${year}<small>Temporada sorteada</small>`;
   $('rerolls').textContent=`Re-sortear: ${rerolls} restantes`;
   $('rollBtn').querySelector('span').textContent='Re-sortear';
   if(rerolls<=0) $('rollBtn').disabled=true;
-  cat=SLOTS.find(([k])=>!picks[k])[0]; renderTabs(); renderList();
+  cat=firstCat(); renderTabs(); renderList();
 };
 renderSlots();
 
@@ -888,7 +897,7 @@ function showRoll(roll){
   $('rerolls').textContent=`Re-sortear: ${rerolls} restantes`;
   $('rollBtn').querySelector('span').textContent='Re-sortear';
   $('rollBtn').disabled=rerolls<=0;
-  cat=SLOTS.find(([k])=>!picks[k])[0]; renderTabs(); renderList();
+  cat=firstCat(); renderTabs(); renderList();
 }
 async function roomRoll(){
   const reroll=!!year; if(reroll&&rerolls<=0) return;
@@ -991,6 +1000,67 @@ const inRoom=()=>MODE==='room'&&!!ROOM&&!(RESULT&&RS&&RS.room.status==='racing')
   const orig=$(id).onclick;
   $(id).onclick=e=>{ if(inRoom()) leaveRoomAndGo(location.pathname+q); else if(MODE==='room') location.href=location.pathname+q; else orig(e); };
 });
+
+// ---------- CUENTA: login con Google y campeonato guardado ----------
+// Supabase Auth (Google). La clave "publishable" es pública por diseño; los datos los protege
+// la tabla campeonatos con RLS (cada usuario solo lee y escribe su fila).
+const SB_URL='https://vljuhibzzwtcswirunfr.supabase.co', SB_KEY='sb_publishable_-eWaOokr2vEuoRXXklXGLA_7L7u9fgz';
+let sb=null, USER=null;
+try{ if(window.supabase) sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,detectSessionInUrl:true,flowType:'pkce'}}); }catch(e){ console.warn(e) }
+function paintUser(){
+  const m=USER&&USER.user_metadata||{}, name=USER?(m.full_name||m.name||USER.email):'Invitado';
+  $('pName').textContent=name;
+  $('pName').nextElementSibling.textContent=USER?`Conectado con Google (${USER.email}). Tu campeonato se guarda en tu cuenta.`:'Sin sesión: tu campeonato se guarda solo en este navegador.';
+  $('pLogin').lastChild.textContent=USER?'Cerrar sesión':(GOOGLE_ON?'Continuar con Google':'Continuar con Google (próximamente)');
+  $('pLogin').disabled=!USER&&!GOOGLE_ON; $('pLogin').style.opacity=$('pLogin').disabled?.5:1;
+  $('nProfile').textContent=USER?('Perfil · '+String(m.full_name||m.name||USER.email).split(/[ @]/)[0]):'Perfil';
+}
+function cloudRow(){ return {user_id:USER.id,campeonato:loadChamp(),stats:loadStats(),historial:loadHist(),updated_at:new Date().toISOString()} }
+async function syncUp(){
+  if(!sb||!USER) return;
+  const {error}=await sb.from('campeonatos').upsert(cloudRow());
+  if(error){ console.warn(error); toast('No se pudo guardar en tu cuenta. Se guardó en este navegador.'); }
+}
+async function syncDown(){
+  const {data,error}=await sb.from('campeonatos').select('*').eq('user_id',USER.id).maybeSingle();
+  if(error){ console.warn(error); return toast('No se pudo leer tu campeonato de la cuenta.'); }
+  const localHas=Object.keys(loadChamp()).length>0||loadStats().races>0;
+  const cloudHas=data&&(Object.keys(data.campeonato||{}).length>0||(data.stats&&data.stats.races>0));
+  if(!cloudHas){ if(localHas){ await syncUp(); toast('Listo: tu campeonato quedó guardado en tu cuenta.'); } else await syncUp(); }
+  else {
+    // La cuenta manda: es lo que se ve en todos tus dispositivos.
+    try{ localStorage.setItem(KEY,JSON.stringify(data.campeonato||{})); localStorage.setItem('boxbox_stats',JSON.stringify(data.stats||{races:0,wins:0,podiums:0,best:null})); localStorage.setItem('boxbox_historial',JSON.stringify(data.historial||[])); }catch(e){}
+    toast('Campeonato cargado desde tu cuenta.');
+  }
+  if($('s-profile').classList.contains('on')) showProfile();
+  if($('s-champpage').classList.contains('on')) showChampPage();
+}
+async function signIn(){
+  if(!sb) return toast('No se pudo cargar el login. Revisa tu conexión y recarga.');
+  const {error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname+'?ver=perfil'}});
+  if(error) toast('No se pudo iniciar sesión: '+error.message);
+}
+async function signOut(){
+  await sb.auth.signOut(); USER=null; paintUser();
+  toast('Sesión cerrada. Tu campeonato sigue guardado en tu cuenta.');
+}
+$('pLogin').onclick=()=>USER?signOut():signIn();
+// Si Google todavía no está activado en Supabase, el botón avisa en vez de dar error.
+let GOOGLE_ON=false;
+fetch(SB_URL+'/auth/v1/settings',{headers:{apikey:SB_KEY}}).then(r=>r.json()).then(j=>{
+  GOOGLE_ON=!!(j.external&&j.external.google);
+  paintUser();
+}).catch(()=>{});
+// Cada vez que cambia el campeonato, se guarda también en la cuenta.
+{ const _s=saveStats; saveStats=function(...a){ _s(...a); syncUp(); };
+  const _r=resetChamp; resetChamp=function(...a){ _r(...a); syncUp(); }; }
+if(sb){
+  sb.auth.onAuthStateChange((ev,session)=>{
+    const u=session&&session.user||null, changed=(u&&u.id)!==(USER&&USER.id);
+    USER=u; paintUser();
+    if(u&&changed) setTimeout(syncDown,0);
+  });
+}
 </script>
 </body>
 </html>

@@ -2,7 +2,16 @@
 
 Tira el dado, sale una temporada de la historia del automovilismo. Elige un piloto, coche, motor, jefe de equipo o estratega de ese año, completa tu auto de 5 casillas, clasifica a una vuelta y corre un Gran Premio en un circuito real contra una parrilla de leyendas.
 
-**Estado:** prototipo jugable. Las medias de pilotos y piezas son de ejemplo y hay 7 temporadas cargadas (1976, 1988, 1991, 2004, 2023, 2024 y 2025).
+**Estado:** jugable en [boxf1box.com](https://boxf1box.com). Están **todos los pilotos y escuderías de 1950 a 2026**, con medias calculadas a partir de su temporada real. Motores, jefes de equipo y estrategas solo existen en las temporadas curadas a mano (1976, 1988, 1991, 2004, 2023, 2024 y 2025).
+
+### Datos y medias
+
+- [scripts/generar-temporadas.mjs](scripts/generar-temporadas.mjs) descarga los campeonatos de [Jolpica-F1](https://github.com/jolpica/jolpica-f1) y genera `supabase/functions/_shared/temporadas.json`.
+- **Piloto:** 50% posición en el campeonato, 30% puntos respecto del líder y 20% comparación con su compañero de equipo. El campeón tiene al menos 95.
+- **Coche:** posición y puntos en el campeonato de constructores (antes de 1958, el mejor piloto de la escudería).
+- [scripts/temporadas-curadas.json](scripts/temporadas-curadas.json) tiene las temporadas ajustadas a mano; sus medias pisan a las calculadas.
+
+Después de cambiar los datos: `node scripts/generar-temporadas.mjs` y volver a desplegar la función `sala`.
 
 ## Cómo se juega
 

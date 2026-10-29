@@ -22,6 +22,7 @@ type Pick = { n: string; y: string; r: number; auto?: boolean };
 const SLOTS = ["piloto", "coche", "motor", "jefe", "estratega"];
 const MAX_PLAYERS = 22;
 const MAX_REROLLS = 2;
+const MAX_SHOWN = 12;
 const BUILD_MS = 3 * 60 * 1000;     // tiempo para armar
 const RACE_DELAY_MS = 15 * 1000;    // de cierre a largada (qualy + cuenta regresiva)
 const ROOM_TTL_MS = 24 * 60 * 60 * 1000;
@@ -77,16 +78,26 @@ function makeOffer(rng: () => number, year: string): Offer {
       const rest = all.filter((it) => !shown.includes(it)).sort((a, b) => a[2] - b[2]);
       shown = shown.concat(rest.slice(0, 2 - shown.length));
     }
+    if (shown.length > MAX_SHOWN) {                  // como máximo 12 opciones por casilla
+      for (let i = 0; i < MAX_SHOWN; i++) {
+        const j = i + Math.floor(rng() * (shown.length - i));
+        [shown[i], shown[j]] = [shown[j], shown[i]];
+      }
+      shown = shown.slice(0, MAX_SHOWN);
+    }
     o[k] = { shown: shown.sort((a, b) => b[2] - a[2]), total: all.length };
   }
   return o;
 }
 // Tirada i (0..4). n = número de re-sorteo. La base es igual para toda la sala;
-// los re-sorteos son propios de cada jugador.
-async function rollFor(diceSeed: string, pid: string, i: number, n: number) {
+// los re-sorteos son propios de cada jugador. Solo sortea años que tengan alguna pieza
+// para las casillas libres (motor, jefe y estratega existen solo en temporadas curadas).
+async function rollFor(diceSeed: string, pid: string, i: number, n: number, free: string[]) {
   const rng = mulberry32(n === 0 ? await seedOf(diceSeed, "tirada", i) : await seedOf(diceSeed, pid, i, n));
-  const years = Object.keys(DATA).sort();
-  const year = years[Math.floor(rng() * years.length)];
+  const seasons = DATA as Record<string, Record<string, Item[]>>;
+  const all = Object.keys(seasons).sort();
+  const years = all.filter((y) => free.some((k) => seasons[y][k]?.length));
+  const year = (years.length ? years : all)[Math.floor(rng() * (years.length || all.length))];
   return { i, n, year, offer: makeOffer(rng, year), used: false } as Roll;
 }
 
@@ -127,7 +138,7 @@ async function maybeLock(room: Record<string, any>) {
     let i = Object.keys(picks).length;
     for (const slot of SLOTS) {
       if (picks[slot]) continue;
-      const roll = await rollFor(room.dice_seed, p.pid, i++, 0);
+      const roll = await rollFor(room.dice_seed, p.pid, i++, 0, [slot]);
       const worst = roll.offer[slot].shown.reduce((a, b) => (b[2] < a[2] ? b : a));
       picks[slot] = { n: worst[0], y: roll.year, r: worst[2], auto: true };
     }
@@ -219,6 +230,7 @@ async function handle(body: Record<string, any>) {
     const rolls = me.rolls as Roll[];
     const open = rolls.find((r) => !r.used);
     const i = Object.keys(me.picks).length;
+    const free = SLOTS.filter((s) => !me.picks[s]);
     let rerolls = me.rerolls;
     let roll: Roll;
     if (open && !body.reroll) {
@@ -226,11 +238,11 @@ async function handle(body: Record<string, any>) {
     } else if (open && body.reroll) {
       if (rerolls >= MAX_REROLLS) throw new Fail("No te quedan re-sorteos.", 409);
       rerolls++;
-      roll = await rollFor(room.dice_seed, me.pid, i, open.n + 1);
+      roll = await rollFor(room.dice_seed, me.pid, i, open.n + 1, free);
       open.used = true;                              // la tirada anterior se descarta
       rolls.push(roll);
     } else {
-      roll = await rollFor(room.dice_seed, me.pid, i, 0);
+      roll = await rollFor(room.dice_seed, me.pid, i, 0, free);
       rolls.push(roll);
     }
     await db.from("jugadores").update({ rolls, rerolls }).eq("sala", code).eq("pid", me.pid);
