@@ -881,7 +881,7 @@ function enterRoom(state){
   MODE='room'; BLIND=false; rememberRoom();
   document.querySelectorAll('.modal').forEach(m=>m.classList.remove('open'));
   history.replaceState(null,'',location.pathname+'?sala='+encodeURIComponent(ROOM.code));
-  clearInterval(pollT); pollT=setInterval(poll,1500);
+  clearInterval(pollT); pollT=setInterval(()=>{ if(!document.hidden) poll() },3000);   // cada 3 s y solo con la pestaña a la vista: cuida el límite gratis de Supabase
   clearInterval(tickT); tickT=setInterval(paintTimer,500);
   onState(state);
 }
