@@ -13,6 +13,8 @@
 
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 import DATA from "../_shared/temporadas.json" with { type: "json" };
+// Ofertas y reglas: el mismo motor que usa el juego en el navegador (una sola fuente de verdad).
+import { makeOffer, mulberry32, yearsFor } from "../_shared/engine.js";
 
 type Item = [string, string, number];
 type Offer = Record<string, { shown: Item[]; total: number }>;
@@ -22,7 +24,6 @@ type Pick = { n: string; y: string; r: number; auto?: boolean };
 const SLOTS = ["piloto", "coche", "motor", "jefe", "estratega"];
 const MAX_PLAYERS = 22;
 const MAX_REROLLS = 2;
-const MAX_SHOWN = 12;
 const BUILD_MS = 3 * 60 * 1000;     // tiempo para armar
 const RACE_DELAY_MS = 15 * 1000;    // de cierre a largada (qualy + cuenta regresiva)
 const ROOM_TTL_MS = 24 * 60 * 60 * 1000;
@@ -49,14 +50,6 @@ async function seedOf(...parts: (string | number)[]) {
   const b = new Uint8Array(await crypto.subtle.digest("SHA-256", enc.encode(parts.join("|"))));
   return ((b[0] << 24) | (b[1] << 16) | (b[2] << 8) | b[3]) >>> 0;
 }
-function mulberry32(a: number) {
-  return function () {
-    a |= 0; a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
 function randU32() { return crypto.getRandomValues(new Uint32Array(1))[0]; }
 function randStr(len: number) {
   const v = crypto.getRandomValues(new Uint8Array(len));
@@ -67,28 +60,6 @@ function cleanName(s: unknown) {
 }
 class Fail extends Error { constructor(msg: string, public status = 400) { super(msg); } }
 
-// Misma regla de rareza que el modo solo: las piezas top aparecen menos.
-function makeOffer(rng: () => number, year: string): Offer {
-  const season = (DATA as Record<string, Record<string, Item[]>>)[year];
-  const o: Offer = {};
-  for (const k of SLOTS) {
-    const all = season[k];
-    let shown = all.filter((it) => rng() < (it[2] >= 97 ? 0.3 : it[2] >= 93 ? 0.5 : it[2] >= 88 ? 0.75 : 1));
-    if (shown.length < 2) {
-      const rest = all.filter((it) => !shown.includes(it)).sort((a, b) => a[2] - b[2]);
-      shown = shown.concat(rest.slice(0, 2 - shown.length));
-    }
-    if (shown.length > MAX_SHOWN) {                  // como máximo 12 opciones por casilla
-      for (let i = 0; i < MAX_SHOWN; i++) {
-        const j = i + Math.floor(rng() * (shown.length - i));
-        [shown[i], shown[j]] = [shown[j], shown[i]];
-      }
-      shown = shown.slice(0, MAX_SHOWN);
-    }
-    o[k] = { shown: shown.sort((a, b) => b[2] - a[2]), total: all.length };
-  }
-  return o;
-}
 // Tirada i (0..4). n = número de re-sorteo. La base es igual para toda la sala;
 // los re-sorteos son propios de cada jugador. Solo sortea años que tengan alguna pieza
 // para las casillas libres (motor, jefe y estratega existen solo en temporadas curadas).
@@ -96,9 +67,9 @@ async function rollFor(diceSeed: string, pid: string, i: number, n: number, free
   const rng = mulberry32(n === 0 ? await seedOf(diceSeed, "tirada", i) : await seedOf(diceSeed, pid, i, n));
   const seasons = DATA as Record<string, Record<string, Item[]>>;
   const all = Object.keys(seasons).sort();
-  const years = all.filter((y) => free.some((k) => seasons[y][k]?.length));
+  const years = yearsFor(seasons, free);
   const year = (years.length ? years : all)[Math.floor(rng() * (years.length || all.length))];
-  return { i, n, year, offer: makeOffer(rng, year), used: false } as Roll;
+  return { i, n, year, offer: makeOffer(seasons, rng, year), used: false } as Roll;
 }
 
 // ---------- acceso a datos ----------

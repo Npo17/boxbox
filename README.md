@@ -18,10 +18,23 @@ Después de cambiar los datos: `node scripts/generar-temporadas.mjs` y volver a 
 1. **Tira:** sale un año. Solo ves parte de esa temporada y las piezas top aparecen poco.
 2. **Arma:** elige una pieza de ese año para una casilla libre. 5 tiradas, 2 re-sorteos.
 3. **Qualy:** una vuelta lanzada con dado. Tu piloto y tu auto deciden dónde largas.
-4. **Carrera:** 22 autos, 20 vueltas, una parada obligatoria, radio y dirección de carrera. Un estratega malo para tarde, un piloto flojo se sale o choca, un motor flojo se rompe.
+4. **Carrera:** 22 autos, 20 vueltas, una parada obligatoria, radio y dirección de carrera. Un estratega malo para tarde, un piloto flojo se sale o choca, un motor flojo se rompe. Los pilotos de menos de 75 de media abandonan seguido; cuando alguien choca sale el **safety car** (el pelotón se junta, la carrera se pone en cámara lenta y todos entran a boxes) y tú decides si entras por gomas nuevas o te quedas en pista.
 5. **Campeonato:** los 22 pilotos suman 25-18-15-12-10-8-6-4-2-1 en cada carrera que juegas.
 
-También hay desafío del día (los mismos dados para todos ese día), perfil, tema claro u oscuro y campeonatos anteriores.
+### Desafío del día
+
+Una partida por día y por cuenta de Google, con la misma mano para todos y **sin ver las medias**. Hay ranking de hoy y de ayer, y racha de días seguidos. El día cambia a medianoche de Argentina. Después de jugar, el modo **amistoso** repite la misma mano sin registrar nada.
+
+- **Servidor:** Edge Function `diario` ([supabase/functions/diario](supabase/functions/diario/index.ts)). Las tiradas salen de un secreto del servidor (`DAILY_SECRET`, un HMAC por día) y se revelan de a una, sin medias. La semilla de la carrera se entrega recién con el auto completo. El resultado oficial lo calcula el servidor con el mismo motor que el navegador.
+- **Tablas:** `perfiles` y `desafios` ([migración](supabase/migrations/20261029020000_desafio_diario.sql)), con RLS sin políticas.
+- **Secreto:** en Supabase, Edge Functions → Secrets → `DAILY_SECRET` (cualquier texto largo y aleatorio).
+- **Prueba de punta a punta:** `node scripts/probar-diario.mjs` (crea y borra usuarios de prueba).
+
+También hay perfil, tema claro u oscuro y campeonatos anteriores.
+
+### Motor de carrera
+
+[supabase/functions/_shared/engine.js](supabase/functions/_shared/engine.js) es JavaScript puro y determinista: lo usan el juego (navegador) y las funciones del servidor (salas y desafío). Pruebas masivas: `node scripts/probar-motor.mjs`. Si cambias los circuitos de `tracks.js`: `node scripts/generar-circuitos.mjs`.
 
 ## Con amigos (salas online)
 

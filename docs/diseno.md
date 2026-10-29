@@ -257,3 +257,14 @@ Hecho según "Salas de amigos", con una simplificación deliberada:
 - **Igual que el diseño:** semillas secretas con hash publicado, tiradas reveladas de a una, validación de cada elección, autocompletado en el servidor al vencer el tiempo, autos ajenos ocultos hasta largar, salas que expiran a las 24 h, sincronía por hora del servidor.
 - **Simplificado:** el servidor no recalcula la carrera. Cada navegador la simula con la semilla revelada y los autos validados por el servidor, así que un jugador que modifique su navegador solo cambia lo que ve él, no lo que ven los demás. El resultado oficial en el servidor se agrega cuando el campeonato se guarde en la cuenta (login con Google).
 - **Identidad:** sin login por ahora. Cada jugador recibe un secreto de sala que vive en su navegador (permite volver si recarga).
+
+---
+
+## Cambios del 2026-10-29: carrera más viva y desafío del día
+
+- **Motor compartido** (`_shared/engine.js`): una sola implementación de ofertas, parrilla, qualy y carrera para el navegador y el servidor. Cada auto usa su propio flujo de números aleatorios por vuelta, así una decisión del jugador no cambia la suerte de los demás.
+- **Rivales variados:** ya no son 21 leyendas fijas. Cada carrera sortea 5 estrellas (90+), 8 buenos (80-89), 5 medios (75-79) y 3 flojos (menos de 75) de toda la historia.
+- **Más abandonos:** los pilotos de menos de 75 de media chocan (probabilidad por vuelta = 0,2% + 0,1% por cada punto bajo 75); el motor flojo se rompe más rara vez. Medido en 600 carreras: 1,3 abandonos por carrera; los de menos de 75 abandonan el 36% de las veces.
+- **Safety car** (en el 54% de las carreras): sale con un choque, dura 3 vueltas, el pelotón se junta, todos entran a boxes (con una parada más barata) y el jugador decide si entra o se queda. La decisión es real: entrar mejora el resultado en 149 de 338 carreras con safety car y lo empeora en 96.
+- **Desafío del día:** una partida por día y por cuenta, mano ciega y la misma para todos (años con las 5 casillas), sin re-sorteos, ranking de hoy y ayer, racha de días seguidos y modo amistoso. El servidor guarda las semillas en secreto y calcula el resultado oficial.
+- **Curva de dificultad** (media del auto → resultado): 85 puntúa poco, 90 llega al podio el 41%, 94 gana el 57%, 97 gana el 93%.

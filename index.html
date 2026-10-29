@@ -178,6 +178,27 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
 .stats div{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px;text-align:center;color:var(--muted);font-size:13px}
 .stats b{display:block;font-size:30px;font-weight:900;font-style:italic;color:var(--text)}
 @media (max-width:860px){header{flex-wrap:wrap;gap:10px}.hero{grid-template-columns:1fr}.mega{font-size:92px;letter-spacing:-3px}.hero h2{font-size:32px}.how{grid-template-columns:1fr}.how div+div{border-left:0;border-top:1px solid var(--line)}.stats{grid-template-columns:repeat(2,1fr)}}
+.lights.sc i{background:var(--yellow);box-shadow:0 0 10px var(--yellow)}
+.msg.sc{border-color:var(--yellow);background:rgba(255,210,63,.12)} .msg.sc b{color:var(--yellow)}
+.msg.ok{border-color:var(--green)} .msg.ok b{color:var(--green)}
+#scBanner{display:none;background:var(--yellow);color:#1a1300;font-weight:900;text-align:center;letter-spacing:4px;padding:6px;border-radius:6px;margin-bottom:8px;animation:blink 1s infinite}
+@keyframes blink{50%{opacity:.55}}
+.dcol{max-width:520px;margin:0 auto;display:grid;gap:16px}
+.dcard{text-align:center;padding:22px 18px}
+.dcard .cta{width:100%;margin-top:12px}
+.dcard input{text-align:center;margin-top:10px}
+.dres{margin:12px 0 2px;font-size:16px}
+.dtimer{margin-top:14px;border:1px solid var(--line);border-radius:8px;padding:10px;font-size:12px;letter-spacing:2px;color:var(--muted);text-transform:uppercase}
+.dtimer b{color:var(--text);font-family:ui-monospace,monospace;font-size:16px;margin-left:6px}
+.dstreak{text-align:center}.dnum{font-size:96px;font-weight:900;font-style:italic;color:var(--green);line-height:.9}
+.dtabs{display:flex;gap:6px;margin-bottom:8px}
+.dtab{cursor:pointer;font:inherit;font-weight:900;font-size:13px;text-transform:uppercase;padding:6px 14px;border:1px solid var(--line);border-radius:4px;background:transparent;color:var(--muted)}
+.dtab.on{background:var(--yellow);border-color:var(--yellow);color:#1a1300}
+#dRank{max-height:440px;overflow:auto}
+.rk{display:grid;grid-template-columns:50px 1fr auto 86px;gap:8px;align-items:center;padding:9px 6px;border-bottom:1px solid var(--line);font-size:15px}
+.rk.me{background:rgba(255,59,48,.14);border-left:3px solid var(--red)}
+.rk .n{color:var(--muted);font-weight:900;font-style:italic}.rk .nm{font-weight:700;overflow:hidden;text-overflow:ellipsis}
+.rk .pt{font-weight:900}.rk .tm{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums;font-size:13px}
 </style>
 </head>
 <body>
@@ -255,6 +276,28 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
   </div>
 </section>
 
+<!-- ============ DESAFÍO DEL DÍA ============ -->
+<section class="screen" id="s-daily">
+  <div class="dcol">
+    <div class="panel dcard">
+      <div class="eyebrow" id="dDate" style="font-size:11px;letter-spacing:3px">DESAFÍO DEL DÍA</div>
+      <h1 style="font-size:40px;margin:8px 0 4px">Mano <em>ciega</em></h1>
+      <p class="sub" style="margin-bottom:6px">La misma mano para todos, sin ver las medias. ¿Quién llega más lejos?</p>
+      <div id="dActions"></div>
+      <div class="dtimer">Nuevo desafío en <b id="dTimer">--:--:--</b></div>
+    </div>
+    <div class="panel dstreak"><div class="dnum" id="dStreak">0</div><b id="dStreakTxt" style="text-transform:uppercase;font-size:18px">0 días seguidos</b><div class="note" id="dStreakSub" style="margin-top:2px"></div></div>
+    <div class="panel">
+      <div class="note" style="text-transform:uppercase;letter-spacing:2px;margin:0;font-size:11px">Ranking del día</div>
+      <h2 style="margin:2px 0 10px;font-style:italic;text-transform:uppercase">Clasificación</h2>
+      <div class="dtabs"><button class="dtab on" data-d="hoy">Hoy</button><button class="dtab" data-d="ayer">Ayer</button></div>
+      <div id="dRank"></div>
+      <div class="note" id="dRankMe" style="text-align:center"></div>
+      <button class="btn cta" id="dShare" style="display:none"><span>Compartir mi puesto →</span></button>
+    </div>
+  </div>
+</section>
+
 <!-- ============ PERFIL ============ -->
 <section class="screen" id="s-profile">
   <h1>Tu <em>perfil</em></h1>
@@ -294,7 +337,7 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
 <!-- ============ PANTALLA 1: ARMA ============ -->
 <section class="screen" id="s-build">
   <h1 id="buildTitle">Tira el dado. <em>Arma tu auto.</em></h1>
-  <p class="sub">Sale un año. Elige una pieza de esa temporada para una casilla libre. 5 tiradas, un auto de leyenda.</p>
+  <p class="sub" id="buildSub">Sale un año. Elige una pieza de esa temporada para una casilla libre. 5 tiradas, un auto de leyenda.</p>
   <div class="panel" id="roomBar" style="display:none;margin-bottom:16px;display:none;align-items:center;gap:16px;flex-wrap:wrap">
     <b id="rbTimer" style="font-size:26px;font-style:italic">3:00</b>
     <span id="rbReady" class="note" style="margin:0"></span>
@@ -348,6 +391,7 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
   <div class="racegrid">
     <div class="panel">
       <div class="hud"><div class="lights" id="lights"><i></i><i></i><i></i><i></i><i></i></div><div class="lap" id="lap">VUELTA 0/20</div></div>
+      <div id="scBanner">🚨 SAFETY CAR</div>
       <svg class="track" viewBox="0 0 800 460" id="track">
         <defs>
           <pattern id="kerbp" width="16" height="16" patternUnits="userSpaceOnUse"><rect width="8" height="16" fill="#ff3b30"/><rect x="8" width="8" height="16" fill="#fff"/></pattern>
@@ -380,6 +424,7 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
       <a class="btn ghost" id="shX" target="_blank" rel="noopener" style="text-decoration:none"><span>X</span></a>
       <button class="btn ghost" id="shCopy"><span>Copiar</span></button>
     </div>
+    <div id="dailyRes" style="display:none;max-width:520px;margin:14px auto 0"></div>
     <div id="roomRes" style="display:none;max-width:520px;margin:18px auto 0;text-align:left"></div>
     <div class="row-actions">
       <button class="btn" id="again"><span>Otra tirada</span></button>
@@ -399,6 +444,14 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
   <button class="link" id="fRating">¿No estás de acuerdo con alguna media?</button>
   <span style="margin-left:auto">Juego de fans · sin afiliación con la F1, equipos ni pilotos · Trazados: f1-circuits (MIT)</span>
 </footer>
+
+<div class="modal" id="mSC"><div class="box">
+  <h2>🚨 Safety car</h2>
+  <p class="note" id="scTxt" style="margin-top:0"></p>
+  <p class="note" id="scInfo"></p>
+  <button class="btn cta" onclick="__resolveSC('pit')"><span>Entrar a boxes: gomas nuevas</span></button>
+  <button class="btn ghost cta" onclick="__resolveSC('stay')"><span>Seguir en pista</span></button>
+</div></div>
 
 <div class="modal" id="mDonate"><div class="box"><button class="x" data-close>×</button>
   <h2>Apoya a BoxBox ☕</h2>
@@ -441,17 +494,16 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
 <script src="tracks.js"></script>
 <script>
-// ---------- Datos de ejemplo (nombres reales, medias inventadas para el boceto) ----------
-// Temporadas: el mismo archivo que usa el servidor de salas (una sola fuente de datos).
-let DATA={};
+// ---------- Datos y motor ----------
+// Las temporadas y el motor de carrera son los mismos archivos que usa el servidor (una sola fuente de verdad).
+let DATA={}, E=null;
 const DATA_READY=fetch('supabase/functions/_shared/temporadas.json').then(r=>r.json()).then(j=>{DATA=j});
+const ENGINE_READY=import('./supabase/functions/_shared/engine.js').then(m=>{E=m});
+const READY=Promise.all([DATA_READY,ENGINE_READY]);
 const SLOTS=[["piloto","Piloto"],["coche","Coche"],["motor","Motor"],["jefe","Jefe de equipo"],["estratega","Estratega"]];
-// Rivales: leyendas reales con una media de ejemplo
-const LEGENDS=[["J. M. Fangio",'#4fc3f7',95],["J. Clark",'#81c784',96],["J. Stewart",'#ba68c8',94],["N. Lauda",'#ef5350',95],["A. Prost",'#ffb74d',96],["A. Senna",'#ffd23f',98],["N. Mansell",'#e57373',91],["N. Piquet",'#64b5f6',90],["M. Häkkinen",'#b0bec5',93],["M. Schumacher",'#f44336',98],["F. Alonso",'#29b6f6',95],["K. Räikkönen",'#90a4ae',91],["S. Vettel",'#5c6bc0',93],["L. Hamilton",'#26a69a',97],["N. Rosberg",'#80cbc4',89],["M. Verstappen",'#3949ab',98],["C. Leclerc",'#e53935',91],["L. Norris",'#ff9800',91],["G. Villeneuve",'#d32f2f',92],["D. Hill",'#8d6e63',88],["J. Button",'#cddc39',89],["J. Hunt",'#f06292',90]];
-let TRACK=null;
+let TRACK=null, BLIND=false;   // BLIND: desafío del día, las medias están ocultas
 const PTS=[25,18,15,12,10,8,6,4,2,1];
-let rnd=Math.random; const pick=a=>a[Math.floor(rnd()*a.length)];
-let LAPS=+(new URLSearchParams(location.search).get('laps')||20);   // ?laps=N solo para pruebas; en salas siempre 20
+let LAPS=+(new URLSearchParams(location.search).get('laps')||20);   // ?laps=N solo para pruebas; en salas y desafío siempre 20
 
 // ---------- Estado ----------
 let year=null, cat=null, rerolls=2, picks={}, offer={}, FIELD=[], GRID=[], MODE='solo';
@@ -477,36 +529,18 @@ function renderSlots(){
   $('carsvg').innerHTML=carSVG(filled?'#ff3b30':null);
   $('slots').innerHTML=SLOTS.map(([k,l])=>{
     const p=picks[k];
-    return `<div class="slot ${p?'filled':''}"><span class="k">${l}</span>${p?`<span class="v">${p.n} <small style="color:var(--muted)">${p.y}</small> <span class="rt ${rc(p.r)}" style="font-size:14px;padding:2px 6px;margin-left:6px">${p.r}</span></span>`:'<span style="color:#555">—</span>'}</div>`}).join('');
+    return `<div class="slot ${p?'filled':''}"><span class="k">${l}</span>${p?`<span class="v">${p.n} <small style="color:var(--muted)">${p.y}</small> <span class="rt ${BLIND?'r0':rc(p.r)}" style="font-size:14px;padding:2px 6px;margin-left:6px">${BLIND?'?':p.r}</span></span>`:'<span style="color:#555">—</span>'}</div>`}).join('');
   const vals=Object.values(picks).map(p=>p.r);
-  $('avg').textContent=vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length):'—';
+  $('avg').textContent=vals.length&&!BLIND?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length):'—';
   $('toRace').disabled=filled<5;
   $('toRace').style.display=MODE==='room'?'none':'';
   $('rollBtn').disabled=filled>=5;
 }
 
-// Cada tirada muestra solo parte de la temporada: las piezas top aparecen menos.
-// Un 99 sale, pero no siempre (≈30% de las tiradas de ese año).
-const MAX_SHOWN=12;   // como máximo 12 opciones por casilla en cada tirada (en 1950 hubo 81 pilotos)
-// Casillas libres y años que tienen alguna pieza para ellas (motor, jefe y estratega solo
-// existen en las temporadas curadas).
+// Cada tirada muestra solo parte de la temporada: las piezas top aparecen menos (lo decide el motor).
 const freeSlots=()=>SLOTS.map(([k])=>k).filter(k=>!picks[k]);
-const yearsFor=free=>Object.keys(DATA).filter(y=>free.some(k=>DATA[y][k]&&DATA[y][k].length));
 const firstCat=()=>(SLOTS.find(([k])=>!picks[k]&&offer[k]&&offer[k].shown.length)||SLOTS.find(([k])=>!picks[k]))[0];
-function makeOffer(y){
-  const o={};
-  for(const [k] of SLOTS){
-    const all=DATA[y][k];
-    let shown=all.filter(it=>rnd() < (it[2]>=97?0.3:it[2]>=93?0.5:it[2]>=88?0.75:1));
-    if(shown.length<2){
-      const rest=all.filter(it=>!shown.includes(it)).sort((a,b)=>a[2]-b[2]);
-      shown=shown.concat(rest.slice(0,2-shown.length));
-    }
-    if(shown.length>MAX_SHOWN){ for(let i=0;i<MAX_SHOWN;i++){const j=i+Math.floor(rnd()*(shown.length-i));[shown[i],shown[j]]=[shown[j],shown[i]]} shown=shown.slice(0,MAX_SHOWN); }
-    o[k]={shown:shown.sort((a,b)=>b[2]-a[2]), total:all.length};
-  }
-  return o;
-}
+const makeOffer=y=>E.makeOffer(DATA,Math.random,y);
 function renderTabs(){
   const none=k=>offer[k]&&!offer[k].shown.length;   // ese año no tiene piezas para esa casilla
   $('tabs').innerHTML=SLOTS.map(([k,l])=>`<div class="tab ${picks[k]||none(k)?'done':''} ${cat===k?'on':''}" data-k="${k}" title="${none(k)&&!picks[k]?'No hay '+l.toLowerCase()+' de '+year:''}">${l}</div>`).join('');
@@ -516,9 +550,10 @@ function renderList(){
   if(!year) return;
   const {shown,total}=offer[cat];
   $('list').innerHTML=`<div class="note" style="margin:0 0 4px">${shown.length} de ${total} disponibles en esta tirada</div>`+
-    shown.map((it,i)=>`<div class="pick" data-i="${i}"><div class="who"><b>${it[0]}</b><small>${it[1]||year}</small></div><div class="rt ${rc(it[2])}">${it[2]}</div></div>`).join('');
+    shown.map((it,i)=>`<div class="pick" data-i="${i}"><div class="who"><b>${it[0]}</b><small>${it[1]||year}</small></div><div class="rt ${BLIND?'r0':rc(it[2])}">${BLIND?'?':it[2]}</div></div>`).join('');
   document.querySelectorAll('.pick').forEach(el=>el.onclick=()=>{
     if(MODE==='room'){roomPick(cat,+el.dataset.i,shown[+el.dataset.i]);return}
+    if(MODE==='daily'){dailyPick(cat,+el.dataset.i,shown[+el.dataset.i]);return}
     const it=shown[+el.dataset.i]; picks[cat]={n:it[0],y:year,r:it[2]};
     const y=year; year=null; cat=null;
     $('year').innerHTML='?<small>Elegiste. Tira de nuevo</small>'; $('rollBtn').querySelector('span').textContent='Tirar';
@@ -528,62 +563,62 @@ function renderList(){
 }
 $('rollBtn').onclick=async()=>{
   if(MODE==='room'){roomRoll();return}
-  await DATA_READY;
+  if(MODE==='daily'){dailyRoll();return}
+  await READY;
   if(year && rerolls<=0) return;
   if(year) rerolls--;
-  const ys=yearsFor(freeSlots()); year=pick(ys); offer=makeOffer(year);
-  $('die').classList.remove('spin'); void $('die').offsetWidth; $('die').classList.add('spin');
-  $('year').innerHTML=`${year}<small>Temporada sorteada</small>`;
-  $('rerolls').textContent=`Re-sortear: ${rerolls} restantes`;
-  $('rollBtn').querySelector('span').textContent='Re-sortear';
-  if(rerolls<=0) $('rollBtn').disabled=true;
-  cat=firstCat(); renderTabs(); renderList();
+  if(MODE==='friendly'){friendlyRoll();return}
+  const ys=E.yearsFor(DATA,freeSlots()), y=ys[Math.floor(Math.random()*ys.length)];
+  showRoll({year:y,offer:makeOffer(y)});
 };
 renderSlots();
 
 function go(screen,step){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$(screen).classList.add('on');
   ['st1','st2','st3','st4'].forEach((s,i)=>$(s).classList.toggle('on',i+1===step));window.scrollTo(0,0)}
 
-// ---------- Modelo: cada casilla pesa en el ritmo ----------
-// coche > piloto > motor en ritmo puro; jefe = mecánicos (boxes); estratega = cuándo parar.
-const paceOf=c=>(c.c-85)*0.045+(c.d-85)*0.035+(c.m-85)*0.025;
-function buildField(){
-  FIELD=[{name:`${picks.piloto.n} '${String(picks.piloto.y).slice(2)}`,driver:picks.piloto.n,color:'#ff3b30',me:true,
-          d:picks.piloto.r,c:picks.coche.r,m:picks.motor.r,j:picks.jefe.r,s:picks.estratega.r},
-    ...LEGENDS.filter(l=>l[0]!==picks.piloto.n).slice(0,21).map(([n,col,r])=>({name:n,driver:n,color:col,d:r,
-          c:r-7+Math.round(rnd()*9),m:r-5+Math.round(rnd()*7),j:84+Math.round(rnd()*10),s:82+Math.round(rnd()*12)}))];
-}
+// ---------- Carrera: el motor (supabase/functions/_shared/engine.js) la calcula y acá se anima ----------
+let RACE=null, MEKEY='h:me', SEED='', HUMANS=[], DECISIONS={}, PIT=null;
+const carByKey=k=>RACE.cars.find(c=>c.key===k);
+const newRace=(decisions)=>E.runRace({DATA,tracks:TRACKS,seed:SEED,humans:HUMANS,laps:LAPS,decisions});
 
-// ---------- QUALY ----------
+// Solo, amistoso y desafío del día: carrera nueva con el auto que armaste
+function prepareRace(seed){
+  SEED=seed||('s'+Date.now().toString(36)+Math.random().toString(36).slice(2,8));
+  HUMANS=[E.humanFromPicks('me','#ff3b30',picks)]; MEKEY='h:me'; DECISIONS={};
+  RACE=newRace({}); setTrack();
+}
 function setTrack(){
-  TRACK=pick(TRACKS);
+  TRACK=TRACKS[RACE.trackIdx];
   const s=TRACK.d.match(/M([0-9.]+),([0-9.]+)/), layers=(id)=>`<path ${id} d="${TRACK.d}" fill="none" stroke="url(#kerbp)" stroke-width="34" stroke-linejoin="round"/>
    <path d="${TRACK.d}" fill="none" stroke="#3a3c44" stroke-width="26" stroke-linejoin="round"/>
    <path d="${TRACK.d}" fill="none" stroke="#fff" stroke-opacity=".25" stroke-width="1.5" stroke-dasharray="10 12"/>
    <circle cx="${s[1]}" cy="${s[2]}" r="7" fill="#fff"/>`;
   $('trackg').innerHTML=layers('id="tp"')+`<text x="${+s[1]+12}" y="${+s[2]+24}" fill="#fff" fill-opacity=".5" font-size="13" font-family="Titillium Web" font-weight="700">LARGADA / META</text>`;
+  // calle de boxes: paralela a la recta de meta, del lado con más espacio
+  const pth=$('tp'), PL=pth.getTotalLength(), a=pth.getPointAtLength(0), b=pth.getPointAtLength(Math.min(PL*0.01,12));
+  let tx=b.x-a.x, ty=b.y-a.y; const nn=Math.hypot(tx,ty)||1; tx/=nn; ty/=nn;
+  let nx=-ty, ny=tx; const inside=(x,y)=>x>16&&x<784&&y>16&&y<444;
+  if(!inside(a.x+nx*40,a.y+ny*40)){nx=-nx;ny=-ny}
+  PIT={x:a.x+nx*34,y:a.y+ny*34,tx,ty};
+  $('trackg').insertAdjacentHTML('beforeend',`<line x1="${PIT.x-tx*40}" y1="${PIT.y-ty*40}" x2="${PIT.x+tx*40}" y2="${PIT.y+ty*40}" stroke="#555a66" stroke-width="13" stroke-linecap="round"/>
+   <text x="${PIT.x+nx*16}" y="${PIT.y+ny*16+4}" text-anchor="middle" fill="#fff" fill-opacity=".6" font-size="11" font-family="Titillium Web" font-weight="700">BOX</text>`);
   $('qtrack').innerHTML='<defs><pattern id="kerbq" width="16" height="16" patternUnits="userSpaceOnUse"><rect width="8" height="16" fill="#ff3b30"/><rect x="8" width="8" height="16" fill="#fff"/></pattern></defs>'+layers('').replace('url(#kerbp)','url(#kerbq)');
   $('qcircuit').textContent=`Ronda ${TRACK.round} · ${TRACK.circuit} · ${TRACK.km.replace('.',',')} km`;
   $('raceTitle').innerHTML=`Gran Premio <em>de ${TRACK.gp}</em>`;
-  $('raceSub').textContent=`Ronda ${TRACK.round} · ${TRACK.circuit} · ${TRACK.km.replace('.',',')} km · 22 autos · ${LAPS} vueltas · una parada obligatoria`;
+  $('raceSub').textContent=`Ronda ${TRACK.round} · ${TRACK.circuit} · ${TRACK.km.replace('.',',')} km · 22 autos · ${RACE.laps} vueltas · una parada obligatoria`;
   $('qsub').textContent=`Gran Premio de ${TRACK.gp}, sorteado del calendario 2026. Una vuelta lanzada por auto: tu piloto y tu auto marcan el ritmo; el dado pone la suerte (o el error).`;
 }
-$('toRace').onclick=()=>{buildField();setTrack();go('s-quali',2)};
-// Calcula la qualy (usa rnd: en salas es la semilla compartida) y la muestra.
-// El orden en que aparecen los tiempos es solo visual y usa Math.random para no
-// alterar la secuencia de la carrera, que debe ser idéntica en todos los navegadores.
+
+// ---------- QUALY ----------
+// El orden en que aparecen los tiempos es solo visual (Math.random): el resultado ya viene del motor.
 function runQualy(animate,onDone){
-  FIELD.forEach(c=>{
-    c.q=TRACK.lap-1.9-paceOf(c)-(c.d-85)*0.02+(rnd()-0.5)*0.7;
-    c.qErr=rnd()<Math.max(0,88-c.d)*0.015; // piloto flojo: error en la vuelta
-    if(c.qErr){c.qErr=pick(TRACK.corners);c.q+=1.2+rnd()*1.5}
-  });
-  GRID=[...FIELD].sort((a,b)=>a.q-b.q);
-  const order=[...FIELD]; for(let k=order.length-1;k>0;k--){const j=Math.floor(Math.random()*(k+1));[order[k],order[j]]=[order[j],order[k]]}
+  const cars=RACE.cars; cars.forEach(c=>{c.me=c.key===MEKEY});
+  const grid=RACE.grid.map(carByKey);
+  const order=[...cars]; for(let k=order.length-1;k>0;k--){const j=Math.floor(Math.random()*(k+1));[order[k],order[j]]=[order[j],order[k]]}
   let i=animate?0:order.length, done=animate?[]:[...order];
   const paint=()=>{done.sort((a,b)=>a.q-b.q); const best=done[0].q;
     $('qtower').innerHTML=done.map((c,k)=>`<div class="trow ${c.me?'me':''}"><span class="p">${k+1}</span><span class="c" style="background:${c.color}"></span><span>${c.name}${c.qErr?` <small style="color:var(--red)">· error en ${c.qErr}</small>`:''}</span><span class="g">${k?'+'+(c.q-best).toFixed(3):fmt(c.q)}</span></div>`).join('')};
-  const end=()=>{ const me=GRID.findIndex(c=>c.me)+1, m=FIELD.find(c=>c.me);
+  const end=()=>{ const m=carByKey(MEKEY), me=grid.indexOf(m)+1;
     $('qtime').textContent=fmt(m.q);
     $('qpos').innerHTML=`Largas <b style="color:var(--red)">P${me}</b>${m.qErr?`<br><small style="color:var(--muted)">Error en ${m.qErr}: perdiste tiempo</small>`:me===1?'<br><small style="color:var(--yellow)">¡POLE POSITION!</small>':''}`;
     $('qBtn').style.display='none'; onDone&&onDone(); };
@@ -592,105 +627,110 @@ function runQualy(animate,onDone){
   const t=setInterval(()=>{ done.push(order[i++]); paint(); if(i>=order.length){clearInterval(t);end()} },110);
 }
 $('qBtn').onclick=()=>{ $('qBtn').disabled=true; runQualy(true,()=>{$('toRace2').style.display='block'}); };
-$('toRace2').onclick=()=>{go('s-race',3);startRace()};
+$('toRace2').onclick=()=>{go('s-race',3);startRace(0,MODE==='solo'||MODE==='friendly'||MODE==='daily')};
+$('toRace').onclick=()=>{
+  if(MODE==='daily'){dailyToRace();return}
+  prepareRace(MODE==='friendly'?FRIENDLY.seed:null); go('s-quali',2);
+};
 
-// ---------- CARRERA: se calcula vuelta a vuelta y después se anima ----------
-function simulate(){
-  const BASE=TRACK.lap, OPT=Math.round(LAPS/2), cars=GRID.map((c,i)=>({...c,grid:i+1,cum:[i*0.35],ev:[],dnf:0,stops:0}));
-  cars.forEach(c=>{
-    const err=(96-c.s)/5;                                  // estratega malo = se equivoca de vuelta
-    c.pit=Math.max(2,Math.min(LAPS-1,OPT+Math.round((rnd()*2-1)*err)));
-    c.extra=(c.s<84 && rnd()<(84-c.s)*0.05)?Math.min(LAPS-1,c.pit+2+Math.floor(rnd()*3)):0; // parada de más
-    c.stat=+(2.0+(95-c.j)*0.06+rnd()*0.4).toFixed(1);      // jefe de equipo = mecánicos
-  });
-  for(let lap=1;lap<=LAPS;lap++){
-    for(const c of cars){
-      if(c.dnf){continue}
-      const age=lap<=c.pit?lap:lap-c.pit;
-      let t=BASE-paceOf(c)+(rnd()-0.5)*0.6+age*0.22;      // gomas gastadas
-      const T=c.cum[c.cum.length-1];
-      if(lap===c.pit||lap===c.extra){t+=19+c.stat;c.stops++;
-        c.ev.push({T,lap,me:c.me,k:'pit',txt:lap===c.extra?`Box, box… ¿otra vez? Parada de ${c.stat}s y las gomas estaban bien`:`Box, box. Parada de ${c.stat}s${Math.abs(c.pit-OPT)>=3?(c.pit>OPT?' (tarde: las gomas ya estaban muertas)':' (demasiado pronto)'):''}`});}
-      if(c.me && lap===OPT+2 && c.pit>OPT+2) c.ev.push({T,lap,me:true,k:'radio',txt:'¡Estas gomas no dan más! ¿Cuándo paro?'});
-      if(rnd()<Math.max(0,90-c.d)*0.004){const loss=3+rnd()*4;t+=loss;
-        c.ev.push({T,lap,me:c.me,k:'off',txt:`${c.name} se sale de pista en ${pick(TRACK.corners)} (−${loss.toFixed(1)}s)`});}
-      if(rnd()<Math.max(0,80-c.d)*0.004){                 // piloto ≤ 80: puede chocar a otro
-        const near=cars.filter(o=>o!==c&&!o.dnf).sort((a,b)=>Math.abs(a.cum[a.cum.length-1]-T)-Math.abs(b.cum[b.cum.length-1]-T))[0];
-        c.dnf=lap; c.ev.push({T,lap,me:c.me,k:'crash',txt:`Choque de ${c.name} con ${near.name} en ${pick(TRACK.corners)}. ${c.name} abandona`});
-        if(near){ if(rnd()<0.35){near.dnf=lap; near.ev.push({T,lap,me:near.me,k:'crash',txt:`${near.name} también abandona por el choque`});}
-                  else near.cum[near.cum.length-1]+=8; }
-        continue;
-      }
-      if(rnd()<Math.max(0,86-c.m)*0.0012){c.dnf=lap;      // motor flojo: se rompe
-        c.ev.push({T,lap,me:c.me,k:'engine',txt:`Humo en ${c.name}: motor roto, abandona`});continue;}
-      c.cum.push(T+t);
-    }
-  }
-  // radio del jugador: cómo va la carrera cada pocas vueltas
-  const me=cars.find(c=>c.me); let prev=me.grid;
-  for(const lap of [3,6,9,12,15,18].filter(l=>l<LAPS)){
-    if(me.cum.length<=lap) break;
-    const alive=cars.filter(c=>c.cum.length>lap).sort((a,b)=>a.cum[lap]-b.cum[lap]);
-    const p=alive.indexOf(me)+1, ahead=alive[p-2], T=me.cum[lap];
-    const txt=p<prev?`P${p}. ¡Ganaste ${prev-p} puesto${prev-p>1?'s':''}! Sigue así.`
-      :p>prev?`P${p}. Perdimos ${p-prev} puesto${p-prev>1?'s':''}, hay que reaccionar.`
-      :ahead?`P${p}. ${ahead.name} está a ${(me.cum[lap]-ahead.cum[lap]).toFixed(1)}s. Empuja.`:`P${p}. Lideras. Controla el ritmo.`;
-    me.ev.push({T,lap,me:true,k:'radio',who:'eng',txt}); prev=p;
-  }
-  return cars;
-}
-// syncAt (opcional, salas): hora local en que arranca el reloj de carrera para todos.
-// Si llegas tarde, la carrera se adelanta hasta el punto en que van los demás.
-function startRace(syncAt){
-  const tp=$('tp'), L=tp.getTotalLength(), cars=simulate();
-  const finishers=cars.filter(c=>!c.dnf), leaderEnd=Math.min(...finishers.map(c=>c.cum[LAPS]||1e9));
-  const endT=leaderEnd+6, scale=endT/32;                   // toda la carrera en ~32 segundos
-  cars.forEach(c=>{c.el=document.createElementNS('http://www.w3.org/2000/svg','g');
-    c.el.innerHTML=`<circle r="${c.me?8:6}" fill="${c.color}" stroke="${c.me?'#fff':'#000'}" stroke-width="2"/>`;$('cars').appendChild(c.el)});
-  const events=cars.flatMap(c=>c.ev).sort((a,b)=>a.T-b.T); let evI=0;
-  const prog=(c,T)=>{const n=c.cum.length-1; if(T>=c.cum[n]) return c.dnf? n+0.5 : n + (T-c.cum[n])/TRACK.lap;
-    let k=0; while(k<n && c.cum[k+1]<=T) k++; return k+(T-c.cum[k])/(c.cum[k+1]-c.cum[k]);};
-  const draw=T=>{cars.forEach(c=>{c.p=Math.min(prog(c,T),c.dnf?c.dnf-0.5:LAPS+0.05);
-    const pt=tp.getPointAtLength(((c.p*L)%L+L)%L); c.el.setAttribute('transform',`translate(${pt.x},${pt.y})`);
-    if(c.dnf && T>=c.cum[c.cum.length-1]) c.el.style.opacity=.3;});
+// ---------- ANIMACIÓN DE LA CARRERA ----------
+// syncAt (salas): hora local en que arranca el reloj de carrera para todos; si llegas tarde, se adelanta.
+// interactive: se puede decidir qué hacer con el safety car.
+function startRace(syncAt,interactive){
+  const tp=$('tp'), L=tp.getTotalLength(), els={};
+  $('cars').innerHTML=''; $('radio').innerHTML=''; $('scBanner').style.display='none'; $('toResult').style.display='none';
+  RACE.cars.forEach(c=>{c.me=c.key===MEKEY});
+  RACE.cars.forEach(c=>{const g=document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.innerHTML=`<circle r="${c.me?8:6}" fill="${c.color}" stroke="${c.me?'#fff':'#000'}" stroke-width="2"/>`;$('cars').appendChild(g);els[c.key]=g});
+  const scEl=document.createElementNS('http://www.w3.org/2000/svg','g');
+  scEl.innerHTML='<rect x="-13" y="-8" width="26" height="16" rx="4" fill="#ffd23f" stroke="#000" stroke-width="2"/><text y="4" text-anchor="middle" font-size="10" font-weight="900" font-family="Titillium Web" fill="#000">SC</text>';
+  scEl.style.display='none'; $('cars').appendChild(scEl);
+  let cars=RACE.cars, events=RACE.events;
+  const winnerEnd=()=>Math.min(...cars.filter(c=>!c.dnf).map(c=>c.cum[RACE.laps]));
+  let endT=winnerEnd()+6; const scale=endT/32;               // toda la carrera en ~32 segundos
+  const hashKey=k=>[...k].reduce((a,ch)=>a+ch.charCodeAt(0),0);
+  let evI=0, playT=0, last=0, paused=false, decided=!interactive||!RACE.sc;
+
+  const draw=T=>{
+    cars.forEach(c=>{const st=E.stateAt(c,T); c.p=Math.min(st.p,RACE.laps); c.out=st.out; c.inPit=st.inPit;
+      let x,y;
+      if(st.inPit){const along=((hashKey(c.key)%5)-2)*9; x=PIT.x+PIT.tx*along; y=PIT.y+PIT.ty*along}
+      else {const pt=tp.getPointAtLength(((c.p*L)%L+L)%L); x=pt.x; y=pt.y}
+      els[c.key].setAttribute('transform',`translate(${x},${y})`); els[c.key].style.opacity=c.out?.3:1;
+      const dot=els[c.key].firstChild; dot.setAttribute('r',st.inPit?10:(c.me?8:6)); dot.setAttribute('stroke',st.inPit?'#ffd23f':(c.me?'#fff':'#000'));});   // en boxes: más grande y con borde amarillo
     const o=[...cars].sort((a,b)=>(!!a.out-!!b.out)||b.p-a.p);
-    tower(o,T);
-    $('lap').textContent=`VUELTA ${Math.min(LAPS,Math.floor(o[0].p)+1)}/${LAPS}`;};
-  cars.forEach(c=>c.out=false); draw(0);
+    const sc=RACE.sc, scOn=!!sc&&T>=sc.T&&T<sc.endT;
+    if(scOn){ const pt=tp.getPointAtLength((((o[0].p+0.025)*L)%L+L)%L); scEl.setAttribute('transform',`translate(${pt.x},${pt.y})`); }
+    scEl.style.display=scOn?'':'none';
+    $('scBanner').style.display=scOn?'block':'none';
+    $('lights').className=scOn?'lights sc':'lights go';
+    tower(o);
+    $('lap').textContent=`VUELTA ${Math.min(RACE.laps,Math.floor(o[0].p)+1)}/${RACE.laps}`;
+  };
+  draw(0);
+
   const li=$('lights').children; let k=0;
   const lights=()=>{const t=setInterval(()=>{ if(k<5){li[k].style.background='#ff3b30';li[k].style.boxShadow='0 0 10px #ff3b30';k++} else {clearInterval(t);$('lights').className='lights go';[...li].forEach(x=>x.style.cssText='');run(syncAt?Math.max(0,Date.now()-syncAt):0)} },400)};
+  $('lights').className='lights'; [...li].forEach(x=>x.style.cssText='');
   if(!syncAt) lights();
   else { const wait=syncAt-2000-Date.now();
     if(wait>=0) setTimeout(lights,wait); else { $('lights').className='lights go'; run(Math.max(0,Date.now()-syncAt)); } }
+
+  // el jugador decide qué hacer con el safety car: la carrera se detiene hasta que elija
+  function askSC(){
+    const me=carByKey(MEKEY), sc=RACE.sc;
+    const stops=me.ev.filter(e=>e.k==='pit'&&e.lap<=sc.lap), lastStop=stops.length?stops[stops.length-1].lap:0;
+    $('scTxt').textContent=`${sc.by} ${sc.why==='choque'?'chocó':'rompió el motor'} y salió el safety car. Con el pelotón lento, entrar a boxes cuesta mucho menos.`;
+    $('scInfo').innerHTML=lastStop?`Ya hiciste tu parada en la vuelta ${lastStop}. Tus gomas tienen <b>${sc.lap-lastStop}</b> vueltas: otra parada es opcional.`
+      :`Todavía no hiciste tu parada obligatoria. Tus gomas tienen <b>${sc.lap}</b> vueltas.`;
+    openM('mSC');
+  }
+  window.__resolveSC=(dec)=>{
+    $('mSC').classList.remove('open');
+    DECISIONS={me:dec}; RACE=newRace(DECISIONS);               // lo que pasó antes del safety car es idéntico
+    RACE.cars.forEach(c=>{c.me=c.key===MEKEY}); cars=RACE.cars; events=RACE.events;
+    evI=events.filter(e=>e.T<=playT).length; endT=winnerEnd()+6;
+    paused=false; last=performance.now();
+  };
+
   function run(lateMs){
-    const t0=performance.now()-lateMs;
+    playT=lateMs/1000*scale; last=performance.now();
     const tick=()=>{
-      const T=Math.min(endT,(performance.now()-t0)/1000*scale);
-      while(evI<events.length && events[evI].T<=T){const e=events[evI++]; if(e.k==='crash'||e.k==='engine'){cars.forEach(c=>{if(c.dnf && c.cum[c.cum.length-1]<=T) c.out=true})} msg(e)}
-      draw(T);
-      if(T<endT) setTimeout(tick,33); else finish(cars);
+      if(paused){setTimeout(tick,100);return}
+      const now=performance.now(), sc0=RACE.sc, slow=sc0&&playT>=sc0.T&&playT<sc0.endT?0.5:1;   // con safety car, cámara lenta para ver las paradas
+      playT=Math.min(endT,playT+(now-last)/1000*scale*slow); last=now;
+      while(evI<events.length && events[evI].T<=playT) msg(events[evI++]);
+      draw(playT);
+      if(!decided && RACE.sc && playT>=RACE.sc.T){ decided=true; const me=carByKey(MEKEY); if(me&&!me.dnf){ paused=true; askSC(); setTimeout(tick,100); return } }
+      if(playT<endT) setTimeout(tick,33); else finish();
     }; tick();
   }
 }
 function tower(o){
   const lead=o[0].p;
-  $('tower').innerHTML=o.map((c,i)=>`<div class="trow ${c.me?'me':''}" style="${c.out?'opacity:.4':''}"><span class="p">${i+1}</span><span class="c" style="background:${c.color}"></span><span>${c.name}</span><span class="g">${c.out?'OUT':i?'+'+((lead-c.p)*TRACK.lap).toFixed(1)+'s':'LÍDER'}</span></div>`).join('');
+  $('tower').innerHTML=o.map((c,i)=>`<div class="trow ${c.me?'me':''}" style="${c.out?'opacity:.4':''}"><span class="p">${i+1}</span><span class="c" style="background:${c.color}"></span><span>${c.name}</span><span class="g">${c.out?'OUT':c.inPit?'<b style="color:var(--yellow)">BOX</b>':i?'+'+((lead-c.p)*TRACK.lap).toFixed(1)+'s':'LÍDER'}</span></div>`).join('');
 }
 function msg(e){
-  if(!e.me && e.k==='pit') return;                        // las paradas de rivales no ensucian la radio
-  const bad=e.k!=='pit'&&e.k!=='radio';
-  const who=e.me?(e.k==='radio'?(e.who==='eng'?`📻 Ingeniero → ${picks.piloto.n}`:`📻 ${picks.piloto.n}`):e.k==='pit'?`📻 Estratega → ${picks.piloto.n}`:'⚠ Dirección de carrera'):'⚠ Dirección de carrera';
-  $('radio').insertAdjacentHTML('afterbegin',`<div class="msg ${bad?'inc':''}"><b>${who} · V${e.lap}</b>${e.k==='radio'?`"${e.txt}"`:e.txt}</div>`);
+  const mine=e.carKey===MEKEY;
+  if(e.k==='pit'&&!mine) return;                          // las paradas de rivales no ensucian la radio
+  if(e.k==='radio'&&!mine) return;
+  let cls='',who,txt=e.txt;
+  if(e.k==='sc'){cls='sc';who='🚨 Safety car'}
+  else if(e.k==='green'){cls='ok';who='🟢 Dirección de carrera'}
+  else if(e.k==='radio'){who=e.who==='eng'?`📻 Ingeniero → ${picks.piloto.n}`:`📻 ${picks.piloto.n}`;txt=`"${e.txt}"`}
+  else if(e.k==='pit'){who=`📻 Estratega → ${picks.piloto.n}`}
+  else {cls='inc';who='⚠ Dirección de carrera'}
+  $('radio').insertAdjacentHTML('afterbegin',`<div class="msg ${cls}"><b>${who} · V${e.lap}</b>${esc(txt)}</div>`);
   while($('radio').children.length>5)$('radio').lastChild.remove();
 }
 let RESULT=null;
-function finish(cars){
-  const cls=[...cars].sort((a,b)=>(!!a.dnf-!!b.dnf)||(a.dnf&&b.dnf?b.dnf-a.dnf:a.cum[LAPS]-b.cum[LAPS]));
-  const pos=cls.findIndex(c=>c.me)+1, me=cars.find(c=>c.me);
-  RESULT={pos,dnf:me.dnf,grid:me.grid,stops:me.stops,cls};
-  $('radio').insertAdjacentHTML('afterbegin',`<div class="msg" style="border-color:#fff"><b>🏁 Bandera a cuadros</b>${me.dnf?'Abandonaste en la vuelta '+me.dnf:'Terminaste P'+pos}.</div>`);
+function finish(){
+  const cls=RACE.classification.map(carByKey), me=carByKey(MEKEY);
+  RESULT={pos:me.pos,dnf:me.dnf,grid:me.grid,stops:me.stops,cls};
+  $('radio').insertAdjacentHTML('afterbegin',`<div class="msg" style="border-color:#fff"><b>🏁 Bandera a cuadros</b>${me.dnf?'Abandonaste en la vuelta '+me.dnf:'Terminaste P'+me.pos}.</div>`);
   $('toResult').style.display='block';
-  saveRace(cls); saveStats(pos,me.dnf);
+  if(MODE==='friendly'||MODE==='daily'){ /* no suma al campeonato: el amistoso no cuenta y el diario se registra en el servidor */ if(MODE==='daily') dailyFinish(); }
+  else { saveRace(cls); saveStats(me.pos,me.dnf); }
   // La carrera de la sala terminó: no volver a ella al recargar (el resultado sigue en pantalla).
   if(MODE==='room'){ try{localStorage.removeItem(ROOM_KEY)}catch(e){} }
 }
@@ -705,9 +745,10 @@ function saveRace(cls){const c=loadChamp(); LAST={};
   try{localStorage.setItem(KEY,JSON.stringify(c))}catch(e){}}
 
 $('toResult').onclick=()=>{
-  const {pos,dnf,grid,stops}=RESULT, pts=dnf?0:(PTS[pos-1]||0), p=picks.piloto;
+  if(BLIND){BLIND=false;renderSlots()}   // ahora sí se ven las medias
+  const {pos,dnf,grid,stops}=RESULT, pts=dnf?0:(PTS[pos-1]||0), p=picks.piloto, special=MODE==='daily'||MODE==='friendly';
   $('pos').textContent=dnf?'DNF':'P'+pos; $('pos').className='pos'+(!dnf&&pos===1?' p1':'');
-  $('resmsg').textContent=pts?`+${pts} puntos para ${p.n} en tu campeonato`:dnf?'Abandono: sin puntos':'Sin puntos esta vez';
+  $('resmsg').textContent=special?(MODE==='daily'?'Desafío del día: no suma a tu campeonato de pilotos':'Amistoso: no cuenta para el ranking ni para la racha'):pts?`+${pts} puntos para ${p.n} en tu campeonato`:dnf?'Abandono: sin puntos':'Sin puntos esta vez';
   SHARE=buildShare(RESULT); $('share').innerHTML=esc(SHARE.text).replace(/\n/g,'<br>');
   if(MODE==='room'){
     const rows=RESULT.cls.map((c,i)=>({c,i})).filter(x=>x.c.human);
@@ -715,7 +756,11 @@ $('toResult').onclick=()=>{
       rows.map(({c,i})=>`<div class="trow ${c.me?'me':''}" style="margin-bottom:4px"><span class="p">${c.dnf?'—':i+1}</span><span class="c" style="background:${c.color}"></span><span>${c.name}</span><span class="g">${c.dnf?'DNF':(PTS[i]?'+'+PTS[i]+' pts':'')}</span></div>`).join('');
     $('roomRes').style.display='block'; $('again').querySelector('span').textContent='Volver al inicio';
   }
+  $('roomRes').style.display=MODE==='room'?'block':'none'; $('dailyRes').style.display='none';
+  $('again').querySelector('span').textContent=special?'Volver al desafío':MODE==='room'?'Volver al inicio':'Otra tirada';
+  $('toChamp').style.display=special?'none':'';
   go('s-result',4);
+  if(MODE==='daily') paintDailyResult();
 };
 $('toChamp').onclick=()=>{
   const rows=Object.entries(loadChamp()).sort((a,b)=>b[1].pts-a[1].pts);
@@ -724,18 +769,13 @@ $('toChamp').onclick=()=>{
   $('champ').style.display='block'; $('champ').scrollIntoView({behavior:'smooth'});
 };
 $('again').onclick=()=>{ if(MODE==='room'){forgetRoom();location.href=location.pathname;return}
+  if(MODE==='daily'||MODE==='friendly'){location.href=location.pathname+'?desafio';return}
   try{sessionStorage.setItem('boxbox_auto',MODE)}catch(e){};location.reload()};
 // ---------- Inicio, navegación, ajustes, perfil, modales ----------
-function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
 // MODE se declara arriba, junto al estado del juego
 const today=new Date(), DAYKEY=today.getFullYear()*10000+(today.getMonth()+1)*100+today.getDate();
-function startGame(mode){
-  MODE=mode; if(mode==='daily') rnd=mulberry32(DAYKEY);   // desafío del día: mismos dados para todos hoy
-  $('st0').style.display=''; go('s-build',1);
-  $('buildTitle').innerHTML=mode==='daily'?`Desafío <em>del día · ${today.toLocaleDateString('es')}</em>`:'Tira el dado. <em>Arma tu auto.</em>';
-}
 $('hPlay').onclick=()=>startGame('solo');
-$('hDaily').onclick=$('nDaily').onclick=()=>startGame('daily');
+$('hDaily').onclick=$('nDaily').onclick=()=>showDaily();
 $('hFriends').onclick=()=>openM('mFriends');
 $('hChamp').onclick=$('nChamp').onclick=()=>showChampPage();
 $('nProfile').onclick=()=>showProfile();
@@ -750,7 +790,7 @@ $('tDark').onclick=()=>setTheme('dark'); $('tLight').onclick=()=>setTheme('light
 $('dReset').onclick=()=>resetChamp(false); $('dNew').onclick=()=>resetChamp(true);
 // Modales
 function openM(id){$(id).classList.add('open')}
-document.querySelectorAll('.modal').forEach(m=>{m.onclick=e=>{if(e.target===m||e.target.closest('[data-close]'))m.classList.remove('open')}});
+document.querySelectorAll('.modal').forEach(m=>{ if(m.id==='mSC') return; m.onclick=e=>{if(e.target===m||e.target.closest('[data-close]'))m.classList.remove('open')}});
 // Donaciones
 const CAFECITO_USER='boxf1box';   // → https://cafecito.app/boxf1box
 if(CAFECITO_USER){$('cafLink').href='https://cafecito.app/'+encodeURIComponent(CAFECITO_USER);$('cafOpt').style.display=''}
@@ -835,7 +875,7 @@ $('fCreate').onclick=createRoom; $('fJoin').onclick=joinRoom;
 $('fCode').onkeydown=e=>{if(e.key==='Enter')joinRoom()};
 
 function enterRoom(state){
-  MODE='room'; rememberRoom();
+  MODE='room'; BLIND=false; rememberRoom();
   document.querySelectorAll('.modal').forEach(m=>m.classList.remove('open'));
   history.replaceState(null,'',location.pathname+'?sala='+encodeURIComponent(ROOM.code));
   clearInterval(pollT); pollT=setInterval(poll,1500);
@@ -850,7 +890,7 @@ function onState(s){
   RS=s; const st=s.room.status;
   if(st==='lobby') return renderLobby(s);
   if(st==='building') return renderRoomBuild(s);
-  if(st==='racing' && !raceShown){ raceShown=true; clearInterval(pollT); startRoomRace(s); }
+  if(st==='racing' && !raceShown){ raceShown=true; clearInterval(pollT); READY.then(()=>startRoomRace(s)); }
 }
 
 // --- sala de espera ---
@@ -894,8 +934,8 @@ function showRoll(roll){
   year=roll.year; offer=roll.offer;
   $('die').classList.remove('spin'); void $('die').offsetWidth; $('die').classList.add('spin');
   $('year').innerHTML=`${year}<small>Temporada sorteada</small>`;
-  $('rerolls').textContent=`Re-sortear: ${rerolls} restantes`;
-  $('rollBtn').querySelector('span').textContent='Re-sortear';
+  $('rerolls').textContent=BLIND?'Sin re-sorteos: la mano es la misma para todos':`Re-sortear: ${rerolls} restantes`;
+  $('rollBtn').querySelector('span').textContent=BLIND?'Tirar':'Re-sortear';
   $('rollBtn').disabled=rerolls<=0;
   cat=firstCat(); renderTabs(); renderList();
 }
@@ -916,24 +956,18 @@ async function roomPick(slot,idx,it){
 }
 
 // --- carrera sincronizada ---
-function buildRoomField(s){
-  const pl=s.players, taken=new Set(pl.map(p=>p.picks.piloto.n));
-  FIELD=[...pl.map(p=>({name:`${esc(p.name)} · ${esc(p.picks.piloto.n)} '${String(p.picks.piloto.y).slice(2)}`,driver:p.picks.piloto.n,
-      color:p.color,me:p.pid===ROOM.pid,human:true,
-      d:p.picks.piloto.r,c:p.picks.coche.r,m:p.picks.motor.r,j:p.picks.jefe.r,s:p.picks.estratega.r})),
-    ...LEGENDS.filter(l=>!taken.has(l[0])).slice(0,Math.max(0,22-pl.length)).map(([n,col,r])=>({name:n,driver:n,color:col,d:r,
-      c:r-7+Math.round(rnd()*9),m:r-5+Math.round(rnd()*7),j:84+Math.round(rnd()*10),s:82+Math.round(rnd()*12)}))];
-}
+// Todos los navegadores corren el mismo motor con la misma semilla y los autos que validó el servidor.
 function startRoomRace(s){
   clearInterval(tickT);
-  rnd=mulberry32(Number(s.room.race_seed));               // misma semilla = misma carrera para todos
-  LAPS=20;                                                 // todos con las mismas vueltas
+  LAPS=20;                                                   // en salas todos corren las mismas vueltas
   picks={...s.players.find(p=>p.pid===ROOM.pid).picks};
-  setTrack(); buildRoomField(s);
+  HUMANS=s.players.map(p=>E.humanFromPicks(p.pid,p.color,p.picks,`${esc(p.name)} · ${p.picks.piloto.n} '${String(p.picks.piloto.y).slice(2)}`));
+  MEKEY='h:'+ROOM.pid; SEED=String(s.room.race_seed); DECISIONS={};
+  RACE=newRace({}); setTrack();
   const raceAt=srvToLocal(s.room.race_start), syncAt=raceAt+2000, late=Date.now()>=raceAt;
   $('qBtn').style.display='none'; $('toRace2').style.display='none';
   go('s-quali',2);
-  const toRace=()=>{ go('s-race',3); startRace(syncAt); };
+  const toRace=()=>{ go('s-race',3); startRace(syncAt,false); };
   if(late){ runQualy(false); toRace(); return; }
   runQualy(true,()=>{
     $('qWait').style.display='block';
@@ -957,14 +991,14 @@ function startRoomRace(s){
 // Tarjeta de texto tipo Wordle. El desafío del día comparte un link que abre ese mismo desafío.
 const SITE='https://boxf1box.com';
 let SHARE=null;
-function buildShare(R){
+function buildShare(R,D){
   const p=picks.piloto, avg=$('avg').textContent;
   const sq=SLOTS.map(([k])=>picks[k].r>=95?'🟪':picks[k].r>=90?'🟩':picks[k].r>=80?'🟨':'⬛').join('');
   const medal=R.pos===1?'🏆':R.pos<=3?'🍾':R.pos<=10?'✅':'😬';
-  const url=MODE==='daily'?SITE+'/?desafio':SITE;
-  const head=MODE==='daily'?`🏁 BoxBox · Desafío del día ${today.toLocaleDateString('es')}`:MODE==='room'?'🏁 BoxBox · Carrera con amigos':'🏁 BoxBox';
+  const url=MODE==='daily'||MODE==='friendly'?SITE+'/?desafio':SITE;
+  const head=MODE==='daily'?`🏁 BoxBox · Desafío del día ${today.toLocaleDateString('es')}`:MODE==='friendly'?'🏁 BoxBox · Desafío amistoso':MODE==='room'?'🏁 BoxBox · Carrera con amigos':'🏁 BoxBox';
   const line=R.dnf?`💥 Abandoné en la vuelta ${R.dnf} (largué P${R.grid})`:`${medal} P${R.pos}/22 (largué P${R.grid})`;
-  const text=`${head}\nGP de ${TRACK.gp}\n${line}\n${sq} ${p.n} '${String(p.y).slice(2)} · media ${avg}\n¿Me ganás? 👉 ${url}`;
+  const text=`${head}\nGP de ${TRACK.gp}\n${line}\n${sq} ${p.n} '${String(p.y).slice(2)} · media ${avg}\n${D&&!D.error?`#${D.rank} de ${D.total} hoy${D.streak>1?` · 🔥 ${D.streak} días`:''}\n`:''}¿Me ganás? 👉 ${url}`;
   $('shWa').href='https://wa.me/?text='+encodeURIComponent(text);
   $('shX').href='https://x.com/intent/tweet?text='+encodeURIComponent(text);
   return {text,url};
@@ -978,10 +1012,148 @@ $('shNative').onclick=async()=>{
   if(navigator.share){ try{await navigator.share({title:'BoxBox',text:SHARE.text});return}catch(e){ if(e.name==='AbortError') return } }
   copyShare();
 };
-// boxf1box.com/?desafio abre directamente el desafío del día
-if(new URLSearchParams(location.search).has('desafio') && MODE!=='room') startGame('daily');
-{ const v=new URLSearchParams(location.search).get('ver');           // ?ver=campeonato | ?ver=perfil
-  if(MODE!=='room'){ if(v==='campeonato') showChampPage(); if(v==='perfil') showProfile(); } }
+
+// ---------- DESAFÍO DEL DÍA ----------
+// Una partida por día (se registra con tu cuenta de Google), la misma mano para todos y sin ver las medias.
+// Después podés jugar "amistoso": la misma mano, pero no cuenta para el ranking ni la racha.
+// El servidor (Edge Function "diario") reparte las tiradas, valida cada elección y calcula el resultado oficial.
+const DIARIO_URL='https://vljuhibzzwtcswirunfr.supabase.co/functions/v1/diario';
+let DST=null, DAILY=null, DRES=null, DOFF=0, dTimerT=null, dRankDay='hoy', FRIENDLY={seed:null,rolls:null};
+async function dApi(action,extra={}){
+  const headers={'Content-Type':'application/json'};
+  try{ const {data}=await sb.auth.getSession(); if(data&&data.session) headers.Authorization='Bearer '+data.session.access_token }catch(e){}
+  let r,j;
+  try{ r=await fetch(DIARIO_URL,{method:'POST',headers,body:JSON.stringify({action,...extra})}); j=await r.json() }
+  catch(e){ throw new Error('Sin conexión con el servidor. Revisa tu internet.') }
+  if(!r.ok) throw Object.assign(new Error(j.error||'Error del servidor'),{status:r.status,code:j.code});
+  if(j.now) DOFF=j.now-Date.now();
+  return j;
+}
+const fmtRace=t=>{ if(t==null) return '—'; const h=Math.floor(t/3600), m=Math.floor((t%3600)/60), s=(t%60).toFixed(1).padStart(4,'0'); return h?`${h}:${String(m).padStart(2,'0')}:${s}`:`${m}:${s}`};
+const fmtPos=r=>r.dnf?`DNF · V${r.laps}`:`P${r.pos}`;
+
+function resetBuild(rr){
+  year=null; cat=null; offer={}; picks={}; rerolls=rr; FIELD=[]; GRID=[];
+  $('year').innerHTML='?<small id="yearsub">Tira para sortear una temporada</small>';
+  $('list').innerHTML='<div class="empty">🏁 Tira el dado para ver la parrilla de ese año</div>';
+  $('tabs').innerHTML=''; $('rerolls').textContent=''; $('rollBtn').querySelector('span').textContent='Tirar';
+  $('roomBar').style.display='none'; renderSlots();
+}
+function startGame(mode){
+  MODE=mode; BLIND=(mode==='daily'||mode==='friendly'); if(BLIND) LAPS=20;
+  resetBuild(BLIND?0:2);
+  $('st0').style.display=''; go('s-build',1);
+  $('buildTitle').innerHTML=mode==='daily'?'Desafío <em>del día</em>':mode==='friendly'?'Desafío <em>amistoso</em>':'Tira el dado. <em>Arma tu auto.</em>';
+  $('buildSub').textContent=BLIND?'Sin medias a la vista y sin re-sorteos: la mano es la misma para todos. Elige con el olfato.':'Sale un año. Elige una pieza de esa temporada para una casilla libre. 5 tiradas, un auto de leyenda.';
+}
+
+// --- pantalla del desafío ---
+async function showDaily(){
+  MODE='solo'; BLIND=false; $('st0').style.display='none'; go('s-daily',0);
+  $('dActions').innerHTML='<div class="note" style="text-align:center">Cargando…</div>';
+  try{ await READY; DST=await dApi('estado'); }catch(e){ DST=null; toast(e.message); }
+  renderDaily(); loadRank(dRankDay); startDTimer();
+}
+function renderDaily(){
+  const d=new Date(Date.now()+DOFF), st=DST;
+  $('dDate').textContent='Desafío del día · '+d.toLocaleDateString('es',{weekday:'long',day:'numeric',month:'long',timeZone:'America/Argentina/Buenos_Aires'});
+  const E0=st&&st.entry, played=E0&&E0.status==='listo';
+  $('dStreak').textContent=st?st.streak:0;
+  $('dStreakTxt').textContent=(st&&st.streak===1)?'1 día seguido':`${st?st.streak:0} días seguidos`;
+  $('dStreakSub').textContent=played?'Jugaste hoy':(st&&st.streak?'Juega hoy para mantener tu racha':'Juega hoy para empezar tu racha');
+  let h='';
+  if(!st) h='<div class="note" style="text-align:center">No se pudo cargar el desafío. Revisa tu conexión.</div><button class="btn cta" id="dRetry"><span>Reintentar</span></button>';
+  else if(!st.logged) h='<button class="btn cta" id="dLogin"><span>Entrar con Google para jugar</span></button><button class="btn ghost cta" id="dFriend"><span>Jugar amistoso →</span></button><div class="note" style="text-align:center">Con tu cuenta se registra tu resultado, tu racha y tu lugar en el ranking.</div>';
+  else if(!st.nickname) h='<div class="note" style="text-align:center">Elige tu nombre para el ranking (3 a 16 letras, números, punto, guion o _).</div><input id="dNick" maxlength="16" placeholder="Tu nombre de piloto" autocomplete="off"><button class="btn cta" id="dNickSave"><span>Guardar nombre</span></button><div class="note" id="dNickErr" style="color:var(--red);text-align:center;min-height:18px"></div>';
+  else if(played) h=`<button class="btn cta" disabled><span>Ya jugaste hoy</span></button><div class="dres">Tu resultado: <b>${fmtPos(E0.result)}</b> · ${E0.result.dnf?'':fmtRace(E0.result.tiempo)+' · '}<b>#${E0.rank}</b> de ${st.total}</div><button class="btn ghost cta" id="dFriend"><span>Jugar amistoso →</span></button><div class="note" style="text-align:center">no cuenta para el ranking ni para la racha</div>`;
+  else h=`<button class="btn cta" id="dPlay"><span>${E0&&E0.nPicks?'Continuar el desafío →':'Jugar el desafío →'}</span></button><div class="note" style="text-align:center">Tienes una sola partida por día.</div>`;
+  $('dActions').innerHTML=h;
+  const on=(id,fn)=>{const e=$(id); if(e) e.onclick=fn};
+  on('dRetry',showDaily); on('dLogin',()=>signIn('?desafio')); on('dFriend',startFriendly); on('dPlay',startDaily); on('dNickSave',saveNick);
+  $('dShare').style.display=played?'block':'none';
+}
+function startDTimer(){
+  clearInterval(dTimerT);
+  const tick=()=>{ if(!DST) return; const ms=Math.max(0,DST.nextAt-(Date.now()+DOFF)), s=Math.floor(ms/1000);
+    $('dTimer').textContent=[Math.floor(s/3600),Math.floor(s/60)%60,s%60].map(x=>String(x).padStart(2,'0')).join(':');
+    if(ms<=0){clearInterval(dTimerT); if($('s-daily').classList.contains('on')) showDaily();} };
+  tick(); dTimerT=setInterval(tick,1000);
+}
+async function saveNick(){
+  const v=$('dNick').value.trim(); $('dNickErr').textContent=''; $('dNickSave').disabled=true;
+  try{ await dApi('apodo',{nickname:v}); await showDaily(); }
+  catch(e){ $('dNickErr').textContent=e.message; $('dNickSave').disabled=false; }
+}
+document.querySelectorAll('.dtab').forEach(b=>b.onclick=()=>{ dRankDay=b.dataset.d; document.querySelectorAll('.dtab').forEach(x=>x.classList.toggle('on',x===b)); loadRank(dRankDay); });
+async function loadRank(dia){
+  $('dRank').innerHTML='<div class="note" style="text-align:center">Cargando…</div>'; $('dRankMe').textContent='';
+  try{
+    const j=await dApi('ranking',{dia}), row=r=>`<div class="rk ${r.mine?'me':''}"><span class="n">${r.rank<=3?['🥇','🥈','🥉'][r.rank-1]:'#'+r.rank}</span><span class="nm">${esc(r.nickname)}</span><span class="pt">${r.dnf?'DNF':'P'+r.pos}</span><span class="tm">${r.dnf?'V'+r.laps:fmtRace(r.tiempo)}</span></div>`;
+    let h=j.list.map(row).join('');
+    if(j.mine&&!j.list.some(r=>r.mine)) h+='<div class="note" style="text-align:center;margin:4px 0">· · ·</div>'+row(j.mine);
+    $('dRank').innerHTML=h||`<div class="empty" style="padding:22px 10px">${dia==='hoy'?'Todavía no jugó nadie hoy. ¡Sé el primero!':'Ayer no jugó nadie.'}</div>`;
+    $('dRankMe').textContent=j.mine?`Estás en el #${j.mine.rank} de ${j.total} ${dia==='hoy'?'hoy':'ayer'}.`:(j.total?`${j.total} jugaron ${dia==='hoy'?'hoy':'ayer'}.`:'');
+  }catch(e){ $('dRank').innerHTML=`<div class="note" style="text-align:center">${esc(e.message)}</div>` }
+}
+$('dShare').onclick=()=>{ const e=DST&&DST.entry; if(!e||!e.result) return;
+  const d=new Date(Date.now()+DOFF).toLocaleDateString('es',{day:'numeric',month:'numeric',timeZone:'America/Argentina/Buenos_Aires'});
+  shareText(`🏁 BoxBox · Desafío del día ${d}\n#${e.rank} de ${DST.total} · ${fmtPos(e.result)}${e.result.dnf?'':' ('+fmtRace(e.result.tiempo)+')'}\n${DST.streak>1?'🔥 '+DST.streak+' días seguidos\n':''}¿Me ganás? 👉 ${SITE}/?desafio`); };
+
+// --- jugar el desafío registrado ---
+function startDaily(){
+  const e=DST.entry; startGame('daily');
+  if(e&&e.nPicks){ for(const [k,v] of Object.entries(e.picks)) picks[k]={n:v.n,y:v.y,r:0}; renderSlots(); }
+}
+async function dailyRoll(){
+  $('rollBtn').disabled=true;
+  try{ const j=await dApi('roll'); showRoll({year:j.roll.year,offer:j.roll.offer}); }
+  catch(e){ toast(e.message); $('rollBtn').disabled=false; if(['jugado','login','nick'].includes(e.code)) showDaily(); }
+}
+async function dailyPick(slot,idx,it){
+  document.querySelectorAll('.pick').forEach(el=>el.style.pointerEvents='none');
+  try{
+    const j=await dApi('pick',{slot,idx}), y=year; year=null; cat=null;
+    if(j.done){ DAILY={raceSeed:j.raceSeed,picks:j.picks}; picks={...j.picks}; }
+    else { picks={}; for(const [k,v] of Object.entries(j.picks)) picks[k]={n:v.n,y:v.y,r:0}; }
+    $('year').innerHTML='?<small>Elegiste. Tira de nuevo</small>'; $('rollBtn').querySelector('span').textContent='Tirar';
+    $('list').innerHTML=`<div class="empty">✅ ${esc(it[0])} (${y}) a tu auto. ${Object.keys(picks).length<5?'Tira otra vez.':'¡Auto completo!'}</div>`;
+    $('tabs').innerHTML=''; renderSlots();
+  }catch(e){ toast(e.message); document.querySelectorAll('.pick').forEach(el=>el.style.pointerEvents=''); }
+}
+function dailyToRace(){ LAPS=20; picks=DAILY.picks; DRES=null; prepareRace(DAILY.raceSeed); go('s-quali',2); }
+// el servidor calcula el resultado oficial (con tu decisión del safety car) y devuelve tu puesto
+async function dailyFinish(){
+  try{
+    const j=await dApi('cerrar',{decision:DECISIONS.me}); DRES=j;
+    if(j.result.pos!==RESULT.pos||!!j.result.dnf!==!!RESULT.dnf) console.warn('El resultado del servidor difiere del local',j.result,RESULT);
+  }catch(e){ DRES={error:e.message}; }
+  paintDailyResult();
+}
+function paintDailyResult(){
+  if(MODE!=='daily'||!$('s-result').classList.contains('on')) return;
+  const r=DRES, box=$('dailyRes'); box.style.display='block';
+  if(!r) box.innerHTML='<div class="note" style="text-align:center">Registrando tu resultado…</div>';
+  else if(r.error) box.innerHTML=`<div class="note" style="text-align:center;color:var(--red)">No se pudo registrar tu resultado: ${esc(r.error)}</div><button class="btn ghost" id="dRetryFin"><span>Reintentar</span></button>`;
+  else {
+    box.innerHTML=`<div class="dres">Puesto <b>#${r.rank}</b> de ${r.total} hoy${r.streak?` · 🔥 <b>${r.streak}</b> ${r.streak===1?'día seguido':'días seguidos'}`:''}</div>
+      <div class="row-actions" style="margin-top:8px"><button class="btn ghost" id="dSeeRank"><span>Ver el ranking</span></button></div>`;
+    SHARE=buildShare(RESULT,r); $('share').innerHTML=esc(SHARE.text).replace(/\n/g,'<br>');
+  }
+  const a=$('dRetryFin'); if(a) a.onclick=()=>{DRES=null;paintDailyResult();dailyFinish()};
+  const b=$('dSeeRank'); if(b) b.onclick=()=>{BLIND=false;showDaily()};
+}
+
+// --- amistoso: la misma mano, sin registrar nada ---
+async function startFriendly(){
+  await READY;
+  const mano=DST&&DST.entry&&DST.entry.mano;
+  FRIENDLY=mano?{rolls:mano.rolls,seed:mano.raceSeed}:{rolls:null,seed:'amistoso-'+E.dayKey(Date.now()+DOFF)};
+  startGame('friendly');
+}
+function friendlyRoll(){
+  const i=Object.keys(picks).length, r=FRIENDLY.rolls?FRIENDLY.rolls.find(x=>x.i===i):E.dailyRoll(DATA,FRIENDLY.seed,i);
+  showRoll({year:r.year,offer:r.offer});
+}
 
 // ---------- SALIR DE UNA SALA DESDE EL MENÚ ----------
 // Estando en una sala, el logo y el menú preguntan antes de salir. Si no, la sala
@@ -1035,9 +1207,9 @@ async function syncDown(){
   if($('s-profile').classList.contains('on')) showProfile();
   if($('s-champpage').classList.contains('on')) showChampPage();
 }
-async function signIn(){
+async function signIn(q){
   if(!sb) return toast('No se pudo cargar el login. Revisa tu conexión y recarga.');
-  const {error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname+'?ver=perfil'}});
+  const {error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname+(typeof q==='string'?q:'?ver=perfil')}});
   if(error) toast('No se pudo iniciar sesión: '+error.message);
 }
 async function signOut(){
@@ -1059,8 +1231,14 @@ if(sb){
     const u=session&&session.user||null, changed=(u&&u.id)!==(USER&&USER.id);
     USER=u; paintUser();
     if(u&&changed) setTimeout(syncDown,0);
+    if(changed&&$('s-daily').classList.contains('on')) setTimeout(showDaily,0);
   });
 }
+
+// ---------- ARRANQUE ----------
+// boxf1box.com/?desafio abre el desafío del día; ?ver=campeonato y ?ver=perfil abren esas pantallas.
+{ const q=new URLSearchParams(location.search), v=q.get('ver');
+  if(MODE!=='room'){ if(q.has('desafio')) showDaily(); else if(v==='campeonato') showChampPage(); else if(v==='perfil') showProfile(); } }
 </script>
 </body>
 </html>
