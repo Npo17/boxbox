@@ -81,7 +81,8 @@ async function getRoom(code: string) {
   return data;
 }
 async function getPlayers(code: string) {
-  const { data, error } = await db.from("jugadores").select("*").eq("sala", code).order("joined_at");
+  // Sin las tiradas ni el hash secreto: con 22 jugadores es lo más pesado y nadie lo necesita acá.
+  const { data, error } = await db.from("jugadores").select("pid,name,color,done,picks").eq("sala", code).order("joined_at");
   if (error) throw new Fail("Error leyendo jugadores", 500);
   return data ?? [];
 }
@@ -98,9 +99,9 @@ async function newPlayer(code: string, name: string, color: string) {
 }
 
 // Cierre del armado: completa autos incompletos y pasa a carrera. Idempotente.
-async function maybeLock(room: Record<string, any>) {
+async function maybeLock(room: Record<string, any>, known?: Record<string, any>[]) {
   if (room.status !== "building") return room;
-  const players = await getPlayers(room.code);
+  const players = known ?? await getPlayers(room.code);
   const expired = room.deadline && Date.now() >= Date.parse(room.deadline);
   if (!expired && !(players.length && players.every((p) => p.done))) return room;
   for (const p of players) {
@@ -121,8 +122,8 @@ async function maybeLock(room: Record<string, any>) {
   return data ?? (await getRoom(room.code));
 }
 
-async function stateFor(room: Record<string, any>, me: Record<string, any> | null) {
-  const players = await getPlayers(room.code);
+async function stateFor(room: Record<string, any>, me: Record<string, any> | null, known?: Record<string, any>[]) {
+  const players = known ?? await getPlayers(room.code);
   const racing = room.status === "racing";
   const current = me ? (me.rolls as Roll[]).find((r) => !r.used) ?? null : null;
   return {
@@ -179,12 +180,15 @@ async function handle(body: Record<string, any>) {
     return { ...p, ...(await stateFor(room, await auth(code, p.pid, p.secret))) };
   }
 
-  const me = await auth(code, body.pid, body.secret);
-  let room = await getRoom(code);
+  const [me, room0] = await Promise.all([auth(code, body.pid, body.secret), getRoom(code)]);
+  let room = room0;
 
   if (action === "state") {
-    room = await maybeLock(room);
-    return await stateFor(room, await auth(code, body.pid, body.secret));
+    // Camino más pedido (cada jugador cada 3 s): consultas en paralelo y sin repetir lecturas.
+    const players = await getPlayers(code);
+    const locked = await maybeLock(room, players);
+    if (locked === room) return await stateFor(room, me, players);
+    return await stateFor(locked, await auth(code, body.pid, body.secret));   // se cerró el armado: releer
   }
 
   if (action === "start") {
