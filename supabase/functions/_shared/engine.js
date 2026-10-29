@@ -43,7 +43,7 @@ const round1 = (x) => Math.round(x * 10) / 10;
 
 // ---------- ofertas (cada tirada) ----------
 // Las piezas top aparecen menos: un 99 sale, pero no siempre.
-const appearChance = (r) => (r >= 97 ? 0.3 : r >= 93 ? 0.5 : r >= 88 ? 0.75 : 1);
+const appearChance = (r) => (r >= 97 ? 0.08 : r >= 93 ? 0.15 : r >= 88 ? 0.3 : r >= 84 ? 0.6 : 1);
 
 export function makeOffer(DATA, rng, year) {
   const season = DATA[year], o = {};
