@@ -1,0 +1,4469 @@
+{
+ "seasons": {
+  "1958": [
+   {
+    "slug": "vanwall",
+    "team": "Vanwall",
+    "engine": null
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "cooper",
+    "team": "Cooper",
+    "engine": "Climax"
+   },
+   {
+    "slug": "brm",
+    "team": "BRM",
+    "engine": null
+   },
+   {
+    "slug": "maserati",
+    "team": "Maserati",
+    "engine": null
+   },
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "Climax"
+   }
+  ],
+  "1959": [
+   {
+    "slug": "cooper",
+    "team": "Cooper",
+    "engine": "Climax"
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "brm",
+    "team": "BRM",
+    "engine": null
+   },
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "Climax"
+   }
+  ],
+  "1960": [
+   {
+    "slug": "cooper",
+    "team": "Cooper",
+    "engine": "Climax"
+   },
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "Climax"
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "brm",
+    "team": "BRM",
+    "engine": null
+   },
+   {
+    "slug": "cooper",
+    "team": "Cooper",
+    "engine": "Maserati"
+   },
+   {
+    "slug": "cooper",
+    "team": "Cooper",
+    "engine": "Castellotti"
+   },
+   {
+    "slug": "porsche",
+    "team": "Porsche",
+    "engine": null
+   }
+  ],
+  "1961": [
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "Climax"
+   },
+   {
+    "slug": "porsche",
+    "team": "Porsche",
+    "engine": null
+   },
+   {
+    "slug": "cooper",
+    "team": "Cooper",
+    "engine": "Climax"
+   },
+   {
+    "slug": "brm",
+    "team": "BRM",
+    "engine": "Climax"
+   }
+  ],
+  "1962": [
+   {
+    "slug": "brm",
+    "team": "BRM",
+    "engine": null
+   },
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "Climax"
+   },
+   {
+    "slug": "cooper",
+    "team": "Cooper",
+    "engine": "Climax"
+   },
+   {
+    "slug": "lola",
+    "team": "Lola",
+    "engine": "Climax"
+   },
+   {
+    "slug": "porsche",
+    "team": "Porsche",
+    "engine": null
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "brabham",
+    "team": "Brabham",
+    "engine": "Climax"
+   },
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "BRM"
+   }
+  ],
+  "1963": [
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "Climax"
+   },
+   {
+    "slug": "brm",
+    "team": "BRM",
+    "engine": null
+   },
+   {
+    "slug": "brabham",
+    "team": "Brabham",
+    "engine": "Climax"
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "cooper",
+    "team": "Cooper",
+    "engine": "Climax"
+   },
+   {
+    "slug": "brp",
+    "team": "BRP",
+    "engine": "BRM"
+   },
+   {
+    "slug": "porsche",
+    "team": "Porsche",
+    "engine": null
+   },
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "BRM"
+   }
+  ],
+  "1964": [
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "brm",
+    "team": "BRM",
+    "engine": null
+   },
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "Climax"
+   },
+   {
+    "slug": "brabham",
+    "team": "Brabham",
+    "engine": "Climax"
+   },
+   {
+    "slug": "cooper",
+    "team": "Cooper",
+    "engine": "Climax"
+   },
+   {
+    "slug": "brabham",
+    "team": "Brabham",
+    "engine": "BRM"
+   },
+   {
+    "slug": "brp",
+    "team": "BRP",
+    "engine": "BRM"
+   },
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "BRM"
+   }
+  ],
+  "1965": [
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "Climax"
+   },
+   {
+    "slug": "brm",
+    "team": "BRM",
+    "engine": null
+   },
+   {
+    "slug": "brabham",
+    "team": "Brabham",
+    "engine": "Climax"
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "cooper",
+    "team": "Cooper",
+    "engine": "Climax"
+   },
+   {
+    "slug": "honda",
+    "team": "Honda",
+    "engine": null
+   },
+   {
+    "slug": "brabham",
+    "team": "Brabham",
+    "engine": "BRM"
+   },
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "BRM"
+   }
+  ],
+  "1966": [
+   {
+    "slug": "brabham",
+    "team": "Brabham",
+    "engine": "Repco"
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "cooper",
+    "team": "Cooper",
+    "engine": "Maserati"
+   },
+   {
+    "slug": "brm",
+    "team": "BRM",
+    "engine": null
+   },
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "BRM"
+   },
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "Climax"
+   },
+   {
+    "slug": "eagle",
+    "team": "Eagle",
+    "engine": "Climax"
+   },
+   {
+    "slug": "honda",
+    "team": "Honda",
+    "engine": null
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Ford"
+   },
+   {
+    "slug": "brabham",
+    "team": "Brabham",
+    "engine": "Climax"
+   },
+   {
+    "slug": "brabham",
+    "team": "Brabham",
+    "engine": "BRM"
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Serenissima"
+   }
+  ],
+  "1967": [
+   {
+    "slug": "brabham",
+    "team": "Brabham",
+    "engine": "Repco"
+   },
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "cooper",
+    "team": "Cooper",
+    "engine": "Maserati"
+   },
+   {
+    "slug": "honda",
+    "team": "Honda",
+    "engine": null
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "brm",
+    "team": "BRM",
+    "engine": null
+   },
+   {
+    "slug": "eagle",
+    "team": "Eagle",
+    "engine": "Weslake"
+   },
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "BRM"
+   },
+   {
+    "slug": "cooper",
+    "team": "Cooper",
+    "engine": "Climax"
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "BRM"
+   },
+   {
+    "slug": "brabham",
+    "team": "Brabham",
+    "engine": "Climax"
+   }
+  ],
+  "1968": [
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "matra",
+    "team": "Matra",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "brm",
+    "team": "BRM",
+    "engine": null
+   },
+   {
+    "slug": "honda",
+    "team": "Honda",
+    "engine": null
+   },
+   {
+    "slug": "cooper",
+    "team": "Cooper",
+    "engine": "BRM"
+   },
+   {
+    "slug": "brabham",
+    "team": "Brabham",
+    "engine": "Repco"
+   },
+   {
+    "slug": "matra",
+    "team": "Matra",
+    "engine": null
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "BRM"
+   }
+  ],
+  "1969": [
+   {
+    "slug": "matra",
+    "team": "Matra",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "brabham",
+    "team": "Brabham",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "brm",
+    "team": "BRM",
+    "engine": null
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   }
+  ],
+  "1970": [
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "march",
+    "team": "March",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "brabham",
+    "team": "Brabham",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "brm",
+    "team": "BRM",
+    "engine": null
+   },
+   {
+    "slug": "matra",
+    "team": "Matra",
+    "engine": null
+   },
+   {
+    "slug": "surtees",
+    "team": "Surtees",
+    "engine": "Ford Cosworth"
+   }
+  ],
+  "1971": [
+   {
+    "slug": "tyrrell",
+    "team": "Tyrrell",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "brm",
+    "team": "BRM",
+    "engine": null
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "march",
+    "team": "March",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "matra",
+    "team": "Matra",
+    "engine": null
+   },
+   {
+    "slug": "surtees",
+    "team": "Surtees",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "brabham",
+    "team": "Brabham",
+    "engine": "Ford Cosworth"
+   }
+  ],
+  "1972": [
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "tyrrell",
+    "team": "Tyrrell",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "surtees",
+    "team": "Surtees",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "march",
+    "team": "March",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "brm",
+    "team": "BRM",
+    "engine": null
+   },
+   {
+    "slug": "matra",
+    "team": "Matra",
+    "engine": null
+   },
+   {
+    "slug": "brabham",
+    "team": "Brabham",
+    "engine": "Ford Cosworth"
+   }
+  ],
+  "1973": [
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "tyrrell",
+    "team": "Tyrrell",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "brabham",
+    "team": "Brabham",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "march",
+    "team": "March",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "brm",
+    "team": "BRM",
+    "engine": null
+   },
+   {
+    "slug": "shadow",
+    "team": "Shadow",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "surtees",
+    "team": "Surtees",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "iso-marlboro",
+    "team": "Iso-Marlboro",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "tecno",
+    "team": "Tecno",
+    "engine": null
+   }
+  ],
+  "1974": [
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "tyrrell",
+    "team": "Tyrrell",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "brabham",
+    "team": "Brabham",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "hesketh",
+    "team": "Hesketh",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "brm",
+    "team": "BRM",
+    "engine": null
+   },
+   {
+    "slug": "shadow",
+    "team": "Shadow",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "march",
+    "team": "March",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "iso-marlboro",
+    "team": "Iso-Marlboro",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "surtees",
+    "team": "Surtees",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "lola",
+    "team": "Lola",
+    "engine": "Ford Cosworth"
+   }
+  ],
+  "1975": [
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "brabham",
+    "team": "Brabham",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "hesketh",
+    "team": "Hesketh",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "tyrrell",
+    "team": "Tyrrell",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "shadow",
+    "team": "Shadow",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "march",
+    "team": "March",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "parnelli",
+    "team": "Parnelli",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "hill",
+    "team": "Hill",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "penske",
+    "team": "Penske",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "ensign",
+    "team": "Ensign",
+    "engine": "Ford Cosworth"
+   }
+  ],
+  "1976": [
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "tyrrell",
+    "team": "Tyrrell",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "penske",
+    "team": "Penske",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "ligier",
+    "team": "Ligier",
+    "engine": "Matra"
+   },
+   {
+    "slug": "march",
+    "team": "March",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "shadow",
+    "team": "Shadow",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "brabham",
+    "team": "Brabham",
+    "engine": "Alfa Romeo"
+   },
+   {
+    "slug": "surtees",
+    "team": "Surtees",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "copersucar",
+    "team": "Copersucar",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "ensign",
+    "team": "Ensign",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "parnelli",
+    "team": "Parnelli",
+    "engine": "Ford Cosworth"
+   }
+  ],
+  "1977": [
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "wolf",
+    "team": "Wolf",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "brabham",
+    "team": "Brabham",
+    "engine": "Alfa Romeo"
+   },
+   {
+    "slug": "tyrrell",
+    "team": "Tyrrell",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "shadow",
+    "team": "Shadow",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "ligier",
+    "team": "Ligier",
+    "engine": "Matra"
+   },
+   {
+    "slug": "copersucar",
+    "team": "Copersucar",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "ensign",
+    "team": "Ensign",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "surtees",
+    "team": "Surtees",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "penske",
+    "team": "Penske",
+    "engine": "Ford Cosworth"
+   }
+  ],
+  "1978": [
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "brabham",
+    "team": "Brabham",
+    "engine": "Alfa Romeo"
+   },
+   {
+    "slug": "tyrrell",
+    "team": "Tyrrell",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "wolf",
+    "team": "Wolf",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "ligier",
+    "team": "Ligier",
+    "engine": "Matra"
+   },
+   {
+    "slug": "copersucar",
+    "team": "Copersucar",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "arrows",
+    "team": "Arrows",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "shadow",
+    "team": "Shadow",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "renault",
+    "team": "Renault",
+    "engine": null
+   },
+   {
+    "slug": "surtees",
+    "team": "Surtees",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "ensign",
+    "team": "Ensign",
+    "engine": "Ford Cosworth"
+   }
+  ],
+  "1979": [
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "ligier",
+    "team": "Ligier",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "tyrrell",
+    "team": "Tyrrell",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "renault",
+    "team": "Renault",
+    "engine": null
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "brabham",
+    "team": "Brabham",
+    "engine": "Alfa Romeo"
+   },
+   {
+    "slug": "arrows",
+    "team": "Arrows",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "shadow",
+    "team": "Shadow",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "ats",
+    "team": "ATS",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "copersucar",
+    "team": "Copersucar",
+    "engine": "Ford Cosworth"
+   }
+  ],
+  "1980": [
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "ligier",
+    "team": "Ligier",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "brabham",
+    "team": "Brabham",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "renault",
+    "team": "Renault",
+    "engine": null
+   },
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "tyrrell",
+    "team": "Tyrrell",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "arrows",
+    "team": "Arrows",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "fittipaldi",
+    "team": "Fittipaldi",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "alfa-romeo",
+    "team": "Alfa Romeo",
+    "engine": null
+   }
+  ],
+  "1981": [
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "brabham",
+    "team": "Brabham",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "renault",
+    "team": "Renault",
+    "engine": null
+   },
+   {
+    "slug": "ligier",
+    "team": "Ligier",
+    "engine": "Matra"
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "arrows",
+    "team": "Arrows",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "alfa-romeo",
+    "team": "Alfa Romeo",
+    "engine": null
+   },
+   {
+    "slug": "tyrrell",
+    "team": "Tyrrell",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "ensign",
+    "team": "Ensign",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "theodore",
+    "team": "Theodore",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "ats",
+    "team": "ATS",
+    "engine": "Ford Cosworth"
+   }
+  ],
+  "1982": [
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "renault",
+    "team": "Renault",
+    "engine": null
+   },
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "tyrrell",
+    "team": "Tyrrell",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "brabham",
+    "team": "Brabham",
+    "engine": "BMW"
+   },
+   {
+    "slug": "ligier",
+    "team": "Ligier",
+    "engine": "Matra"
+   },
+   {
+    "slug": "brabham",
+    "team": "Brabham",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "alfa-romeo",
+    "team": "Alfa Romeo",
+    "engine": null
+   },
+   {
+    "slug": "arrows",
+    "team": "Arrows",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "ats",
+    "team": "ATS",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "osella",
+    "team": "Osella",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "fittipaldi",
+    "team": "Fittipaldi",
+    "engine": "Ford Cosworth"
+   }
+  ],
+  "1983": [
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "renault",
+    "team": "Renault",
+    "engine": null
+   },
+   {
+    "slug": "brabham",
+    "team": "Brabham",
+    "engine": "BMW"
+   },
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "alfa-romeo",
+    "team": "Alfa Romeo",
+    "engine": null
+   },
+   {
+    "slug": "tyrrell",
+    "team": "Tyrrell",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "Renault"
+   },
+   {
+    "slug": "toleman",
+    "team": "Toleman",
+    "engine": "Hart"
+   },
+   {
+    "slug": "arrows",
+    "team": "Arrows",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "Honda"
+   },
+   {
+    "slug": "theodore",
+    "team": "Theodore",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "Ford Cosworth"
+   }
+  ],
+  "1984": [
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "TAG Porsche"
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "Renault"
+   },
+   {
+    "slug": "brabham",
+    "team": "Brabham",
+    "engine": "BMW"
+   },
+   {
+    "slug": "renault",
+    "team": "Renault",
+    "engine": null
+   },
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "Honda"
+   },
+   {
+    "slug": "toleman",
+    "team": "Toleman",
+    "engine": "Hart"
+   },
+   {
+    "slug": "alfa-romeo",
+    "team": "Alfa Romeo",
+    "engine": null
+   },
+   {
+    "slug": "ligier",
+    "team": "Ligier",
+    "engine": "Renault"
+   },
+   {
+    "slug": "arrows",
+    "team": "Arrows",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "arrows",
+    "team": "Arrows",
+    "engine": "BMW"
+   },
+   {
+    "slug": "osella",
+    "team": "Osella",
+    "engine": "Alfa Romeo"
+   }
+  ],
+  "1985": [
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "TAG Porsche"
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "Honda"
+   },
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "Renault"
+   },
+   {
+    "slug": "brabham",
+    "team": "Brabham",
+    "engine": "BMW"
+   },
+   {
+    "slug": "ligier",
+    "team": "Ligier",
+    "engine": "Renault"
+   },
+   {
+    "slug": "renault",
+    "team": "Renault",
+    "engine": null
+   },
+   {
+    "slug": "arrows",
+    "team": "Arrows",
+    "engine": "BMW"
+   },
+   {
+    "slug": "tyrrell",
+    "team": "Tyrrell",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "tyrrell",
+    "team": "Tyrrell",
+    "engine": "Renault"
+   }
+  ],
+  "1986": [
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "Honda"
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "TAG Porsche"
+   },
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "Renault"
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "ligier",
+    "team": "Ligier",
+    "engine": "Renault"
+   },
+   {
+    "slug": "benetton",
+    "team": "Benetton",
+    "engine": "BMW"
+   },
+   {
+    "slug": "tyrrell",
+    "team": "Tyrrell",
+    "engine": "Renault"
+   },
+   {
+    "slug": "lola",
+    "team": "Lola",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "brabham",
+    "team": "Brabham",
+    "engine": "BMW"
+   },
+   {
+    "slug": "arrows",
+    "team": "Arrows",
+    "engine": "BMW"
+   }
+  ],
+  "1987": [
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "Honda"
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "TAG Porsche"
+   },
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "Honda"
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "benetton",
+    "team": "Benetton",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "tyrrell",
+    "team": "Tyrrell",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "arrows",
+    "team": "Arrows",
+    "engine": "Megatron"
+   },
+   {
+    "slug": "brabham",
+    "team": "Brabham",
+    "engine": "BMW"
+   },
+   {
+    "slug": "lola",
+    "team": "Lola",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "zakspeed",
+    "team": "Zakspeed",
+    "engine": null
+   },
+   {
+    "slug": "ligier",
+    "team": "Ligier",
+    "engine": "Megatron"
+   },
+   {
+    "slug": "ags",
+    "team": "AGS",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "march",
+    "team": "March",
+    "engine": "Ford Cosworth"
+   }
+  ],
+  "1988": [
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Honda"
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "benetton",
+    "team": "Benetton",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "Honda"
+   },
+   {
+    "slug": "arrows",
+    "team": "Arrows",
+    "engine": "Megatron"
+   },
+   {
+    "slug": "march",
+    "team": "March",
+    "engine": "Judd"
+   },
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "Judd"
+   },
+   {
+    "slug": "tyrrell",
+    "team": "Tyrrell",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "rial",
+    "team": "Rial",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "minardi",
+    "team": "Minardi",
+    "engine": "Ford Cosworth"
+   }
+  ],
+  "1989": [
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Honda"
+   },
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "Renault"
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "benetton",
+    "team": "Benetton",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "tyrrell",
+    "team": "Tyrrell",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "Judd"
+   },
+   {
+    "slug": "arrows",
+    "team": "Arrows",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "dallara",
+    "team": "Dallara",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "brabham",
+    "team": "Brabham",
+    "engine": "Judd"
+   },
+   {
+    "slug": "onyx",
+    "team": "Onyx",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "minardi",
+    "team": "Minardi",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "march",
+    "team": "March",
+    "engine": "Judd"
+   },
+   {
+    "slug": "rial",
+    "team": "Rial",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "ligier",
+    "team": "Ligier",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "ags",
+    "team": "AGS",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "lola",
+    "team": "Lola",
+    "engine": "Lamborghini"
+   }
+  ],
+  "1990": [
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Honda"
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "benetton",
+    "team": "Benetton",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "Renault"
+   },
+   {
+    "slug": "tyrrell",
+    "team": "Tyrrell",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "lola",
+    "team": "Lola",
+    "engine": "Lamborghini"
+   },
+   {
+    "slug": "leyton-house",
+    "team": "Leyton House",
+    "engine": "Judd"
+   },
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "Lamborghini"
+   },
+   {
+    "slug": "arrows",
+    "team": "Arrows",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "brabham",
+    "team": "Brabham",
+    "engine": "Judd"
+   }
+  ],
+  "1991": [
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Honda"
+   },
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "Renault"
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "benetton",
+    "team": "Benetton",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "jordan",
+    "team": "Jordan",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "tyrrell",
+    "team": "Tyrrell",
+    "engine": "Honda"
+   },
+   {
+    "slug": "minardi",
+    "team": "Minardi",
+    "engine": "Ferrari"
+   },
+   {
+    "slug": "dallara",
+    "team": "Dallara",
+    "engine": "Judd"
+   },
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "Judd"
+   },
+   {
+    "slug": "brabham",
+    "team": "Brabham",
+    "engine": "Yamaha"
+   },
+   {
+    "slug": "lola",
+    "team": "Lola",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "leyton-house",
+    "team": "Leyton House",
+    "engine": "Ilmor"
+   }
+  ],
+  "1992": [
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "Renault"
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Honda"
+   },
+   {
+    "slug": "benetton",
+    "team": "Benetton",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "tyrrell",
+    "team": "Tyrrell",
+    "engine": "Ilmor"
+   },
+   {
+    "slug": "footwork",
+    "team": "Footwork",
+    "engine": "Mugen Honda"
+   },
+   {
+    "slug": "ligier",
+    "team": "Ligier",
+    "engine": "Renault"
+   },
+   {
+    "slug": "march",
+    "team": "March",
+    "engine": "Ilmor"
+   },
+   {
+    "slug": "dallara",
+    "team": "Dallara",
+    "engine": "Ferrari"
+   },
+   {
+    "slug": "jordan",
+    "team": "Jordan",
+    "engine": "Yamaha"
+   },
+   {
+    "slug": "minardi",
+    "team": "Minardi",
+    "engine": "Lamborghini"
+   },
+   {
+    "slug": "venturi",
+    "team": "Venturi",
+    "engine": "Lamborghini"
+   }
+  ],
+  "1993": [
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "Renault"
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "benetton",
+    "team": "Benetton",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "ligier",
+    "team": "Ligier",
+    "engine": "Renault"
+   },
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "sauber",
+    "team": "Sauber",
+    "engine": null
+   },
+   {
+    "slug": "minardi",
+    "team": "Minardi",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "footwork",
+    "team": "Footwork",
+    "engine": "Mugen Honda"
+   },
+   {
+    "slug": "larrousse",
+    "team": "Larrousse",
+    "engine": "Lamborghini"
+   },
+   {
+    "slug": "jordan",
+    "team": "Jordan",
+    "engine": "Hart"
+   }
+  ],
+  "1994": [
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "Renault"
+   },
+   {
+    "slug": "benetton",
+    "team": "Benetton",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Peugeot"
+   },
+   {
+    "slug": "jordan",
+    "team": "Jordan",
+    "engine": "Hart"
+   },
+   {
+    "slug": "ligier",
+    "team": "Ligier",
+    "engine": "Renault"
+   },
+   {
+    "slug": "tyrrell",
+    "team": "Tyrrell",
+    "engine": "Yamaha"
+   },
+   {
+    "slug": "sauber",
+    "team": "Sauber",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "footwork",
+    "team": "Footwork",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "minardi",
+    "team": "Minardi",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "larrousse",
+    "team": "Larrousse",
+    "engine": "Ford Cosworth"
+   }
+  ],
+  "1995": [
+   {
+    "slug": "benetton",
+    "team": "Benetton",
+    "engine": "Renault"
+   },
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "Renault"
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "ligier",
+    "team": "Ligier",
+    "engine": "Mugen Honda"
+   },
+   {
+    "slug": "jordan",
+    "team": "Jordan",
+    "engine": "Peugeot"
+   },
+   {
+    "slug": "sauber",
+    "team": "Sauber",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "footwork",
+    "team": "Footwork",
+    "engine": "Hart"
+   },
+   {
+    "slug": "tyrrell",
+    "team": "Tyrrell",
+    "engine": "Yamaha"
+   },
+   {
+    "slug": "minardi",
+    "team": "Minardi",
+    "engine": "Ford Cosworth"
+   }
+  ],
+  "1996": [
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "Renault"
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "benetton",
+    "team": "Benetton",
+    "engine": "Renault"
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "jordan",
+    "team": "Jordan",
+    "engine": "Peugeot"
+   },
+   {
+    "slug": "ligier",
+    "team": "Ligier",
+    "engine": "Mugen Honda"
+   },
+   {
+    "slug": "sauber",
+    "team": "Sauber",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "tyrrell",
+    "team": "Tyrrell",
+    "engine": "Yamaha"
+   },
+   {
+    "slug": "footwork",
+    "team": "Footwork",
+    "engine": "Hart"
+   }
+  ],
+  "1997": [
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "Renault"
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "benetton",
+    "team": "Benetton",
+    "engine": "Renault"
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "jordan",
+    "team": "Jordan",
+    "engine": "Peugeot"
+   },
+   {
+    "slug": "prost",
+    "team": "Prost",
+    "engine": "Mugen Honda"
+   },
+   {
+    "slug": "sauber",
+    "team": "Sauber",
+    "engine": "Petronas"
+   },
+   {
+    "slug": "arrows",
+    "team": "Arrows",
+    "engine": "Yamaha"
+   },
+   {
+    "slug": "stewart",
+    "team": "Stewart",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "tyrrell",
+    "team": "Tyrrell",
+    "engine": "Ford Cosworth"
+   }
+  ],
+  "1998": [
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "Mecachrome"
+   },
+   {
+    "slug": "jordan",
+    "team": "Jordan",
+    "engine": "Mugen Honda"
+   },
+   {
+    "slug": "benetton",
+    "team": "Benetton",
+    "engine": "Playlife"
+   },
+   {
+    "slug": "sauber",
+    "team": "Sauber",
+    "engine": "Petronas"
+   },
+   {
+    "slug": "arrows",
+    "team": "Arrows",
+    "engine": null
+   },
+   {
+    "slug": "stewart",
+    "team": "Stewart",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "prost",
+    "team": "Prost",
+    "engine": "Peugeot"
+   }
+  ],
+  "1999": [
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "jordan",
+    "team": "Jordan",
+    "engine": "Mugen Honda"
+   },
+   {
+    "slug": "stewart",
+    "team": "Stewart",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "Supertec"
+   },
+   {
+    "slug": "benetton",
+    "team": "Benetton",
+    "engine": "Playlife"
+   },
+   {
+    "slug": "prost",
+    "team": "Prost",
+    "engine": "Peugeot"
+   },
+   {
+    "slug": "sauber",
+    "team": "Sauber",
+    "engine": "Petronas"
+   },
+   {
+    "slug": "arrows",
+    "team": "Arrows",
+    "engine": null
+   },
+   {
+    "slug": "minardi",
+    "team": "Minardi",
+    "engine": "Ford Cosworth"
+   }
+  ],
+  "2000": [
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "BMW"
+   },
+   {
+    "slug": "benetton",
+    "team": "Benetton",
+    "engine": "Playlife"
+   },
+   {
+    "slug": "bar",
+    "team": "BAR",
+    "engine": "Honda"
+   },
+   {
+    "slug": "jordan",
+    "team": "Jordan",
+    "engine": "Mugen Honda"
+   },
+   {
+    "slug": "arrows",
+    "team": "Arrows",
+    "engine": "Supertec"
+   },
+   {
+    "slug": "sauber",
+    "team": "Sauber",
+    "engine": "Petronas"
+   },
+   {
+    "slug": "jaguar",
+    "team": "Jaguar",
+    "engine": "Cosworth"
+   },
+   {
+    "slug": "minardi",
+    "team": "Minardi",
+    "engine": "Fondmetal"
+   },
+   {
+    "slug": "prost",
+    "team": "Prost",
+    "engine": "Peugeot"
+   }
+  ],
+  "2001": [
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "BMW"
+   },
+   {
+    "slug": "sauber",
+    "team": "Sauber",
+    "engine": "Petronas"
+   },
+   {
+    "slug": "jordan",
+    "team": "Jordan",
+    "engine": "Honda"
+   },
+   {
+    "slug": "bar",
+    "team": "BAR",
+    "engine": "Honda"
+   },
+   {
+    "slug": "benetton",
+    "team": "Benetton",
+    "engine": "Renault"
+   },
+   {
+    "slug": "jaguar",
+    "team": "Jaguar",
+    "engine": "Cosworth"
+   },
+   {
+    "slug": "prost",
+    "team": "Prost",
+    "engine": "Acer"
+   },
+   {
+    "slug": "arrows",
+    "team": "Arrows",
+    "engine": "Asiatech"
+   },
+   {
+    "slug": "minardi",
+    "team": "Minardi",
+    "engine": "European"
+   }
+  ],
+  "2002": [
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "BMW"
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "renault",
+    "team": "Renault",
+    "engine": null
+   },
+   {
+    "slug": "sauber",
+    "team": "Sauber",
+    "engine": "Petronas"
+   },
+   {
+    "slug": "jordan",
+    "team": "Jordan",
+    "engine": "Honda"
+   },
+   {
+    "slug": "jaguar",
+    "team": "Jaguar",
+    "engine": "Cosworth"
+   },
+   {
+    "slug": "bar",
+    "team": "BAR",
+    "engine": "Honda"
+   },
+   {
+    "slug": "minardi",
+    "team": "Minardi",
+    "engine": "Asiatech"
+   },
+   {
+    "slug": "toyota",
+    "team": "Toyota",
+    "engine": null
+   },
+   {
+    "slug": "arrows",
+    "team": "Arrows",
+    "engine": "Cosworth"
+   }
+  ],
+  "2003": [
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "BMW"
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "renault",
+    "team": "Renault",
+    "engine": null
+   },
+   {
+    "slug": "bar",
+    "team": "BAR",
+    "engine": "Honda"
+   },
+   {
+    "slug": "sauber",
+    "team": "Sauber",
+    "engine": "Petronas"
+   },
+   {
+    "slug": "jaguar",
+    "team": "Jaguar",
+    "engine": "Cosworth"
+   },
+   {
+    "slug": "toyota",
+    "team": "Toyota",
+    "engine": null
+   },
+   {
+    "slug": "jordan",
+    "team": "Jordan",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "minardi",
+    "team": "Minardi",
+    "engine": "Cosworth"
+   }
+  ],
+  "2004": [
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "bar",
+    "team": "BAR",
+    "engine": "Honda"
+   },
+   {
+    "slug": "renault",
+    "team": "Renault",
+    "engine": null
+   },
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "BMW"
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "sauber",
+    "team": "Sauber",
+    "engine": "Petronas"
+   },
+   {
+    "slug": "jaguar",
+    "team": "Jaguar",
+    "engine": "Cosworth"
+   },
+   {
+    "slug": "toyota",
+    "team": "Toyota",
+    "engine": null
+   },
+   {
+    "slug": "jordan",
+    "team": "Jordan",
+    "engine": "Ford Cosworth"
+   },
+   {
+    "slug": "minardi",
+    "team": "Minardi",
+    "engine": "Cosworth"
+   }
+  ],
+  "2005": [
+   {
+    "slug": "renault",
+    "team": "Renault",
+    "engine": null
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "toyota",
+    "team": "Toyota",
+    "engine": null
+   },
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "BMW"
+   },
+   {
+    "slug": "bar",
+    "team": "BAR",
+    "engine": "Honda"
+   },
+   {
+    "slug": "red-bull",
+    "team": "Red Bull",
+    "engine": "Cosworth"
+   },
+   {
+    "slug": "sauber",
+    "team": "Sauber",
+    "engine": "Petronas"
+   },
+   {
+    "slug": "jordan",
+    "team": "Jordan",
+    "engine": "Toyota"
+   },
+   {
+    "slug": "minardi",
+    "team": "Minardi",
+    "engine": "Cosworth"
+   }
+  ],
+  "2006": [
+   {
+    "slug": "renault",
+    "team": "Renault",
+    "engine": null
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "honda",
+    "team": "Honda",
+    "engine": null
+   },
+   {
+    "slug": "bmw-sauber",
+    "team": "BMW Sauber",
+    "engine": "BMW"
+   },
+   {
+    "slug": "toyota",
+    "team": "Toyota",
+    "engine": null
+   },
+   {
+    "slug": "red-bull",
+    "team": "Red Bull",
+    "engine": "Ferrari"
+   },
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "Cosworth"
+   },
+   {
+    "slug": "toro-rosso",
+    "team": "Toro Rosso",
+    "engine": "Cosworth"
+   },
+   {
+    "slug": "midland",
+    "team": "Midland",
+    "engine": "Toyota"
+   },
+   {
+    "slug": "super-aguri",
+    "team": "Super Aguri",
+    "engine": "Honda"
+   }
+  ],
+  "2007": [
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "bmw-sauber",
+    "team": "BMW Sauber",
+    "engine": "BMW"
+   },
+   {
+    "slug": "renault",
+    "team": "Renault",
+    "engine": null
+   },
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "Toyota"
+   },
+   {
+    "slug": "red-bull",
+    "team": "Red Bull",
+    "engine": "Renault"
+   },
+   {
+    "slug": "toyota",
+    "team": "Toyota",
+    "engine": null
+   },
+   {
+    "slug": "toro-rosso",
+    "team": "Toro Rosso",
+    "engine": "Ferrari"
+   },
+   {
+    "slug": "honda",
+    "team": "Honda",
+    "engine": null
+   },
+   {
+    "slug": "super-aguri",
+    "team": "Super Aguri",
+    "engine": "Honda"
+   },
+   {
+    "slug": "spyker",
+    "team": "Spyker",
+    "engine": "Ferrari"
+   }
+  ],
+  "2008": [
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "bmw-sauber",
+    "team": "BMW Sauber",
+    "engine": "BMW"
+   },
+   {
+    "slug": "renault",
+    "team": "Renault",
+    "engine": null
+   },
+   {
+    "slug": "toyota",
+    "team": "Toyota",
+    "engine": null
+   },
+   {
+    "slug": "toro-rosso",
+    "team": "Toro Rosso",
+    "engine": "Ferrari"
+   },
+   {
+    "slug": "red-bull",
+    "team": "Red Bull",
+    "engine": "Renault"
+   },
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "Toyota"
+   },
+   {
+    "slug": "honda",
+    "team": "Honda",
+    "engine": null
+   },
+   {
+    "slug": "force-india",
+    "team": "Force India",
+    "engine": "Ferrari"
+   },
+   {
+    "slug": "super-aguri",
+    "team": "Super Aguri",
+    "engine": "Honda"
+   }
+  ],
+  "2009": [
+   {
+    "slug": "brawn-gp",
+    "team": "Brawn GP",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "red-bull",
+    "team": "Red Bull",
+    "engine": "Renault"
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "toyota",
+    "team": "Toyota",
+    "engine": null
+   },
+   {
+    "slug": "bmw-sauber",
+    "team": "BMW Sauber",
+    "engine": "BMW"
+   },
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "Toyota"
+   },
+   {
+    "slug": "renault",
+    "team": "Renault",
+    "engine": null
+   },
+   {
+    "slug": "force-india",
+    "team": "Force India",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "toro-rosso",
+    "team": "Toro Rosso",
+    "engine": "Ferrari"
+   }
+  ],
+  "2010": [
+   {
+    "slug": "red-bull",
+    "team": "Red Bull",
+    "engine": "Renault"
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "mercedes",
+    "team": "Mercedes",
+    "engine": null
+   },
+   {
+    "slug": "renault",
+    "team": "Renault",
+    "engine": null
+   },
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "Cosworth"
+   },
+   {
+    "slug": "force-india",
+    "team": "Force India",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "bmw-sauber",
+    "team": "BMW Sauber",
+    "engine": "Ferrari"
+   },
+   {
+    "slug": "toro-rosso",
+    "team": "Toro Rosso",
+    "engine": "Ferrari"
+   },
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "Cosworth"
+   },
+   {
+    "slug": "hrt",
+    "team": "HRT",
+    "engine": "Cosworth"
+   },
+   {
+    "slug": "virgin",
+    "team": "Virgin",
+    "engine": "Cosworth"
+   }
+  ],
+  "2011": [
+   {
+    "slug": "red-bull",
+    "team": "Red Bull",
+    "engine": "Renault"
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "mercedes",
+    "team": "Mercedes",
+    "engine": null
+   },
+   {
+    "slug": "renault",
+    "team": "Renault",
+    "engine": null
+   },
+   {
+    "slug": "force-india",
+    "team": "Force India",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "sauber",
+    "team": "Sauber",
+    "engine": "Ferrari"
+   },
+   {
+    "slug": "toro-rosso",
+    "team": "Toro Rosso",
+    "engine": "Ferrari"
+   },
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "Cosworth"
+   },
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "Renault"
+   },
+   {
+    "slug": "hrt",
+    "team": "HRT",
+    "engine": "Cosworth"
+   },
+   {
+    "slug": "virgin",
+    "team": "Virgin",
+    "engine": "Cosworth"
+   }
+  ],
+  "2012": [
+   {
+    "slug": "red-bull",
+    "team": "Red Bull",
+    "engine": "Renault"
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "Renault"
+   },
+   {
+    "slug": "mercedes",
+    "team": "Mercedes",
+    "engine": null
+   },
+   {
+    "slug": "sauber",
+    "team": "Sauber",
+    "engine": "Ferrari"
+   },
+   {
+    "slug": "force-india",
+    "team": "Force India",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "Renault"
+   },
+   {
+    "slug": "toro-rosso",
+    "team": "Toro Rosso",
+    "engine": "Ferrari"
+   },
+   {
+    "slug": "caterham",
+    "team": "Caterham",
+    "engine": "Renault"
+   },
+   {
+    "slug": "marussia",
+    "team": "Marussia",
+    "engine": "Cosworth"
+   },
+   {
+    "slug": "hrt",
+    "team": "HRT",
+    "engine": "Cosworth"
+   }
+  ],
+  "2013": [
+   {
+    "slug": "red-bull",
+    "team": "Red Bull",
+    "engine": "Renault"
+   },
+   {
+    "slug": "mercedes",
+    "team": "Mercedes",
+    "engine": null
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "Renault"
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "force-india",
+    "team": "Force India",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "sauber",
+    "team": "Sauber",
+    "engine": "Ferrari"
+   },
+   {
+    "slug": "toro-rosso",
+    "team": "Toro Rosso",
+    "engine": "Ferrari"
+   },
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "Renault"
+   },
+   {
+    "slug": "marussia",
+    "team": "Marussia",
+    "engine": "Cosworth"
+   },
+   {
+    "slug": "caterham",
+    "team": "Caterham",
+    "engine": "Renault"
+   }
+  ],
+  "2014": [
+   {
+    "slug": "mercedes",
+    "team": "Mercedes",
+    "engine": null
+   },
+   {
+    "slug": "red-bull",
+    "team": "Red Bull",
+    "engine": "Renault"
+   },
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "force-india",
+    "team": "Force India",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "toro-rosso",
+    "team": "Toro Rosso",
+    "engine": "Renault"
+   },
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "Renault"
+   },
+   {
+    "slug": "marussia",
+    "team": "Marussia",
+    "engine": "Ferrari"
+   },
+   {
+    "slug": "sauber",
+    "team": "Sauber",
+    "engine": "Ferrari"
+   },
+   {
+    "slug": "caterham",
+    "team": "Caterham",
+    "engine": "Renault"
+   }
+  ],
+  "2015": [
+   {
+    "slug": "mercedes",
+    "team": "Mercedes",
+    "engine": null
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "red-bull",
+    "team": "Red Bull",
+    "engine": "Renault"
+   },
+   {
+    "slug": "force-india",
+    "team": "Force India",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "lotus",
+    "team": "Lotus",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "toro-rosso",
+    "team": "Toro Rosso",
+    "engine": "Renault"
+   },
+   {
+    "slug": "sauber",
+    "team": "Sauber",
+    "engine": "Ferrari"
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Honda"
+   },
+   {
+    "slug": "marussia",
+    "team": "Marussia",
+    "engine": "Ferrari"
+   }
+  ],
+  "2016": [
+   {
+    "slug": "mercedes",
+    "team": "Mercedes",
+    "engine": null
+   },
+   {
+    "slug": "red-bull",
+    "team": "Red Bull",
+    "engine": "TAG Heuer"
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "force-india",
+    "team": "Force India",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Honda"
+   },
+   {
+    "slug": "toro-rosso",
+    "team": "Toro Rosso",
+    "engine": "Ferrari"
+   },
+   {
+    "slug": "haas",
+    "team": "Haas",
+    "engine": "Ferrari"
+   },
+   {
+    "slug": "renault",
+    "team": "Renault",
+    "engine": null
+   },
+   {
+    "slug": "sauber",
+    "team": "Sauber",
+    "engine": "Ferrari"
+   },
+   {
+    "slug": "manor",
+    "team": "Manor",
+    "engine": "Mercedes"
+   }
+  ],
+  "2017": [
+   {
+    "slug": "mercedes",
+    "team": "Mercedes",
+    "engine": null
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "red-bull",
+    "team": "Red Bull",
+    "engine": "TAG Heuer"
+   },
+   {
+    "slug": "force-india",
+    "team": "Force India",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "renault",
+    "team": "Renault",
+    "engine": null
+   },
+   {
+    "slug": "toro-rosso",
+    "team": "Toro Rosso",
+    "engine": "Renault"
+   },
+   {
+    "slug": "haas",
+    "team": "Haas",
+    "engine": "Ferrari"
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Honda"
+   },
+   {
+    "slug": "sauber",
+    "team": "Sauber",
+    "engine": "Ferrari"
+   }
+  ],
+  "2018": [
+   {
+    "slug": "mercedes",
+    "team": "Mercedes",
+    "engine": null
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "red-bull",
+    "team": "Red Bull",
+    "engine": "TAG Heuer"
+   },
+   {
+    "slug": "renault",
+    "team": "Renault",
+    "engine": null
+   },
+   {
+    "slug": "haas",
+    "team": "Haas",
+    "engine": "Ferrari"
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Renault"
+   },
+   {
+    "slug": "force-india",
+    "team": "Force India",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "sauber",
+    "team": "Sauber",
+    "engine": "Ferrari"
+   },
+   {
+    "slug": "toro-rosso",
+    "team": "Toro Rosso",
+    "engine": "Honda"
+   },
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "Mercedes"
+   }
+  ],
+  "2019": [
+   {
+    "slug": "mercedes",
+    "team": "Mercedes",
+    "engine": null
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "red-bull",
+    "team": "Red Bull",
+    "engine": "Honda"
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Renault"
+   },
+   {
+    "slug": "renault",
+    "team": "Renault",
+    "engine": null
+   },
+   {
+    "slug": "toro-rosso",
+    "team": "Toro Rosso",
+    "engine": "Honda"
+   },
+   {
+    "slug": "racing-point",
+    "team": "Racing Point",
+    "engine": "BWT Mercedes"
+   },
+   {
+    "slug": "alfa-romeo",
+    "team": "Alfa Romeo",
+    "engine": "Ferrari"
+   },
+   {
+    "slug": "haas",
+    "team": "Haas",
+    "engine": "Ferrari"
+   },
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "Mercedes"
+   }
+  ],
+  "2020": [
+   {
+    "slug": "mercedes",
+    "team": "Mercedes",
+    "engine": null
+   },
+   {
+    "slug": "red-bull",
+    "team": "Red Bull",
+    "engine": "Honda"
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Renault"
+   },
+   {
+    "slug": "racing-point",
+    "team": "Racing Point",
+    "engine": "BWT Mercedes"
+   },
+   {
+    "slug": "renault",
+    "team": "Renault",
+    "engine": null
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "alphatauri",
+    "team": "AlphaTauri",
+    "engine": "Honda"
+   },
+   {
+    "slug": "alfa-romeo",
+    "team": "Alfa Romeo",
+    "engine": "Ferrari"
+   },
+   {
+    "slug": "haas",
+    "team": "Haas",
+    "engine": "Ferrari"
+   },
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "Mercedes"
+   }
+  ],
+  "2021": [
+   {
+    "slug": "mercedes",
+    "team": "Mercedes",
+    "engine": null
+   },
+   {
+    "slug": "red-bull",
+    "team": "Red Bull",
+    "engine": "Honda"
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "alpine",
+    "team": "Alpine",
+    "engine": "Renault"
+   },
+   {
+    "slug": "alphatauri",
+    "team": "AlphaTauri",
+    "engine": "Honda"
+   },
+   {
+    "slug": "aston-martin",
+    "team": "Aston Martin",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "alfa-romeo",
+    "team": "Alfa Romeo",
+    "engine": "Ferrari"
+   },
+   {
+    "slug": "haas",
+    "team": "Haas",
+    "engine": "Ferrari"
+   }
+  ],
+  "2022": [
+   {
+    "slug": "red-bull",
+    "team": "Red Bull",
+    "engine": "RBPT"
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "mercedes",
+    "team": "Mercedes",
+    "engine": null
+   },
+   {
+    "slug": "alpine",
+    "team": "Alpine",
+    "engine": "Renault"
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "alfa-romeo",
+    "team": "Alfa Romeo",
+    "engine": "Ferrari"
+   },
+   {
+    "slug": "aston-martin",
+    "team": "Aston Martin",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "haas",
+    "team": "Haas",
+    "engine": "Ferrari"
+   },
+   {
+    "slug": "alphatauri",
+    "team": "AlphaTauri",
+    "engine": "RBPT"
+   },
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "Mercedes"
+   }
+  ],
+  "2023": [
+   {
+    "slug": "red-bull",
+    "team": "Red Bull",
+    "engine": "Honda RBPT"
+   },
+   {
+    "slug": "mercedes",
+    "team": "Mercedes",
+    "engine": null
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "aston-martin",
+    "team": "Aston Martin",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "alpine",
+    "team": "Alpine",
+    "engine": "Renault"
+   },
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "alphatauri",
+    "team": "AlphaTauri",
+    "engine": "Honda RBPT"
+   },
+   {
+    "slug": "alfa-romeo",
+    "team": "Alfa Romeo",
+    "engine": "Ferrari"
+   },
+   {
+    "slug": "haas",
+    "team": "Haas",
+    "engine": "Ferrari"
+   }
+  ],
+  "2024": [
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "red-bull",
+    "team": "Red Bull",
+    "engine": "Honda RBPT"
+   },
+   {
+    "slug": "mercedes",
+    "team": "Mercedes",
+    "engine": null
+   },
+   {
+    "slug": "aston-martin",
+    "team": "Aston Martin",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "alpine",
+    "team": "Alpine",
+    "engine": "Renault"
+   },
+   {
+    "slug": "haas",
+    "team": "Haas",
+    "engine": "Ferrari"
+   },
+   {
+    "slug": "rb",
+    "team": "RB",
+    "engine": "Honda RBPT"
+   },
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "kick-sauber",
+    "team": "Kick Sauber",
+    "engine": "Ferrari"
+   }
+  ],
+  "2025": [
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "mercedes",
+    "team": "Mercedes",
+    "engine": null
+   },
+   {
+    "slug": "red-bull",
+    "team": "Red Bull",
+    "engine": "Honda RBPT"
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "racing-bulls",
+    "team": "Racing Bulls",
+    "engine": "Honda RBPT"
+   },
+   {
+    "slug": "aston-martin",
+    "team": "Aston Martin",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "haas",
+    "team": "Haas",
+    "engine": "Ferrari"
+   },
+   {
+    "slug": "kick-sauber",
+    "team": "Kick Sauber",
+    "engine": "Ferrari"
+   },
+   {
+    "slug": "alpine",
+    "team": "Alpine",
+    "engine": "Renault"
+   }
+  ],
+  "2026": [
+   {
+    "slug": "mercedes",
+    "team": "Mercedes",
+    "engine": null
+   },
+   {
+    "slug": "ferrari",
+    "team": "Ferrari",
+    "engine": null
+   },
+   {
+    "slug": "red-bull",
+    "team": "Red Bull",
+    "engine": "Red Bull Ford"
+   },
+   {
+    "slug": "mclaren",
+    "team": "McLaren",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "racing-bulls",
+    "team": "Racing Bulls",
+    "engine": "Red Bull Ford"
+   },
+   {
+    "slug": "alpine",
+    "team": "Alpine",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "haas",
+    "team": "Haas",
+    "engine": "Ferrari"
+   },
+   {
+    "slug": "audi",
+    "team": "Audi",
+    "engine": null
+   },
+   {
+    "slug": "williams",
+    "team": "Williams",
+    "engine": "Mercedes"
+   },
+   {
+    "slug": "aston-martin",
+    "team": "Aston Martin",
+    "engine": "Honda"
+   },
+   {
+    "slug": "cadillac",
+    "team": "Cadillac",
+    "engine": "Ferrari"
+   }
+  ]
+ },
+ "principals": {
+  "vanwall": [],
+  "ferrari": [
+   {
+    "name": "Federico Giberti",
+    "from": 1950,
+    "to": 1951
+   },
+   {
+    "name": "Nello Ugolini",
+    "from": 1952,
+    "to": 1955
+   },
+   {
+    "name": "Romolo Tavoni",
+    "from": 1958,
+    "to": 1961
+   },
+   {
+    "name": "Eugenio Dragoni",
+    "from": 1962,
+    "to": 1966
+   },
+   {
+    "name": "Franco Gozzi",
+    "from": 1968,
+    "to": 1970
+   },
+   {
+    "name": "Peter Schetty",
+    "from": 1971,
+    "to": 1972
+   },
+   {
+    "name": "Luca di Montezemolo",
+    "from": 1974,
+    "to": 1975
+   },
+   {
+    "name": "Marco Piccinini",
+    "from": 1978,
+    "to": 1988
+   },
+   {
+    "name": "Cesare Fiorio",
+    "from": 1989,
+    "to": 1991
+   },
+   {
+    "name": "Sante Ghedini",
+    "from": 1992,
+    "to": 1993
+   },
+   {
+    "name": "Jean Todt",
+    "from": 1993,
+    "to": 2007
+   },
+   {
+    "name": "Stefano Domenicali",
+    "from": 2008,
+    "to": 2014
+   },
+   {
+    "name": "Maurizio Arrivabene",
+    "from": 2015,
+    "to": 2018
+   },
+   {
+    "name": "Mattia Binotto",
+    "from": 2019,
+    "to": 2022
+   },
+   {
+    "name": "Frédéric Vasseur",
+    "from": 2023,
+    "to": 2026
+   }
+  ],
+  "cooper": [],
+  "brm": [
+   {
+    "name": "Raymond Mays",
+    "from": 1947,
+    "to": 1959
+   },
+   {
+    "name": "Tony Rudd",
+    "from": 1960,
+    "to": 1969
+   },
+   {
+    "name": "Tim Parnell",
+    "from": 1969,
+    "to": 1974
+   },
+   {
+    "name": "Louis Stanley",
+    "from": 1975,
+    "to": 1977
+   }
+  ],
+  "maserati": [],
+  "lotus": [
+   {
+    "name": "Colin Chapman",
+    "from": 1958,
+    "to": 1982
+   },
+   {
+    "name": "Peter Warr",
+    "from": 1983,
+    "to": 1989
+   },
+   {
+    "name": "Rupert Manwaring",
+    "from": 1989,
+    "to": 1990
+   },
+   {
+    "name": "Peter Collins",
+    "from": 1991,
+    "to": 1994
+   },
+   {
+    "name": "Tony Fernandes",
+    "from": 2010,
+    "to": 2011
+   },
+   {
+    "name": "Éric Boullier",
+    "from": 2012,
+    "to": 2013
+   },
+   {
+    "name": "Gérard Lopez",
+    "from": 2014,
+    "to": 2015
+   }
+  ],
+  "porsche": [],
+  "lola": [],
+  "brabham": [
+   {
+    "name": "Jack Brabham",
+    "from": 1962,
+    "to": 1970
+   },
+   {
+    "name": "Bernie Ecclestone",
+    "from": 1972,
+    "to": 1987
+   },
+   {
+    "name": "Herbie Blash",
+    "from": 1989,
+    "to": 1990
+   },
+   {
+    "name": "Dennis Nursey",
+    "from": 1991,
+    "to": 1992
+   }
+  ],
+  "brp": [],
+  "honda": [
+   {
+    "name": "Yoshio Nakamura",
+    "from": 1964,
+    "to": 1968
+   },
+   {
+    "name": "Nick Fry",
+    "from": 2006,
+    "to": 2007
+   }
+  ],
+  "eagle": [],
+  "mclaren": [
+   {
+    "name": "Bruce McLaren",
+    "from": 1966,
+    "to": 1970
+   },
+   {
+    "name": "Teddy Mayer",
+    "from": 1970,
+    "to": 1982
+   },
+   {
+    "name": "Ron Dennis",
+    "from": 1981,
+    "to": 2008
+   },
+   {
+    "name": "Martin Whitmarsh",
+    "from": 2009,
+    "to": 2013
+   },
+   {
+    "name": "Éric Boullier",
+    "from": 2014,
+    "to": 2018
+   },
+   {
+    "name": "Gil de Ferran",
+    "from": 2018,
+    "to": 2019
+   },
+   {
+    "name": "Andreas Seidl",
+    "from": 2019,
+    "to": 2022
+   },
+   {
+    "name": "Andrea Stella",
+    "from": 2023,
+    "to": 2026
+   }
+  ],
+  "matra": [],
+  "march": [],
+  "surtees": [],
+  "tyrrell": [
+   {
+    "name": "Ken Tyrrell",
+    "from": 1970,
+    "to": 1997
+   }
+  ],
+  "shadow": [],
+  "iso-marlboro": [],
+  "tecno": [],
+  "hesketh": [
+   {
+    "name": "Lord Alexander Hesketh",
+    "from": 1974,
+    "to": 1975
+   },
+   {
+    "name": "Anthony Horsley",
+    "from": 1976,
+    "to": 1978
+   }
+  ],
+  "williams": [
+   {
+    "name": "Frank Williams",
+    "from": 1975,
+    "to": 1976
+   },
+   {
+    "name": "Frank Williams",
+    "from": 1978,
+    "to": 2013
+   },
+   {
+    "name": "Claire Williams",
+    "from": 2013,
+    "to": 2020
+   },
+   {
+    "name": "Simon Roberts",
+    "from": 2020,
+    "to": 2021
+   },
+   {
+    "name": "Jost Capito",
+    "from": 2021,
+    "to": 2022
+   },
+   {
+    "name": "James Vowles",
+    "from": 2023,
+    "to": 2026
+   }
+  ],
+  "parnelli": [],
+  "hill": [],
+  "penske": [],
+  "ensign": [
+   {
+    "name": "Morris Nunn",
+    "from": 1973,
+    "to": 1982
+   }
+  ],
+  "ligier": [
+   {
+    "name": "Guy Ligier",
+    "from": 1976,
+    "to": 1992
+   },
+   {
+    "name": "Tom Walkinshaw",
+    "from": 1995,
+    "to": 1996
+   }
+  ],
+  "copersucar": [
+   {
+    "name": "Jo Ramírez",
+    "from": 1975,
+    "to": 1977
+   },
+   {
+    "name": "Peter Macintosh",
+    "from": 1978,
+    "to": 1979
+   }
+  ],
+  "wolf": [],
+  "arrows": [
+   {
+    "name": "Jackie Oliver",
+    "from": 1978,
+    "to": 1990
+   },
+   {
+    "name": "Tom Walkinshaw",
+    "from": 1997,
+    "to": 2003
+   }
+  ],
+  "renault": [
+   {
+    "name": "Gérard Larrousse",
+    "from": 1977,
+    "to": 1984
+   },
+   {
+    "name": "Flavio Briatore",
+    "from": 2002,
+    "to": 2009
+   },
+   {
+    "name": "Éric Boullier",
+    "from": 2010,
+    "to": 2011
+   },
+   {
+    "name": "Cyril Abiteboul",
+    "from": 2016,
+    "to": 2020
+   }
+  ],
+  "ats": [
+   {
+    "name": "Gunter Schmidt",
+    "from": 1978,
+    "to": 1984
+   }
+  ],
+  "fittipaldi": [
+   {
+    "name": "Peter Warr",
+    "from": 1980,
+    "to": 1981
+   },
+   {
+    "name": "Emerson Fittipaldi",
+    "from": 1981,
+    "to": 1982
+   }
+  ],
+  "alfa-romeo": [
+   {
+    "name": "Giuseppe Busso",
+    "from": 1950,
+    "to": 1951
+   },
+   {
+    "name": "Carlo Chiti",
+    "from": 1979,
+    "to": 1985
+   },
+   {
+    "name": "Frédéric Vasseur",
+    "from": 2019,
+    "to": 2022
+   }
+  ],
+  "theodore": [
+   {
+    "name": "Teddy Yip",
+    "from": 1978,
+    "to": 1983
+   }
+  ],
+  "osella": [
+   {
+    "name": "Enzo Osella",
+    "from": 1980,
+    "to": 1990
+   }
+  ],
+  "toleman": [
+   {
+    "name": "Roger Silman",
+    "from": 1981,
+    "to": 1983
+   }
+  ],
+  "benetton": [
+   {
+    "name": "Peter Collins",
+    "from": 1985,
+    "to": 1989
+   },
+   {
+    "name": "Flavio Briatore",
+    "from": 1989,
+    "to": 1997
+   },
+   {
+    "name": "David Richard",
+    "from": 1997,
+    "to": 1998
+   },
+   {
+    "name": "Rocco Benetton",
+    "from": 1998,
+    "to": 2000
+   },
+   {
+    "name": "Flavio Briatore",
+    "from": 2000,
+    "to": 2001
+   }
+  ],
+  "zakspeed": [],
+  "ags": [
+   {
+    "name": "Henri Julien",
+    "from": 1986,
+    "to": 1988
+   },
+   {
+    "name": "Cyril de Rouvre",
+    "from": 1989,
+    "to": 1990
+   }
+  ],
+  "rial": [],
+  "minardi": [
+   {
+    "name": "Giancarlo Minardi",
+    "from": 1985,
+    "to": 2000
+   },
+   {
+    "name": "Paul Stoddart",
+    "from": 2001,
+    "to": 2005
+   }
+  ],
+  "dallara": [
+   {
+    "name": "Giuseppe Lucchini",
+    "from": 1988,
+    "to": 1992
+   }
+  ],
+  "onyx": [],
+  "leyton-house": [],
+  "jordan": [
+   {
+    "name": "Eddie Jordan",
+    "from": 1991,
+    "to": 2004
+   }
+  ],
+  "footwork": [
+   {
+    "name": "Jackie Oliver",
+    "from": 1991,
+    "to": 1996
+   }
+  ],
+  "venturi": [],
+  "sauber": [
+   {
+    "name": "Peter Sauber",
+    "from": 1993,
+    "to": 2005
+   },
+   {
+    "name": "Monisha Kaltenborn",
+    "from": 2011,
+    "to": 2017
+   },
+   {
+    "name": "Frédéric Vasseur",
+    "from": 2017,
+    "to": 2018
+   }
+  ],
+  "larrousse": [
+   {
+    "name": "Gérard Larrousse",
+    "from": 1993,
+    "to": 1994
+   }
+  ],
+  "prost": [
+   {
+    "name": "Alain Prost",
+    "from": 1997,
+    "to": 2001
+   }
+  ],
+  "stewart": [
+   {
+    "name": "Paul Stewart",
+    "from": 1997,
+    "to": 1999
+   }
+  ],
+  "bar": [
+   {
+    "name": "Craig Pollock",
+    "from": 1999,
+    "to": 2001
+   },
+   {
+    "name": "David Richards",
+    "from": 2002,
+    "to": 2004
+   }
+  ],
+  "jaguar": [
+   {
+    "name": "Niki Lauda",
+    "from": 2001,
+    "to": 2002
+   },
+   {
+    "name": "David Pitchforth",
+    "from": 2003,
+    "to": 2004
+   }
+  ],
+  "toyota": [
+   {
+    "name": "Ange Pasquali",
+    "from": 2002,
+    "to": 2003
+   },
+   {
+    "name": "Tsutomu Tomita",
+    "from": 2004,
+    "to": 2007
+   },
+   {
+    "name": "Tadashi Yamashina",
+    "from": 2007,
+    "to": 2009
+   }
+  ],
+  "red-bull": [
+   {
+    "name": "Christian Horner",
+    "from": 2005,
+    "to": 2025
+   },
+   {
+    "name": "Laurent Mekies",
+    "from": 2025,
+    "to": 2026
+   }
+  ],
+  "bmw-sauber": [
+   {
+    "name": "Mario Theissen",
+    "from": 2006,
+    "to": 2009
+   }
+  ],
+  "toro-rosso": [
+   {
+    "name": "Franz Tost",
+    "from": 2006,
+    "to": 2019
+   }
+  ],
+  "midland": [],
+  "super-aguri": [
+   {
+    "name": "Aguri Suzuki",
+    "from": 2006,
+    "to": 2008
+   }
+  ],
+  "spyker": [],
+  "force-india": [
+   {
+    "name": "Bob Fernley",
+    "from": 2009,
+    "to": 2018
+   }
+  ],
+  "brawn-gp": [],
+  "mercedes": [
+   {
+    "name": "Alfred Neubauer",
+    "from": 1954,
+    "to": 1955
+   },
+   {
+    "name": "Ross Brawn",
+    "from": 2010,
+    "to": 2013
+   },
+   {
+    "name": "Toto Wolff",
+    "from": 2014,
+    "to": 2026
+   }
+  ],
+  "hrt": [
+   {
+    "name": "Colin Kolles",
+    "from": 2010,
+    "to": 2011
+   }
+  ],
+  "virgin": [
+   {
+    "name": "John Booth",
+    "from": 2010,
+    "to": 2011
+   }
+  ],
+  "caterham": [
+   {
+    "name": "Cyril Abiteboul",
+    "from": 2012,
+    "to": 2014
+   }
+  ],
+  "marussia": [
+   {
+    "name": "John Booth",
+    "from": 2012,
+    "to": 2015
+   }
+  ],
+  "haas": [
+   {
+    "name": "Günther Steiner",
+    "from": 2016,
+    "to": 2023
+   },
+   {
+    "name": "Ayao Komatsu",
+    "from": 2024,
+    "to": 2026
+   }
+  ],
+  "manor": [],
+  "racing-point": [
+   {
+    "name": "Otmar Szafnauer",
+    "from": 2019,
+    "to": 2020
+   }
+  ],
+  "alphatauri": [
+   {
+    "name": "Franz Tost",
+    "from": 2020,
+    "to": 2023
+   }
+  ],
+  "alpine": [
+   {
+    "name": "Otmar Szafnauer",
+    "from": 2022,
+    "to": 2023
+   },
+   {
+    "name": "Bruno Famin",
+    "from": 2023,
+    "to": 2024
+   },
+   {
+    "name": "Oliver Oakes",
+    "from": 2024,
+    "to": 2025
+   },
+   {
+    "name": "Steve Nielsen",
+    "from": 2025,
+    "to": 2026
+   }
+  ],
+  "aston-martin": [
+   {
+    "name": "David Brown",
+    "from": 1959,
+    "to": 1960
+   },
+   {
+    "name": "Mike Krack",
+    "from": 2022,
+    "to": 2024
+   },
+   {
+    "name": "Adrian Newey",
+    "from": 2026,
+    "to": 2026
+   }
+  ],
+  "rb": [],
+  "kick-sauber": [],
+  "racing-bulls": [
+   {
+    "name": "Alan Permane",
+    "from": 2025,
+    "to": 2026
+   }
+  ],
+  "audi": [
+   {
+    "name": "Mattia Binotto",
+    "from": 2026,
+    "to": 2026
+   }
+  ],
+  "cadillac": [
+   {
+    "name": "Marcin Budkowski",
+    "from": 2026,
+    "to": 2026
+   }
+  ]
+ }
+}

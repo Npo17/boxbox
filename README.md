@@ -2,7 +2,7 @@
 
 Tira el dado, sale una temporada de la historia del automovilismo. Elige un piloto, coche, motor, jefe de equipo o estratega de ese año, completa tu auto de 5 casillas, clasifica a una vuelta y corre un Gran Premio en un circuito real contra una parrilla de leyendas.
 
-**Estado:** jugable en [boxf1box.com](https://boxf1box.com). Están **todos los pilotos y escuderías de 1950 a 2026**, con medias calculadas a partir de su temporada real. Motores, jefes de equipo y estrategas con nombre real solo existen en las temporadas curadas a mano (1976, 1988, 1991, 2004, 2023, 2024 y 2025); en las demás se **estiman** a partir del resultado de cada escudería y se marcan como "estimado". El desafío del día usa solo las temporadas curadas.
+**Estado:** jugable en [boxf1box.com](https://boxf1box.com). Están **todos los pilotos y escuderías de 1950 a 2026**, con medias calculadas a partir de su temporada real. Motores, jefes de equipo y estrategas con media ajustada a mano existen en las temporadas curadas (1976, 1988, 1991, 2004, 2023, 2024 y 2025). En las demás, el motor y el jefe de equipo llevan su nombre real (datos de StatsF1) con media **estimada** a partir del resultado de la escudería, y los estrategas son siempre estimados. El desafío del día usa solo las temporadas curadas.
 
 ### Datos y medias
 

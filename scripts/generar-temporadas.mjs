@@ -20,6 +20,10 @@ const CACHE = path.join(ROOT, '.cache');
 const OUT = path.join(ROOT, '..', 'supabase', 'functions', '_shared', 'temporadas.json');
 const CURATED = JSON.parse(fs.readFileSync(path.join(ROOT, 'temporadas-curadas.json'), 'utf8'));
 fs.mkdirSync(CACHE, { recursive: true });
+// Motores y jefes de equipo reales por temporada (scripts/generar-nombres.mjs); opcional.
+const NOMBRES = fs.existsSync(path.join(ROOT, 'nombres-statsf1.json')) ? JSON.parse(fs.readFileSync(path.join(ROOT, 'nombres-statsf1.json'), 'utf8')) : null;
+const norm = (s) => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/-/g, ' ').replace(/ f1 team| racing| team|scuderia/g, '').replace(/\s+/g, ' ').trim();
+const same = (a, b) => { const x = norm(a), z = norm(b); return x === z || x.split(' ')[0] === z.split(' ')[0]; };
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 async function get(p) {
@@ -157,8 +161,12 @@ for (let y = FIRST; y <= LAST; y++) {
     // escudería (su coche) con una variación fija por pieza. Así todas las temporadas tienen las 5 casillas.
     const wob = (s) => { let x = 7; for (const ch of s) x = (x * 31 + ch.charCodeAt(0)) % 9973; return (x % 9) - 4; };   // -4..+4, siempre igual
     for (const [team, , r] of season.coche) {
-      season.motor.push([`Motor ${team}`, 'media estimada', clamp(r + wob(y + 'm' + team), 55, 96)]);
-      season.jefe.push([`Jefe de ${team}`, 'media estimada', clamp(r + wob(y + 'j' + team), 55, 96)]);
+      // Nombres reales (StatsF1, ver generar-nombres.mjs): motor y jefe de equipo. Si no hay dato, queda el genérico.
+      const row = (NOMBRES?.seasons[y] ?? []).find((x) => same(x.team, team));
+      const boss = row && (NOMBRES.principals[row.slug] ?? []).filter((p) => p.from <= y && y <= p.to).pop();
+      const usedBoss = season.jefe.some((j) => j[0] === boss?.name);
+      season.motor.push([row?.engine ? `Motor ${row.engine}` : `Motor ${team}`, `${team} · media estimada`, clamp(r + wob(y + 'm' + team), 55, 96)]);
+      season.jefe.push([boss && !usedBoss ? boss.name : `Jefe de ${team}`, `${team} · media estimada`, clamp(r + wob(y + 'j' + team), 55, 96)]);
       season.estratega.push([`Estratega de ${team}`, 'media estimada', clamp(r + wob(y + 'e' + team), 55, 96)]);
     }
   }

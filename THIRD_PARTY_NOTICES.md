@@ -29,3 +29,6 @@ SOFTWARE.
 ## Tipografía: Titillium Web
 
 Cargada desde Google Fonts, licencia SIL Open Font License 1.1.
+
+## StatsF1 (statsf1.com)
+Nombres de proveedores de motor y jefes de equipo (con sus años) de las temporadas 1950–2026, tomados de las páginas públicas de StatsF1 con un script de baja frecuencia (scripts/generar-nombres.mjs). Solo se usan datos de hecho (nombres y fechas); no se copia su texto ni sus imágenes.
