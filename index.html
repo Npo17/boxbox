@@ -690,7 +690,7 @@ function startRace(syncAt,interactive){
       else {const pt=tp.getPointAtLength(((c.p*L)%L+L)%L); x=pt.x; y=pt.y}
       els[c.key].setAttribute('transform',`translate(${x},${y})`); els[c.key].style.opacity=c.out?.3:1;
       const dot=els[c.key].firstChild; dot.setAttribute('r',st.inPit?10:(c.me?8:6)); dot.setAttribute('stroke',st.inPit?'#ffd23f':(c.me?'#fff':'#000'));});   // en boxes: más grande y con borde amarillo
-    const o=[...cars].sort((a,b)=>(!!a.out-!!b.out)||b.p-a.p);
+    const o=[...cars].sort((a,b)=>(!!a.out-!!b.out)||b.p-a.p||a.pos-b.pos);   // los que ya cruzaron la meta empatan en vueltas: desempata la posición final
     const sc=RACE.sc, scOn=!!sc&&T>=sc.T&&T<sc.endT;
     if(scOn){ const pt=tp.getPointAtLength((((o[0].p+0.025)*L)%L+L)%L); scEl.setAttribute('transform',`translate(${pt.x},${pt.y})`); }
     scEl.style.display=scOn?'':'none';
@@ -740,7 +740,7 @@ function startRace(syncAt,interactive){
 }
 function tower(o){
   const lead=o[0].p;
-  $('tower').innerHTML=o.map((c,i)=>`<div class="trow ${c.me?'me':''}" style="${c.out?'opacity:.4':''}"><span class="p">${i+1}</span><span class="c" style="background:${c.color}"></span><span>${c.name}</span><span class="g">${c.out?'OUT':c.inPit?'<b style="color:var(--yellow)">BOX</b>':i?'+'+((lead-c.p)*TRACK.lap).toFixed(1)+'s':'LÍDER'}</span></div>`).join('');
+  $('tower').innerHTML=o.map((c,i)=>`<div class="trow ${c.me?'me':''}" style="${c.out?'opacity:.4':''}"><span class="p">${i+1}</span><span class="c" style="background:${c.color}"></span><span>${c.name}</span><span class="g">${c.out?'OUT':c.inPit?'<b style="color:var(--yellow)">BOX</b>':i?'+'+(c.p>=RACE.laps&&o[0].p>=RACE.laps?c.cum[RACE.laps]-o[0].cum[RACE.laps]:(lead-c.p)*TRACK.lap).toFixed(1)+'s':'LÍDER'}</span></div>`).join('');
 }
 function msg(e){
   const mine=e.carKey===MEKEY;
