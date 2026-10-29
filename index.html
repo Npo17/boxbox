@@ -509,6 +509,7 @@ let LAPS=+(new URLSearchParams(location.search).get('laps')||20);   // ?laps=N s
 let year=null, cat=null, rerolls=2, picks={}, offer={}, FIELD=[], GRID=[], MODE='solo';
 const $=id=>document.getElementById(id);
 const rc=r=>r>=95?'r95':r>=90?'r90':r>=80?'r80':'r0';
+const FACES=['⚀','⚁','⚂','⚃','⚄','⚅'];   // caras de dado
 const fmt=t=>{const m=Math.floor(t/60), s=(t-m*60).toFixed(3).padStart(6,'0'); return `${m}:${s}`};
 
 function carSVG(color){ // auto de fórmula visto desde arriba, dibujo propio
@@ -620,11 +621,13 @@ function runQualy(animate,onDone){
     $('qtower').innerHTML=done.map((c,k)=>`<div class="trow ${c.me?'me':''}"><span class="p">${k+1}</span><span class="c" style="background:${c.color}"></span><span>${c.name}${c.qErr?` <small style="color:var(--red)">· error en ${c.qErr}</small>`:''}</span><span class="g">${k?'+'+(c.q-best).toFixed(3):fmt(c.q)}</span></div>`).join('')};
   const end=()=>{ const m=carByKey(MEKEY), me=grid.indexOf(m)+1;
     $('qtime').textContent=fmt(m.q);
-    $('qpos').innerHTML=`Largas <b style="color:var(--red)">P${me}</b>${m.qErr?`<br><small style="color:var(--muted)">Error en ${m.qErr}: perdiste tiempo</small>`:me===1?'<br><small style="color:var(--yellow)">¡POLE POSITION!</small>':''}`;
+    $('qdie').textContent=FACES[m.luck-1];
+    const lk=m.luck<=2?'vuelta mala':m.luck<=4?'vuelta normal':'¡vuelta redonda!';
+    $('qpos').innerHTML=`Largas <b style="color:var(--red)">P${me}</b>${m.qErr?`<br><small style="color:var(--muted)">Error en ${m.qErr}: perdiste tiempo</small>`:me===1?'<br><small style="color:var(--yellow)">¡POLE POSITION!</small>':''}<br><small style="color:var(--muted)">Dado de suerte: ${m.luck}/6 · ${lk}</small>`;
     $('qBtn').style.display='none'; onDone&&onDone(); };
   if(!animate){paint();end();return}
   $('qdie').classList.add('spin');
-  const t=setInterval(()=>{ done.push(order[i++]); paint(); if(i>=order.length){clearInterval(t);end()} },110);
+  const t=setInterval(()=>{ done.push(order[i++]); paint(); $('qdie').textContent=FACES[Math.floor(Math.random()*6)]; if(i>=order.length){clearInterval(t);end()} },110);
 }
 $('qBtn').onclick=()=>{ $('qBtn').disabled=true; runQualy(true,()=>{$('toRace2').style.display='block'}); };
 $('toRace2').onclick=()=>{go('s-race',3);startRace(0,MODE==='solo'||MODE==='friendly'||MODE==='daily')};
@@ -933,6 +936,7 @@ function paintTimer(){
 function showRoll(roll){
   year=roll.year; offer=roll.offer;
   $('die').classList.remove('spin'); void $('die').offsetWidth; $('die').classList.add('spin');
+  setTimeout(()=>{$('die').textContent=FACES[Math.floor(Math.random()*6)]},600);
   $('year').innerHTML=`${year}<small>Temporada sorteada</small>`;
   $('rerolls').textContent=BLIND?'Sin re-sorteos: la mano es la misma para todos':`Re-sortear: ${rerolls} restantes`;
   $('rollBtn').querySelector('span').textContent=BLIND?'Tirar':'Re-sortear';

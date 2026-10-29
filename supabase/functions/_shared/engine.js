@@ -127,7 +127,9 @@ export function runRace({ DATA, tracks, seed, humans, laps = LAPS, decisions = {
   // qualy a una vuelta
   for (const c of cars) {
     const R = rngFor(seed, "qualy", c.key);
-    c.q = BASE - 1.9 - paceOf(c) - (c.d - 85) * 0.02 + (R() - 0.5) * 0.7;
+    const n = R();                                   // 1.ª tirada: la suerte de la vuelta (±0,35 s)
+    c.luck = Math.min(6, Math.floor((1 - n) * 6) + 1);   // cara del dado: 1 = vuelta mala, 6 = vuelta redonda
+    c.q = BASE - 1.9 - paceOf(c) - (c.d - 85) * 0.02 + (n - 0.5) * 0.7;
     c.qErr = null;
     const err = R(), corner = R(), loss = R();
     if (err < Math.max(0, 88 - c.d) * 0.015) { c.qErr = track.corners[Math.floor(corner * track.corners.length)]; c.q += 1.2 + loss * 1.5; }

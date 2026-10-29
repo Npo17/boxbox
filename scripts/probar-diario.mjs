@@ -7,7 +7,7 @@ import fs from 'node:fs';
 import { execSync } from 'node:child_process';
 import * as E from '../supabase/functions/_shared/engine.js';
 
-const REF = 'vljuhibzzwtcswirunfr', URL = `https://${REF}.supabase.co`, FN = URL + '/functions/v1/diario';
+const REF = 'vljuhibzzwtcswirunfr', SB = `https://${REF}.supabase.co`, FN = SB + '/functions/v1/diario';
 const DATA = JSON.parse(fs.readFileSync(new URL('../supabase/functions/_shared/temporadas.json', import.meta.url), 'utf8'));
 const tracks = JSON.parse(fs.readFileSync(new URL('../supabase/functions/_shared/circuitos.json', import.meta.url), 'utf8'));
 let bad = 0;
@@ -16,8 +16,8 @@ const ok = (c, m) => { console.log((c ? '✅ ' : '❌ ') + m); if (!c) bad++; };
 // claves del proyecto (la secreta nunca se imprime)
 const keys = JSON.parse(execSync(`npx --yes supabase@2.122.0 projects api-keys --project-ref ${REF} -o json`, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).replace(/^[^\[]*/, ''));
 const pub = keys.find((k) => k.name === 'default' && k.type === 'publishable').api_key;
-const sec = keys.find((k) => k.name === 'default' && k.type === 'secret').api_key;
-const admin = (path, opt = {}) => fetch(URL + path, { ...opt, headers: { apikey: sec, Authorization: 'Bearer ' + sec, 'Content-Type': 'application/json', ...(opt.headers || {}) } });
+const sec = keys.find((k) => k.name === 'service_role').api_key;   // la clave "secret" nueva sale enmascarada en la CLI
+const admin = (path, opt = {}) => fetch(SB + path, { ...opt, headers: { apikey: sec, Authorization: 'Bearer ' + sec, 'Content-Type': 'application/json', ...(opt.headers || {}) } });
 
 const created = [];
 async function newUser(tag) {
@@ -25,7 +25,7 @@ async function newUser(tag) {
   const r = await admin('/auth/v1/admin/users', { method: 'POST', body: JSON.stringify({ email, password, email_confirm: true }) });
   const u = await r.json(); if (!u.id) throw new Error('no se pudo crear el usuario de prueba: ' + JSON.stringify(u).slice(0, 120));
   created.push(u.id);
-  const t = await (await fetch(URL + '/auth/v1/token?grant_type=password', { method: 'POST', headers: { apikey: pub, 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) })).json();
+  const t = await (await fetch(SB + '/auth/v1/token?grant_type=password', { method: 'POST', headers: { apikey: pub, 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) })).json();
   return { id: u.id, token: t.access_token };
 }
 const call = async (user, action, extra = {}) => {
