@@ -870,9 +870,17 @@ $('fDonate').onclick=()=>openM('mDonate');
 $('fSuggest').onclick=()=>{$('sType').selectedIndex=0;openM('mSuggest')};
 $('fRating').onclick=()=>{$('sType').selectedIndex=1;openM('mSuggest')};
 $('pLogin').onclick=()=>openM('mLogin');
-$('sSend').onclick=()=>{ if(!$('sText').value.trim()){$('sOk').textContent='Escribe tu idea primero.';return}
-  try{const a=JSON.parse(localStorage.getItem('boxbox_sugerencias')||'[]');a.push({tipo:$('sType').value,texto:$('sText').value,email:$('sMail').value,fecha:new Date().toISOString()});localStorage.setItem('boxbox_sugerencias',JSON.stringify(a))}catch(e){}
-  $('sText').value='';$('sOk').textContent='¡Gracias! (Boceto: en la versión online te llega a tu panel.)'};
+$('sSend').onclick=async()=>{ if(!$('sText').value.trim()){$('sOk').textContent='Escribe tu idea primero.';return}
+  const btn=$('sSend'); if(btn.disabled) return; btn.disabled=true; $('sOk').textContent='Enviando…';
+  try{
+    const h={'Content-Type':'application/json'};
+    try{ const s=sb&&(await sb.auth.getSession()).data.session; if(s) h.Authorization='Bearer '+s.access_token }catch(e){}
+    const r=await fetch('https://vljuhibzzwtcswirunfr.supabase.co/functions/v1/sugerencias',{method:'POST',headers:h,body:JSON.stringify({tipo:$('sType').value,texto:$('sText').value,email:$('sMail').value})});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(j.error||'No se pudo enviar.');
+    $('sText').value='';$('sOk').textContent='¡Gracias! Tu sugerencia llegó y la voy a leer.';
+  }catch(e){ $('sOk').textContent=(e&&e.message&&!/fetch|Failed|Network/i.test(e.message))?e.message:'No se pudo enviar. Revisa tu internet e inténtalo de nuevo.' }
+  btn.disabled=false};
 // Estadísticas del jugador
 function loadStats(){try{return JSON.parse(localStorage.getItem('boxbox_stats'))||{races:0,wins:0,podiums:0,best:null}}catch(e){return {races:0,wins:0,podiums:0,best:null}}}
 function saveStats(pos,dnf){const s=loadStats();s.races++;if(!dnf){if(pos===1)s.wins++;if(pos<=3)s.podiums++;s.best=s.best?Math.min(s.best,pos):pos}try{localStorage.setItem('boxbox_stats',JSON.stringify(s))}catch(e){}}
