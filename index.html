@@ -350,7 +350,7 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
   <p class="sub" id="cpSub"></p>
   <div class="panel">
     <table><thead><tr><th>#</th><th>Piloto</th><th>Carreras</th><th>Victorias</th><th>Última carrera</th><th style="text-align:right">Puntos</th></tr></thead><tbody id="cpBody"></tbody></table>
-    <div class="note">En cada carrera que juegas, los 22 pilotos suman 25-18-15-12-10-8-6-4-2-1 según donde terminaron. Puedes arrancar uno nuevo desde tu perfil o desde Ajustes.</div>
+    <div class="note">En cada carrera que juegas suma puntos solo el piloto que elegiste (25-18-15-12-10-8-6-4-2-1 según donde terminaste), no tus rivales. Puedes arrancar uno nuevo desde tu perfil o desde Ajustes.</div>
   </div>
 </section>
 
@@ -467,7 +467,7 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
   <div class="panel" id="champ" style="display:none;margin-top:20px">
     <h3>Campeonato de pilotos · todas tus carreras</h3>
     <table><thead><tr><th>#</th><th>Piloto</th><th>Carreras</th><th>Victorias</th><th>Esta carrera</th><th style="text-align:right">Puntos</th></tr></thead><tbody id="champBody"></tbody></table>
-    <div class="note">Es tu campeonato: arranca en 0 y en cada carrera que juegas los 22 pilotos suman 25-18-15-12-10-8-6-4-2-1 según donde terminaron, como un campeonato de verdad. (En el boceto se guarda en este navegador.)</div>
+    <div class="note">Es tu campeonato: arranca en 0 y en cada carrera que juegas solo suma puntos el piloto que elegiste (25-18-15-12-10-8-6-4-2-1 según donde terminaste), así que la tabla muestra solo a los pilotos que usaste. (En el boceto se guarda en este navegador.)</div>
   </div>
 </section>
 </main>
@@ -770,7 +770,7 @@ function finish(){
   $('radio').insertAdjacentHTML('afterbegin',`<div class="msg" style="border-color:#fff"><b>🏁 Bandera a cuadros</b>${me.dnf?'Abandonaste en la vuelta '+me.dnf:'Terminaste P'+me.pos}.</div>`);
   $('toResult').style.display='block';
   if(MODE==='friendly'||MODE==='daily'){ /* no suma al campeonato: el amistoso no cuenta y el diario se registra en el servidor */ if(MODE==='daily') dailyFinish(); }
-  else { saveRace(cls); saveStats(me.pos,me.dnf); }
+  else { saveRace(me); saveStats(me.pos,me.dnf); }
   // La carrera de la sala terminó: no volver a ella al recargar (el resultado sigue en pantalla).
   if(MODE==='room'){ try{localStorage.removeItem(ROOM_KEY)}catch(e){} }
 }
@@ -804,12 +804,14 @@ function paintStory(){
 }
 
 // ---------- Campeonato real (en el boceto: localStorage) ----------
-// Cada carrera suma puntos a los 22 pilotos según donde terminaron.
+// Cada carrera suma puntos solo al piloto que elegiste (no a los rivales), según donde terminaste.
+// Las filas nuevas llevan u:1; las del formato anterior (que cargaba a los 22 pilotos) quedan guardadas pero no se muestran.
 const KEY='boxbox_campeonato_v2'; let LAST={};
-function loadChamp(){try{return JSON.parse(localStorage.getItem(KEY))||{}}catch(e){return {}}}
-function saveRace(cls){const c=loadChamp(); LAST={};
-  cls.forEach((car,i)=>{const n=car.driver||car.name, r=c[n]||{pts:0,races:0,wins:0}, pts=car.dnf?0:(PTS[i]||0);
-    r.pts+=pts; r.races++; if(!car.dnf&&i===0) r.wins++; c[n]=r; LAST[n]=car.dnf?'DNF':pts?'+'+pts:'—';});
+function loadRaw(){try{return JSON.parse(localStorage.getItem(KEY))||{}}catch(e){return {}}}
+function loadChamp(){const o={};for(const [n,r] of Object.entries(loadRaw())) if(r&&r.u) o[n]=r; return o}
+function saveRace(me){const c=loadRaw(); LAST={};
+  const n=picks.piloto.n, r=c[n]&&c[n].u?c[n]:{pts:0,races:0,wins:0,u:1}, pts=me.dnf?0:(PTS[me.pos-1]||0);
+  r.pts+=pts; r.races++; if(!me.dnf&&me.pos===1) r.wins++; c[n]=r; LAST[n]=me.dnf?'DNF':pts?'+'+pts:'—';
   try{localStorage.setItem(KEY,JSON.stringify(c))}catch(e){}}
 
 $('toResult').onclick=()=>{
@@ -899,16 +901,17 @@ function resetChamp(archive){
   if($('s-profile').classList.contains('on'))showProfile(); if($('s-champpage').classList.contains('on'))showChampPage();
 }
 $('pReset').onclick=()=>resetChamp(false); $('pNew').onclick=()=>resetChamp(true);
+const champRaces=()=>Object.values(loadChamp()).reduce((t,r)=>t+r.races,0);
 function champRows(hl){const rows=Object.entries(loadChamp()).sort((a,b)=>b[1].pts-a[1].pts);
   return rows.length?rows.map(([n,r],i)=>`<tr class="${n===hl?'hl':''}"><td class="n">${i+1}</td><td><b>${n}</b></td><td>${r.races}</td><td>${r.wins}</td><td style="color:var(--muted)">${LAST[n]||''}</td><td class="pts">${r.pts}</td></tr>`).join('')
   :'<tr><td colspan="6" class="empty">Todavía sin puntos. ¡Corre tu primera carrera!</td></tr>'}
 function showChampPage(){$('st0').style.display='none';$('cpBody').innerHTML=champRows(picks.piloto&&picks.piloto.n);
-  const s=loadStats();$('cpSub').textContent=`${s.races} carrera${s.races===1?'':'s'} en este campeonato`;go('s-champpage',0)}
+  const n=champRaces();$('cpSub').textContent=`${n} carrera${n===1?'':'s'} en este campeonato`;go('s-champpage',0)}
 function showProfile(){$('st0').style.display='none';const s=loadStats();
   $('pStats').innerHTML=`<div><b>${s.races}</b>Carreras</div><div><b>${s.wins}</b>Victorias</div><div><b>${s.podiums}</b>Podios</div><div><b>${s.best?'P'+s.best:'—'}</b>Mejor</div>`;
   const h=loadHist();$('pHist').innerHTML=h.length?h.map((x,i)=>`<div class="opt"><span><b>Campeonato ${h.length-i}</b><br><small>${x.fecha} · ${x.carreras} carreras</small></span><small style="text-align:right">${x.podio.join('<br>')}</small></div>`).join(''):'Todavía no cerraste ningún campeonato.';
   go('s-profile',0)}
-(function(){const s=loadStats();$('hCount').textContent=s.races?`${s.races} carrera${s.races===1?'':'s'} en tu campeonato actual`:'Tu campeonato arranca en 0'})();
+(function(){const n=champRaces();$('hCount').textContent=n?`${n} carrera${n===1?'':'s'} en tu campeonato actual`:'Tu campeonato arranca en 0'})();
 // "Otra tirada": vuelve a jugar el mismo modo sin pasar por el inicio
 try{const m=sessionStorage.getItem('boxbox_auto');if(m){sessionStorage.removeItem('boxbox_auto');startGame(m)}}catch(e){}
 
@@ -1306,7 +1309,7 @@ function paintUser(){
   $('pLogin').disabled=!USER&&!GOOGLE_ON; $('pLogin').style.opacity=$('pLogin').disabled?.5:1;
   $('nProfile').textContent=USER?('Perfil · '+String(m.full_name||m.name||USER.email).split(/[ @]/)[0]):'Perfil';
 }
-function cloudRow(){ return {user_id:USER.id,campeonato:loadChamp(),stats:loadStats(),historial:loadHist(),updated_at:new Date().toISOString()} }
+function cloudRow(){ return {user_id:USER.id,campeonato:loadRaw(),stats:loadStats(),historial:loadHist(),updated_at:new Date().toISOString()} }
 async function syncUp(){
   if(!sb||!USER) return;
   const {error}=await sb.from('campeonatos').upsert(cloudRow());
