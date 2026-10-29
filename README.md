@@ -42,7 +42,7 @@ Hasta 22 jugadores, uno por auto, con código de sala o link de invitación. Tod
 
 - **Servidor:** Edge Function `sala` en Supabase ([supabase/functions/sala](supabase/functions/sala/index.ts)). Las tablas ([migración](supabase/migrations/20261029000000_salas.sql)) tienen RLS sin políticas: solo la función puede leerlas.
 - **Contra trampas:** las semillas de dados y de carrera son secretas (se publica su hash). Las tiradas se revelan de a una y cada elección se valida en el servidor. Al cerrar el armado se revela la semilla de carrera y cada navegador simula la misma carrera con los autos ya validados.
-- **Sugerencias:** el formulario del pie de página va a la Edge Function `sugerencias` ([código](supabase/functions/sugerencias/index.ts), [migración](supabase/migrations/20261029030000_sugerencias.sql)): se guardan en la tabla `sugerencias` y llegan por mail (secreto `SUGERENCIAS_EMAIL`, servicio FormSubmit).
+- **Sugerencias:** el formulario del pie de página va a la Edge Function `sugerencias` ([código](supabase/functions/sugerencias/index.ts), [migración](supabase/migrations/20261029030000_sugerencias.sql)): se guardan en la tabla `sugerencias` y el navegador además avisa por mail con Web3Forms (la clave de acceso es pública por diseño y solo permite mandar a la casilla del dueño).
 - **Datos compartidos:** las temporadas están en [supabase/functions/_shared/temporadas.json](supabase/functions/_shared/temporadas.json), que usan el juego y el servidor.
 
 Para desplegar cambios del servidor:

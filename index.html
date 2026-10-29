@@ -875,9 +875,13 @@ $('sSend').onclick=async()=>{ if(!$('sText').value.trim()){$('sOk').textContent=
   try{
     const h={'Content-Type':'application/json'};
     try{ const s=sb&&(await sb.auth.getSession()).data.session; if(s) h.Authorization='Bearer '+s.access_token }catch(e){}
-    const r=await fetch('https://vljuhibzzwtcswirunfr.supabase.co/functions/v1/sugerencias',{method:'POST',headers:h,body:JSON.stringify({tipo:$('sType').value,texto:$('sText').value,email:$('sMail').value})});
-    const j=await r.json().catch(()=>({}));
-    if(!r.ok) throw new Error(j.error||'No se pudo enviar.');
+    const d={tipo:$('sType').value,texto:$('sText').value,email:$('sMail').value};
+    // Se guarda en Supabase y, en paralelo, se avisa por mail (Web3Forms, plan gratis: solo envía desde el navegador). Alcanza con que una de las dos salga bien.
+    const [g,m]=await Promise.allSettled([
+      fetch('https://vljuhibzzwtcswirunfr.supabase.co/functions/v1/sugerencias',{method:'POST',headers:h,body:JSON.stringify(d)}).then(async r=>{const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'No se pudo enviar.');return j}),
+      fetch('https://api.web3forms.com/submit',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify({access_key:'5db1e9e5-c583-4ee4-b99f-14237e699a3d',subject:'BoxBox · '+d.tipo,from_name:'BoxBox',botcheck:'',message:d.texto,email:d.email||undefined,tipo:d.tipo})}).then(async r=>{const j=await r.json().catch(()=>({}));if(!r.ok||!j.success)throw new Error('mail');return j})
+    ]);
+    if(g.status==='rejected'&&m.status==='rejected') throw g.reason;
     $('sText').value='';$('sOk').textContent='¡Gracias! Tu sugerencia llegó y la voy a leer.';
   }catch(e){ $('sOk').textContent=(e&&e.message&&!/fetch|Failed|Network/i.test(e.message))?e.message:'No se pudo enviar. Revisa tu internet e inténtalo de nuevo.' }
   btn.disabled=false};

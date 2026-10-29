@@ -1,6 +1,5 @@
 // Edge Function "sugerencias": recibe el formulario "Sugerencias y mejoras" del sitio.
-// Guarda cada envío en la tabla `sugerencias` (nunca se pierde) y avisa por mail al dueño.
-// Mail: variable SUGERENCIAS_EMAIL (destino) y servicio FormSubmit (sin clave; la primera vez hay que confirmar el destino).
+// Guarda cada envío en la tabla `sugerencias` (nunca se pierde). El aviso por mail lo manda el navegador (Web3Forms, ver index.html).
 // Contra spam: máximo 5 envíos por hora y por IP, y 2000 caracteres de texto.
 
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
@@ -12,7 +11,6 @@ const MAX_POR_HORA = 5;
 const EMAIL_RE = /^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,}$/;
 
 const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
-const TO = Deno.env.get("SUGERENCIAS_EMAIL") ?? "";
 class Fail extends Error { constructor(msg: string, public status = 400) { super(msg); } }
 
 async function sha(s: string) {
@@ -40,26 +38,9 @@ async function handle(req: Request, body: any) {
   if ((count ?? 0) >= MAX_POR_HORA) throw new Fail("Mandaste varias seguidas. Prueba de nuevo en un rato.", 429);
 
   const uid = await userId(req);
-  const { data, error } = await db.from("sugerencias").insert({ tipo, texto, email: mail || null, user_id: uid, ip_hash }).select("id").single();
+  const { error } = await db.from("sugerencias").insert({ tipo, texto, email: mail || null, user_id: uid, ip_hash });
   if (error) throw error;
 
-  let enviada = false;
-  if (TO) {
-    try {
-      const r = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(TO)}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({
-          _subject: `BoxBox · ${tipo}`, _template: "table", _captcha: "false",
-          tipo, sugerencia: texto, email_de_contacto: mail || "(no dejó email)", usuario: uid ?? "(sin login)",
-          ...(mail ? { _replyto: mail } : {}),
-        }),
-      });
-      const j = await r.json().catch(() => ({}));
-      enviada = r.ok && String(j.success) === "true";
-    } catch (e) { console.error("mail", e); }
-    if (enviada) await db.from("sugerencias").update({ enviada: true }).eq("id", data.id);
-  }
   return { ok: true };
 }
 
