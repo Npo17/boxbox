@@ -382,7 +382,7 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
           <li><b>🚨 Safety car:</b> cuando sale, tú decides si entras a boxes por gomas nuevas o te quedas en pista.</li>
         </ul>
         <div class="note">Elige las casillas en el orden que quieras. El equipo completo cuenta: un buen piloto en un mal coche igual se queda atrás.</div>
-        <div class="note" style="margin-top:6px">Las piezas marcadas <b>estimado</b> (motor, jefe y estratega de la mayoría de las temporadas) salen del resultado de esa escudería: no hay datos públicos de sus nombres.</div>
+        <div class="note" style="margin-top:6px">En la mayoría de las temporadas el nombre real del <b>motor, jefe de equipo y estratega</b> no está en ninguna base pública: esas piezas llevan el nombre de la escudería (ej. «Jefe de Ferrari») y la leyenda <b>media estimada</b>, calculada con el resultado de esa escudería ese año.</div>
       </details>
     </div>
   </div>
@@ -1023,7 +1023,24 @@ function startRoomRace(s){
   const raceAt=srvToLocal(s.room.race_start), syncAt=raceAt+2000, late=Date.now()>=raceAt;
   $('qBtn').style.display='none'; $('toRace2').style.display='none';
   go('s-quali',2);
-  const toRace=()=>{ go('s-race',3); startRace(syncAt,false); };
+  // El safety car se decide antes de largar (así todos corren la misma carrera): al llegar la hora se piden
+  // al servidor las decisiones de todos y se vuelve a calcular la carrera con ellas.
+  const toRace=async()=>{
+    $('mSC').classList.remove('open');
+    if(RACE.sc){ try{
+      const s2=await api('state'), d={}; s2.players.forEach(p=>{ if(p.sc) d[p.pid]=p.sc });
+      DECISIONS=d; RACE=newRace(d);
+    }catch(e){} }
+    go('s-race',3); startRace(syncAt,false);
+  };
+  const lockAt=raceAt-3000, sc=RACE.sc, me0=carByKey(MEKEY);
+  if(!late && sc && me0 && (!me0.dnf||me0.dnf>sc.lap) && Date.now()<lockAt-1000){
+    const stops=me0.ev.filter(e=>e.k==='pit'&&e.lap<=sc.lap), lastStop=stops.length?stops[stops.length-1].lap:0;
+    $('scTxt').textContent=`En la vuelta ${sc.lap} saldrá el safety car: ${sc.by} ${sc.why==='choque'?'chocará':'romperá el motor'}. Con el pelotón lento, entrar a boxes cuesta mucho menos.`;
+    $('scInfo').innerHTML=(lastStop?`Ya habrás hecho tu parada en la vuelta ${lastStop}: otra es opcional.`:`Todavía no habrás hecho tu parada obligatoria.`)+` <b>Decidí antes de que largue la carrera.</b> Si no elegís, decide tu equipo.`;
+    window.__resolveSC=(dec)=>{ $('mSC').classList.remove('open'); api('decide',{choice:dec}).then(()=>toast('Decisión enviada: '+(dec==='pit'?'entras a boxes':'sigues en pista'))).catch(e=>toast(e.message)) };
+    openM('mSC'); setTimeout(()=>$('mSC').classList.remove('open'),lockAt-Date.now());
+  }
   if(late){ runQualy(false); toRace(); return; }
   runQualy(true,()=>{
     $('qWait').style.display='block';

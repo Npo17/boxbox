@@ -157,9 +157,9 @@ for (let y = FIRST; y <= LAST; y++) {
     // escudería (su coche) con una variación fija por pieza. Así todas las temporadas tienen las 5 casillas.
     const wob = (s) => { let x = 7; for (const ch of s) x = (x * 31 + ch.charCodeAt(0)) % 9973; return (x % 9) - 4; };   // -4..+4, siempre igual
     for (const [team, , r] of season.coche) {
-      season.motor.push([`Motor ${team}`, 'estimado', clamp(r + wob(y + 'm' + team), 55, 96)]);
-      season.jefe.push([`Jefe de ${team}`, 'estimado', clamp(r + wob(y + 'j' + team), 55, 96)]);
-      season.estratega.push([`Estratega de ${team}`, 'estimado', clamp(r + wob(y + 'e' + team), 55, 96)]);
+      season.motor.push([`Motor ${team}`, 'media estimada', clamp(r + wob(y + 'm' + team), 55, 96)]);
+      season.jefe.push([`Jefe de ${team}`, 'media estimada', clamp(r + wob(y + 'j' + team), 55, 96)]);
+      season.estratega.push([`Estratega de ${team}`, 'media estimada', clamp(r + wob(y + 'e' + team), 55, 96)]);
     }
   }
   for (const k of ['piloto', 'coche', 'motor', 'jefe', 'estratega']) season[k].sort((a, b) => b[2] - a[2]);

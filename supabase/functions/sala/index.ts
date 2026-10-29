@@ -25,7 +25,8 @@ const SLOTS = ["piloto", "coche", "motor", "jefe", "estratega"];
 const MAX_PLAYERS = 22;
 const MAX_REROLLS = 2;
 const BUILD_MS = 3 * 60 * 1000;     // tiempo para armar
-const RACE_DELAY_MS = 15 * 1000;    // de cierre a largada (qualy + cuenta regresiva)
+const RACE_DELAY_MS = 25 * 1000;    // de cierre a largada (qualy + decisión del safety car + cuenta regresiva)
+const SC_LOCK_MS = 3 * 1000;        // las decisiones del safety car se cierran 3 s antes de largar
 const ROOM_TTL_MS = 24 * 60 * 60 * 1000;
 const COLORS = ["#ff3b30", "#2fd27a", "#4fc3f7", "#ffd23f", "#b26bff", "#ff9800", "#f06292", "#26a69a",
   "#cddc39", "#90a4ae", "#5c6bc0", "#e57373", "#64b5f6", "#81c784", "#ba68c8", "#ffb74d", "#80cbc4",
@@ -80,9 +81,10 @@ async function getRoom(code: string) {
   if (Date.now() - Date.parse(data.created_at) > ROOM_TTL_MS) throw new Fail("Esa sala ya expiró.", 410);
   return data;
 }
-async function getPlayers(code: string) {
-  // Sin las tiradas ni el hash secreto: con 22 jugadores es lo más pesado y nadie lo necesita acá.
-  const { data, error } = await db.from("jugadores").select("pid,name,color,done,picks").eq("sala", code).order("joined_at");
+async function getPlayers(code: string, withRolls = false) {
+  // Sin las tiradas ni el hash secreto: con 22 jugadores es lo más pesado y nadie lo necesita acá
+  // (salvo en carrera, donde en "rolls" queda guardada la decisión del safety car).
+  const { data, error } = await db.from("jugadores").select(withRolls ? "pid,name,color,done,picks,rolls" : "pid,name,color,done,picks").eq("sala", code).order("joined_at");
   if (error) throw new Fail("Error leyendo jugadores", 500);
   return data ?? [];
 }
@@ -123,8 +125,12 @@ async function maybeLock(room: Record<string, any>, known?: Record<string, any>[
 }
 
 async function stateFor(room: Record<string, any>, me: Record<string, any> | null, known?: Record<string, any>[]) {
-  const players = known ?? await getPlayers(room.code);
   const racing = room.status === "racing";
+  const players = known ?? await getPlayers(room.code, racing);
+  // Decisiones de safety car: se muestran recién cuando se cierra el plazo (para que nadie copie la de otro).
+  const lockAt = room.race_start ? Date.parse(room.race_start) - SC_LOCK_MS : Infinity;
+  const showSc = racing && Date.now() >= lockAt;
+  const scOf = (p: Record<string, any>) => (p.rolls ?? []).find((r: any) => r.k === "sc")?.v;
   const current = me ? (me.rolls as Roll[]).find((r) => !r.used) ?? null : null;
   return {
     now: Date.now(),
@@ -139,6 +145,7 @@ async function stateFor(room: Record<string, any>, me: Record<string, any> | nul
       pid: p.pid, name: p.name, color: p.color, done: p.done,
       filled: Object.keys(p.picks).length,
       picks: racing ? p.picks : undefined,          // ocultas hasta la largada
+      sc: showSc ? scOf(p) : undefined,
     })),
     me: me ? { pid: me.pid, picks: me.picks, rerolls: me.rerolls, current } : null,
   };
@@ -185,7 +192,7 @@ async function handle(body: Record<string, any>) {
 
   if (action === "state") {
     // Camino más pedido (cada jugador cada 3 s): consultas en paralelo y sin repetir lecturas.
-    const players = await getPlayers(code);
+    const players = await getPlayers(code, room.status === "racing");
     const locked = await maybeLock(room, players);
     if (locked === room) return await stateFor(room, me, players);
     return await stateFor(locked, await auth(code, body.pid, body.secret));   // se cerró el armado: releer
@@ -241,6 +248,17 @@ async function handle(body: Record<string, any>) {
     await db.from("jugadores").update({ picks, rolls, done }).eq("sala", code).eq("pid", me.pid);
     room = await maybeLock(room);
     return await stateFor(room, await auth(code, body.pid, body.secret));
+  }
+
+  if (action === "decide") {
+    // Qué hacer con el safety car: se decide antes de largar para que todos corran la misma carrera.
+    if (room.status !== "racing") throw new Fail("Ahora no se puede decidir.", 409);
+    if (Date.now() >= Date.parse(room.race_start) - SC_LOCK_MS) throw new Fail("Se acabó el tiempo para decidir.", 409);
+    const choice = String(body.choice ?? "");
+    if (choice !== "pit" && choice !== "stay") throw new Fail("Decisión inválida.");
+    const rolls = [...(me.rolls as any[]).filter((r) => r.k !== "sc"), { k: "sc", v: choice, used: true }];
+    await db.from("jugadores").update({ rolls }).eq("sala", code).eq("pid", me.pid);
+    return { ok: true, now: Date.now() };
   }
 
   if (action === "leave") {

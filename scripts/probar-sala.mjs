@@ -54,5 +54,13 @@ ok(/^\d+$/.test(fin.room.race_seed), 'semilla de carrera revelada');
 const hash = [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(fin.room.race_seed)))].map(x => x.toString(16).padStart(2, '0')).join('');
 ok(hash === fin.room.race_hash, 'la semilla coincide con el hash publicado al crear la sala');
 ok(fin.players.every(p => p.picks && Object.keys(p.picks).length === 5), 'ahora se ven los 2 autos');
-ok(Date.parse(fin.room.race_start) - fin.now > 5000, 'la largada está programada a futuro');
+ok(Date.parse(fin.room.race_start) - fin.now > 15000, 'la largada está programada a futuro');
 console.log('sala de prueba:', code);
+
+// Decisión del safety car: se guarda, se oculta hasta cerrar el plazo y se rechaza lo inválido.
+const dec = await call({ action: 'decide', code, pid: a.pid, secret: a.secret, choice: 'pit' });
+ok(dec.ok, 'se puede decidir el safety car antes de largar');
+try { await call({ action: 'decide', code, pid: b.pid, secret: b.secret, choice: 'volar' }); ok(false, 'decisión inválida rechazada'); }
+catch (e) { ok(true, 'decisión inválida rechazada'); }
+const afterDec = await call({ action: 'state', code, pid: b.pid, secret: b.secret });
+ok(afterDec.players.every(p => p.sc === undefined), 'las decisiones de los demás siguen ocultas durante el plazo');
