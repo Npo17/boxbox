@@ -692,7 +692,7 @@ $('dReset').onclick=()=>resetChamp(false); $('dNew').onclick=()=>resetChamp(true
 function openM(id){$(id).classList.add('open')}
 document.querySelectorAll('.modal').forEach(m=>{m.onclick=e=>{if(e.target===m||e.target.closest('[data-close]'))m.classList.remove('open')}});
 // Donaciones
-const CAFECITO_USER='';   // ej. 'boxbox' → https://cafecito.app/boxbox
+const CAFECITO_USER='boxf1box';   // → https://cafecito.app/boxf1box
 if(CAFECITO_USER){$('cafLink').href='https://cafecito.app/'+encodeURIComponent(CAFECITO_USER);$('cafOpt').style.display=''}
 $('mpCopy').onclick=async()=>{const a=$('mpAlias').textContent;
   try{await navigator.clipboard.writeText(a)}catch(e){const r=document.createRange();r.selectNodeContents($('mpAlias'));const s=getSelection();s.removeAllRanges();s.addRange(r);document.execCommand('copy')}
