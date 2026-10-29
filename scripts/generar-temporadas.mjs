@@ -22,7 +22,7 @@ const CURATED = JSON.parse(fs.readFileSync(path.join(ROOT, 'temporadas-curadas.j
 fs.mkdirSync(CACHE, { recursive: true });
 // Motores y jefes de equipo reales por temporada (scripts/generar-nombres.mjs); opcional.
 const NOMBRES = fs.existsSync(path.join(ROOT, 'nombres-statsf1.json')) ? JSON.parse(fs.readFileSync(path.join(ROOT, 'nombres-statsf1.json'), 'utf8')) : null;
-const norm = (s) => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/-/g, ' ').replace(/ f1 team| racing| team|scuderia/g, '').replace(/\s+/g, ' ').trim();
+const norm = (s) => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/-/g, ' ').replace(/ f1 team| racing|\bteam\b|scuderia/g, '').trim().replace(/\s+/g, ' ').trim();
 const same = (a, b) => { const x = norm(a), z = norm(b); return x === z || x.split(' ')[0] === z.split(' ')[0]; };
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -163,7 +163,9 @@ for (let y = FIRST; y <= LAST; y++) {
     for (const [team, , r] of season.coche) {
       // Nombres reales (StatsF1, ver generar-nombres.mjs): motor y jefe de equipo. Si no hay dato, queda el genérico.
       const row = (NOMBRES?.seasons[y] ?? []).find((x) => same(x.team, team));
-      const boss = row && (NOMBRES.principals[row.slug] ?? []).filter((p) => p.from <= y && y <= p.to).pop();
+      // Sin fila en la tabla de constructores (1950-1957 y algunas escuderías): se busca la escudería por nombre.
+      const slugs = row ? [row.slug] : [norm(team).replace(/ /g, '-'), norm(team).split(' ')[0]];
+      const boss = NOMBRES && slugs.flatMap((s) => (NOMBRES.principals[s] ?? []).filter((p) => p.from <= y && y <= p.to)).pop();
       const usedBoss = season.jefe.some((j) => j[0] === boss?.name);
       season.motor.push([row?.engine ? `Motor ${row.engine}` : `Motor ${team}`, `${team} · media estimada`, clamp(r + wob(y + 'm' + team), 55, 96)]);
       season.jefe.push([boss && !usedBoss ? boss.name : `Jefe de ${team}`, `${team} · media estimada`, clamp(r + wob(y + 'j' + team), 55, 96)]);
