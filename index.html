@@ -1,0 +1,731 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BoxBox · Arma tu auto de leyenda</title>
+<meta name="description" content="Tira el dado, arma tu auto con piezas de toda la historia de la Fórmula 1, clasifica y corre en un circuito real. Juego de fans.">
+<!-- Boceto de diseño, no es el juego final. Datos de ejemplo inventados. Sin marcas, logos ni fotos: todo dibujado en SVG. -->
+<link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --asphalt:#14151b; --asphalt-2:#1d1f28; --line:#2c2f3b; --text:#f2f2f5; --muted:#9a9db0;
+  --red:#ff3b30; --red-d:#c81e15; --yellow:#ffd23f; --green:#2fd27a; --purple:#b26bff;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--asphalt);color:var(--text);font-family:"Titillium Web",system-ui,sans-serif}
+body{min-height:100vh;background:
+  radial-gradient(1200px 500px at 80% -10%, #2a1416 0%, transparent 60%),
+  repeating-linear-gradient(90deg, transparent 0 3px, rgba(255,255,255,.012) 3px 4px), var(--asphalt)}
+.kerb{height:10px;background:repeating-linear-gradient(90deg,var(--red) 0 28px,#fff 28px 56px)}
+header{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;max-width:1180px;margin:0 auto}
+.logo{display:flex;align-items:center;gap:10px;font-weight:900;font-style:italic;font-size:26px;letter-spacing:-.5px}
+.logo b{color:var(--red)}
+.flag{width:30px;height:20px;background:conic-gradient(#fff 25%,#111 0 50%,#fff 0 75%,#111 0) 0 0/10px 10px;border-radius:2px;transform:skewX(-12deg)}
+.steps{display:flex;gap:6px;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px}
+.steps span{padding:6px 12px;border:1px solid var(--line);color:var(--muted);transform:skewX(-12deg)}
+.steps span.on{background:var(--red);border-color:var(--red);color:#fff}
+main{max-width:1180px;margin:0 auto;padding:8px 24px 48px}
+.screen{display:none;animation:in .35s ease}
+.screen.on{display:block}
+@keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1}}
+h1{font-weight:900;font-style:italic;font-size:44px;line-height:1;margin:8px 0 6px;text-transform:uppercase}
+h1 em{color:var(--red);font-style:italic}
+.sub{color:var(--muted);margin:0 0 20px;font-size:16px}
+.grid{display:grid;grid-template-columns:1.25fr 1fr;gap:20px}
+.panel{background:var(--asphalt-2);border:1px solid var(--line);border-radius:10px;padding:16px;position:relative;overflow:hidden}
+.panel h3{margin:0 0 10px;font-size:13px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted)}
+/* Dado y año */
+.rollbox{display:flex;align-items:center;gap:18px}
+.year{font-size:72px;font-weight:900;font-style:italic;line-height:.9;letter-spacing:-2px}
+.year small{display:block;font-size:13px;font-style:normal;letter-spacing:1px;color:var(--muted);font-weight:600}
+.btn{appearance:none;border:0;cursor:pointer;font:inherit;font-weight:900;text-transform:uppercase;letter-spacing:1px;
+  background:var(--red);color:#fff;padding:14px 26px;transform:skewX(-12deg);font-size:16px;transition:.15s}
+.btn:hover{background:var(--red-d)}
+.btn span{display:inline-block;transform:skewX(12deg)}
+.btn.ghost{background:transparent;border:2px solid var(--line);color:var(--text)}
+.btn.ghost:hover{border-color:var(--text)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.die{font-size:44px;display:inline-block}
+.die.spin{animation:spin .6s ease}
+@keyframes spin{to{transform:rotate(720deg)}}
+.tabs{display:flex;gap:6px;margin:14px 0 8px;flex-wrap:wrap}
+.tab{cursor:pointer;padding:6px 12px;border:1px solid var(--line);border-radius:4px;font-size:13px;font-weight:700;color:var(--muted)}
+.tab.on{color:#fff;border-color:var(--red);background:rgba(255,59,48,.12)}
+.tab.done{text-decoration:line-through;opacity:.4;cursor:default}
+.list{display:grid;gap:6px;max-height:330px;overflow:auto;padding-right:4px}
+.pick{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;cursor:pointer;background:var(--card);transition:.12s}
+.pick:hover{border-color:var(--red);transform:translateX(3px)}
+.pick .who{flex:1}
+.pick .who b{display:block;font-size:16px}
+.pick .who small{color:var(--muted)}
+.rt{font-weight:900;font-size:20px;min-width:52px;text-align:center;padding:4px 0;border-radius:6px;font-style:italic}
+.r95{background:var(--purple)} .r90{background:var(--green);color:#071} .r80{background:var(--yellow);color:#332} .r0{background:#3a3d4a}
+.empty{color:var(--muted);text-align:center;padding:40px 10px}
+/* Auto */
+.carwrap{display:flex;justify-content:center;margin:4px 0 10px}
+.slots{display:grid;gap:8px}
+.slot{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1px dashed var(--line);border-radius:8px;font-size:14px}
+.slot .k{color:var(--muted);text-transform:uppercase;font-size:12px;letter-spacing:1px;font-weight:700}
+.slot.filled{border-style:solid;border-color:var(--line);background:var(--card)}
+.slot.filled .v{font-weight:700}
+.avg{display:flex;align-items:baseline;justify-content:space-between;margin-top:12px;border-top:1px solid var(--line);padding-top:12px}
+.avg b{font-size:40px;font-weight:900;font-style:italic}
+.cta{margin-top:14px;width:100%}
+/* Carrera */
+.racegrid{display:grid;grid-template-columns:1.4fr 1fr;gap:20px}
+.hud{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-weight:700}
+.hud .lap{font-size:28px;font-weight:900;font-style:italic}
+.lights{display:flex;gap:6px}
+.lights i{width:16px;height:16px;border-radius:50%;background:#333;display:block}
+.lights.on i{background:var(--red);box-shadow:0 0 10px var(--red)}
+.lights.go i{background:var(--green);box-shadow:0 0 10px var(--green)}
+svg.track{width:100%;height:auto;display:block}
+.tower{display:grid;gap:3px;font-size:14px}
+.trow{display:grid;grid-template-columns:28px 6px 1fr 64px;gap:8px;align-items:center;padding:4px 8px;border-radius:4px;background:var(--card);transition:transform .3s}
+.trow.me{background:rgba(255,59,48,.18);outline:1px solid var(--red)}
+.trow .p{font-weight:900;font-style:italic;text-align:right}
+.trow .c{width:6px;height:18px;border-radius:2px}
+.trow .g{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+.radio{margin-top:14px;display:grid;gap:6px;min-height:150px}
+.msg{background:var(--deep);border-left:3px solid var(--yellow);padding:8px 10px;border-radius:4px;font-size:14px;animation:in .3s ease}
+.msg b{color:var(--yellow);font-size:12px;letter-spacing:1px;text-transform:uppercase;display:block}
+.msg.inc{border-color:var(--red)} .msg.inc b{color:var(--red)}
+/* Resultado */
+.result{text-align:center;padding:30px 10px}
+.pos{font-size:140px;font-weight:900;font-style:italic;line-height:.9;letter-spacing:-6px}
+.pos.p1{color:var(--yellow)}
+.podium{display:flex;justify-content:center;gap:10px;margin:20px 0}
+.row-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:18px}
+.share{display:inline-block;margin:16px auto 0;background:var(--deep);border:1px solid var(--line);border-radius:10px;padding:14px 18px;font-family:ui-monospace,monospace;text-align:left;font-size:14px;line-height:1.6}
+/* Campeonato */
+table{width:100%;border-collapse:collapse;font-size:16px}
+th{text-align:left;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:1px;padding:8px;border-bottom:1px solid var(--line)}
+td{padding:10px 8px;border-bottom:1px solid var(--line)}
+td.n{font-weight:900;font-style:italic;width:40px}
+td.pts{text-align:right;font-weight:900;font-variant-numeric:tabular-nums}
+tr.hl td{background:rgba(255,59,48,.14)}
+.note{color:var(--muted);font-size:13px;margin-top:10px}
+@media (max-width:860px){.grid,.racegrid{grid-template-columns:1fr} h1{font-size:32px} .year{font-size:56px} .steps{display:none}}
+/* ---- Tema claro (Ajustes) ---- */
+:root{--card:#191b23;--deep:#0f1015;--glow:#2a1416}
+html[data-theme="light"]{--asphalt:#f3f3f6;--asphalt-2:#ffffff;--line:#d9dbe3;--text:#15161c;--muted:#5b5e6e;--card:#f5f6f9;--deep:#eceef3;--glow:#ffe1de;--yellow:#c99500}
+html[data-theme="light"] body{background:radial-gradient(1200px 500px at 80% -10%, var(--glow) 0%, transparent 60%), var(--asphalt)}
+html[data-theme="light"] .tab.on{color:var(--red)}
+html[data-theme="light"] .r0{background:#c9ccd6}
+/* ---- Navegación ---- */
+nav.top{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.nb{cursor:pointer;font:inherit;font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:1px;padding:8px 14px;border-radius:999px;border:1.5px solid var(--yellow);color:var(--yellow);background:transparent;position:relative;text-decoration:none}
+.nb.solid{background:var(--yellow);color:#1a1300;border-radius:4px}
+.nb .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--red);margin-right:6px}
+.dd{position:relative}
+.ddm{display:none;position:absolute;right:0;top:44px;background:var(--asphalt-2);border:1px solid var(--line);border-radius:8px;padding:6px;min-width:240px;z-index:20;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.ddm.open{display:block}
+.ddm button{display:block;width:100%;text-align:left;background:none;border:0;color:var(--text);font:inherit;padding:9px 10px;border-radius:6px;cursor:pointer}
+.ddm button:hover{background:var(--card)}
+.ddm hr{border:0;border-top:1px solid var(--line);margin:4px 0}
+.ddm small{display:block;color:var(--muted);padding:4px 10px;text-transform:uppercase;letter-spacing:1px;font-size:11px}
+#logo{cursor:pointer}
+/* ---- Inicio ---- */
+.hero{display:grid;grid-template-columns:1.1fr 1fr;gap:30px;align-items:center;padding-top:10px}
+.eyebrow{font-size:12px;letter-spacing:4px;color:var(--muted);font-weight:700;text-transform:uppercase}
+.mega{font-size:150px;font-weight:900;font-style:italic;line-height:.85;letter-spacing:-6px;margin:6px 0 14px;color:var(--yellow);text-shadow:0 0 40px rgba(255,210,63,.25)}
+.mega b{color:var(--red);text-shadow:0 0 40px rgba(255,59,48,.3)}
+.hero h2{font-size:46px;line-height:1;margin:0 0 14px;font-weight:900;text-transform:uppercase}
+.hero p{color:var(--muted);font-size:18px;max-width:470px}
+.cta-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px}
+.count{font-family:ui-monospace,monospace;font-size:13px;color:var(--muted);margin-top:14px}
+.dream{background:var(--asphalt-2);border:1px solid var(--line);border-radius:14px;padding:18px}
+.dream .slot{background:var(--card)}
+.how{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line);border-radius:10px;margin-top:34px;overflow:hidden}
+.how div{padding:18px;display:flex;gap:14px;align-items:center;background:var(--asphalt-2)}
+.how div+div{border-left:1px solid var(--line)}
+.how .n{font-family:ui-monospace,monospace;font-size:34px;color:var(--yellow);font-weight:700}
+.how b{display:block;font-size:20px;text-transform:uppercase;font-weight:900}
+.how small{color:var(--muted)}
+footer{max-width:1180px;margin:0 auto;padding:0 24px 40px;display:flex;gap:16px;align-items:center;flex-wrap:wrap;color:var(--muted);font-size:13px;border-top:1px solid var(--line);padding-top:18px}
+.pill{background:var(--yellow);color:#1a1300;border:0;border-radius:999px;padding:10px 18px;font:inherit;font-weight:900;text-transform:uppercase;cursor:pointer}
+.link{background:none;border:0;color:var(--muted);text-decoration:underline dashed;cursor:pointer;font:inherit;padding:0}
+/* ---- Modal ---- */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+.modal.open{display:flex}
+.modal .box{background:var(--asphalt-2);border:1px solid var(--line);border-radius:12px;max-width:480px;width:100%;padding:22px;position:relative}
+.modal h2{margin:0 0 8px;font-style:italic;text-transform:uppercase}
+.modal .x{position:absolute;top:10px;right:14px;background:none;border:0;color:var(--muted);font-size:22px;cursor:pointer}
+.opt{display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid var(--line);border-radius:8px;padding:12px;margin:8px 0;background:var(--card)}
+textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:10px;margin:6px 0}
+.gbtn{display:flex;align-items:center;gap:10px;justify-content:center;width:100%;background:#fff;color:#222;border:1px solid #ccc;border-radius:6px;padding:11px;font:inherit;font-weight:700;cursor:pointer}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0}
+.stats div{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px;text-align:center;color:var(--muted);font-size:13px}
+.stats b{display:block;font-size:30px;font-weight:900;font-style:italic;color:var(--text)}
+@media (max-width:860px){header{flex-wrap:wrap;gap:10px}.hero{grid-template-columns:1fr}.mega{font-size:92px;letter-spacing:-3px}.hero h2{font-size:32px}.how{grid-template-columns:1fr}.how div+div{border-left:0;border-top:1px solid var(--line)}.stats{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="kerb"></div>
+<header>
+  <div class="logo" id="logo"><div class="flag"></div>BOX<b>BOX</b></div>
+  <div class="steps" id="st0" style="display:none"><span id="st1" class="on">1 · Arma</span><span id="st2">2 · Qualy</span><span id="st3">3 · Carrera</span><span id="st4">4 · Resultado</span></div>
+  <nav class="top">
+    <button class="nb solid" id="nDaily"><span class="dot"></span>Desafío del día</button>
+    <button class="nb" id="nChamp">🏆 Campeonato</button>
+    <button class="nb" id="nProfile">Perfil</button>
+    <div class="dd"><button class="nb" id="nSettings">Ajustes ▾</button>
+      <div class="ddm" id="ddm">
+        <small>Tema</small>
+        <button id="tDark">🌙 Oscuro</button><button id="tLight">☀️ Claro</button>
+        <hr><small>Campeonato de pilotos</small>
+        <button id="dNew">Arrancar nuevo campeonato</button><button id="dReset">Resetear campeonato</button>
+      </div></div>
+  </nav>
+</header>
+
+<main>
+<!-- ============ INICIO (como 7a0) ============ -->
+<section class="screen on" id="s-home">
+  <div class="hero">
+    <div>
+      <div class="eyebrow">Gran Premio de las leyendas · 1950 — 2026</div>
+      <div class="mega">BOX<b>BOX</b></div>
+      <h2>Tira el dado.<br>Arma tu auto de leyenda.</h2>
+      <p>Sale un año: elige un piloto, coche, motor, jefe o estratega de esa temporada. Completa las 5 casillas, clasifica y corre en un circuito del calendario. ¿Ganas el Gran Premio?</p>
+      <div class="cta-row">
+        <button class="btn" id="hPlay"><span>Jugar ahora →</span></button>
+        <button class="btn ghost" id="hDaily"><span>Desafío del día</span></button>
+      </div>
+      <div class="cta-row">
+        <button class="btn ghost" id="hFriends"><span>Con amigos</span></button>
+        <button class="btn ghost" id="hChamp"><span>Campeonato</span></button>
+      </div>
+      <div class="count" id="hCount"></div>
+    </div>
+    <div class="dream">
+      <h3 style="margin:0 0 6px;font-size:12px;letter-spacing:2px;color:var(--muted);text-transform:uppercase">Un auto de los sueños</h3>
+      <div class="carwrap" id="homeCar"></div>
+      <div class="slots">
+        <div class="slot filled"><span class="k">Piloto</span><span class="v">A. Senna <small style="color:var(--muted)">1991</small> <span class="rt r95" style="font-size:14px;padding:2px 6px;margin-left:6px">99</span></span></div>
+        <div class="slot filled"><span class="k">Coche</span><span class="v">McLaren MP4/4 <small style="color:var(--muted)">1988</small> <span class="rt r95" style="font-size:14px;padding:2px 6px;margin-left:6px">99</span></span></div>
+        <div class="slot filled"><span class="k">Motor</span><span class="v">Ferrari V10 <small style="color:var(--muted)">2004</small> <span class="rt r95" style="font-size:14px;padding:2px 6px;margin-left:6px">97</span></span></div>
+        <div class="slot filled"><span class="k">Jefe de equipo</span><span class="v">J. Todt <small style="color:var(--muted)">2004</small> <span class="rt r95" style="font-size:14px;padding:2px 6px;margin-left:6px">97</span></span></div>
+        <div class="slot filled"><span class="k">Estratega</span><span class="v">R. Brawn <small style="color:var(--muted)">2004</small> <span class="rt r95" style="font-size:14px;padding:2px 6px;margin-left:6px">99</span></span></div>
+      </div>
+    </div>
+  </div>
+  <div class="how">
+    <div><span class="n">01</span><span><b>Tira</b><small>Sale una temporada de la historia</small></span></div>
+    <div><span class="n">02</span><span><b>Arma</b><small>Elige una pieza de ese año para tu auto</small></span></div>
+    <div><span class="n">03</span><span><b>Corre</b><small>Qualy y carrera en un circuito real</small></span></div>
+  </div>
+</section>
+
+<!-- ============ PERFIL ============ -->
+<section class="screen" id="s-profile">
+  <h1>Tu <em>perfil</em></h1>
+  <div class="grid">
+    <div class="panel">
+      <h3>Jugador</h3>
+      <div id="pName" style="font-size:24px;font-weight:900">Invitado</div>
+      <div class="note" style="margin-top:2px">Sin sesión: tu campeonato se guarda solo en este navegador.</div>
+      <div class="stats" id="pStats"></div>
+      <h3 style="margin-top:16px">Campeonatos anteriores</h3>
+      <div id="pHist" class="note"></div>
+    </div>
+    <div class="panel">
+      <h3>Cuenta</h3>
+      <button class="gbtn" id="pLogin"><svg width="18" height="18" viewBox="0 0 48 48"><path fill="#4285F4" d="M45 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h11.8c-.5 2.8-2.1 5.1-4.4 6.7v5.5h7.1c4.2-3.8 6.5-9.5 6.5-16.2z"/><path fill="#34A853" d="M24 46c5.9 0 10.9-2 14.5-5.3l-7.1-5.5c-2 1.3-4.5 2.1-7.4 2.1-5.7 0-10.5-3.8-12.2-9H4.5v5.7C8.1 41.1 15.5 46 24 46z"/><path fill="#FBBC05" d="M11.8 28.3c-.4-1.3-.7-2.8-.7-4.3s.3-3 .7-4.3V14H4.5C3 17 2.2 20.4 2.2 24s.8 7 2.3 10l7.3-5.7z"/><path fill="#EA4335" d="M24 10.8c3.2 0 6.1 1.1 8.4 3.3l6.3-6.3C34.9 4.2 29.9 2 24 2 15.5 2 8.1 6.9 4.5 14l7.3 5.7c1.7-5.2 6.5-8.9 12.2-8.9z"/></svg>Continuar con Google</button>
+      <div class="note">Con tu cuenta, el campeonato de pilotos queda guardado para siempre y lo ves desde cualquier dispositivo.</div>
+      <h3 style="margin-top:18px">Campeonato de pilotos</h3>
+      <div class="cta-row" style="margin-top:6px">
+        <button class="btn ghost" id="pNew"><span>Arrancar nuevo</span></button>
+        <button class="btn ghost" id="pReset"><span>Resetear</span></button>
+      </div>
+      <div class="note"><b>Arrancar nuevo:</b> guarda el actual en "campeonatos anteriores" y arranca en 0. <b>Resetear:</b> lo borra y arranca en 0.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CAMPEONATO (página propia, como "Goleadores") ============ -->
+<section class="screen" id="s-champpage">
+  <h1>Campeonato <em>de pilotos</em></h1>
+  <p class="sub" id="cpSub"></p>
+  <div class="panel">
+    <table><thead><tr><th>#</th><th>Piloto</th><th>Carreras</th><th>Victorias</th><th>Última carrera</th><th style="text-align:right">Puntos</th></tr></thead><tbody id="cpBody"></tbody></table>
+    <div class="note">En cada carrera que juegas, los 22 pilotos suman 25-18-15-12-10-8-6-4-2-1 según donde terminaron. Puedes arrancar uno nuevo desde tu perfil o desde Ajustes.</div>
+  </div>
+</section>
+
+<!-- ============ PANTALLA 1: ARMA ============ -->
+<section class="screen" id="s-build">
+  <h1 id="buildTitle">Tira el dado. <em>Arma tu auto.</em></h1>
+  <p class="sub">Sale un año. Elige una pieza de esa temporada para una casilla libre. 5 tiradas, un auto de leyenda.</p>
+  <div class="grid">
+    <div class="panel">
+      <div class="rollbox">
+        <span class="die" id="die">🎲</span>
+        <div class="year" id="year">?<small id="yearsub">Tira para sortear una temporada</small></div>
+        <div style="margin-left:auto;text-align:right">
+          <button class="btn" id="rollBtn"><span>Tirar</span></button>
+          <div class="note" id="rerolls"></div>
+        </div>
+      </div>
+      <div class="tabs" id="tabs"></div>
+      <div class="list" id="list"><div class="empty">🏁 Tira el dado para ver la parrilla de ese año</div></div>
+    </div>
+    <div class="panel">
+      <h3>Tu auto</h3>
+      <div class="carwrap" id="carsvg"></div>
+      <div class="slots" id="slots"></div>
+      <div class="avg"><span class="k" style="color:var(--muted);font-weight:700;letter-spacing:1px">MEDIA DEL AUTO</span><b id="avg">—</b></div>
+      <button class="btn cta" id="toRace" disabled><span>A la clasificación →</span></button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PANTALLA 2: QUALY (una vuelta, con dado) ============ -->
+<section class="screen" id="s-quali">
+  <h1>Clasificación <em>a una vuelta</em></h1>
+  <p class="sub" id="qsub"></p>
+  <div class="grid">
+    <div class="panel"><h3>Tiempos</h3><div class="tower" id="qtower"><div class="empty">Esperando la tanda…</div></div></div>
+    <div class="panel" style="text-align:center">
+      <svg viewBox="0 0 800 460" id="qtrack" style="width:100%;max-height:170px"></svg><div class="note" id="qcircuit" style="margin-bottom:8px"></div><h3>Tu vuelta</h3>
+      <div class="die" id="qdie" style="font-size:64px">🎲</div>
+      <div class="year" id="qtime" style="font-size:54px;margin:8px 0">-:--.---</div>
+      <div id="qpos" style="font-size:20px;font-weight:700;min-height:56px"></div>
+      <button class="btn cta" id="qBtn"><span>Tirar la qualy</span></button>
+      <button class="btn cta" id="toRace2" style="display:none"><span>A la parrilla →</span></button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PANTALLA 3: CARRERA ============ -->
+<section class="screen" id="s-race">
+  <h1 id="raceTitle">Gran Premio</h1>
+  <p class="sub" id="raceSub"></p>
+  <div class="racegrid">
+    <div class="panel">
+      <div class="hud"><div class="lights" id="lights"><i></i><i></i><i></i><i></i><i></i></div><div class="lap" id="lap">VUELTA 0/20</div></div>
+      <svg class="track" viewBox="0 0 800 460" id="track">
+        <defs>
+          <pattern id="kerbp" width="16" height="16" patternUnits="userSpaceOnUse"><rect width="8" height="16" fill="#ff3b30"/><rect x="8" width="8" height="16" fill="#fff"/></pattern>
+        </defs>
+        <rect width="800" height="460" fill="#173320" rx="14"/>
+        <g id="trackg"></g>
+        <g id="cars"></g>
+      </svg>
+      <div class="note">Trazado: datos abiertos f1-circuits (MIT)</div>
+      <div class="radio" id="radio"></div>
+    </div>
+    <div class="panel">
+      <h3>Posiciones</h3>
+      <div class="tower" id="tower"></div>
+      <button class="btn cta" id="toResult" style="display:none"><span>Ver resultado →</span></button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PANTALLA 4: RESULTADO (+ campeonato opcional) ============ -->
+<section class="screen" id="s-result">
+  <div class="panel result">
+    <div class="note" style="text-transform:uppercase;letter-spacing:2px;font-weight:700">Terminaste</div>
+    <div class="pos" id="pos">P1</div>
+    <div id="resmsg" style="font-size:22px;font-weight:700"></div>
+    <div class="share" id="share"></div>
+    <div class="row-actions">
+      <button class="btn" id="again"><span>Otra tirada</span></button>
+      <button class="btn ghost" id="toChamp"><span>Ver campeonato de pilotos</span></button>
+    </div>
+  </div>
+  <div class="panel" id="champ" style="display:none;margin-top:20px">
+    <h3>Campeonato de pilotos · todas tus carreras</h3>
+    <table><thead><tr><th>#</th><th>Piloto</th><th>Carreras</th><th>Victorias</th><th>Esta carrera</th><th style="text-align:right">Puntos</th></tr></thead><tbody id="champBody"></tbody></table>
+    <div class="note">Es tu campeonato: arranca en 0 y en cada carrera que juegas los 22 pilotos suman 25-18-15-12-10-8-6-4-2-1 según donde terminaron, como un campeonato de verdad. (En el boceto se guarda en este navegador.)</div>
+  </div>
+</section>
+</main>
+<footer>
+  <button class="pill" id="fDonate">☕ Apoya a BoxBox</button>
+  <button class="link" id="fSuggest">Sugerencias y mejoras</button>
+  <button class="link" id="fRating">¿No estás de acuerdo con alguna media?</button>
+  <span style="margin-left:auto">Juego de fans · sin afiliación con la F1, equipos ni pilotos · Trazados: f1-circuits (MIT)</span>
+</footer>
+
+<div class="modal" id="mDonate"><div class="box"><button class="x" data-close>×</button>
+  <h2>Apoya a BoxBox ☕</h2>
+  <p class="note" style="margin-top:0">Si te gustó y quieres ayudar a pagar el servidor y a sumar temporadas, puedes invitarme un café. Es opcional: el juego es y seguirá siendo gratis.</p>
+  <div class="opt"><span><b>Cafecito</b><br><small style="color:var(--muted)">Pesos argentinos · tarjeta o Mercado Pago</small></span><a class="nb" href="#" data-demo>Invitar</a></div>
+  <div class="opt"><span><b>Ko-fi</b><br><small style="color:var(--muted)">Internacional · tarjeta o PayPal</small></span><a class="nb" href="#" data-demo>Invitar</a></div>
+  <div class="note">Boceto: los enlaces todavía no apuntan a ninguna cuenta.</div>
+</div></div>
+
+<div class="modal" id="mSuggest"><div class="box"><button class="x" data-close>×</button>
+  <h2>Sugerencias y mejoras</h2>
+  <p class="note" style="margin-top:0">¿Una idea, un error o una media que te parece injusta? Cuéntame.</p>
+  <select id="sType"><option>Idea o mejora</option><option>Media injusta</option><option>Error / bug</option><option>Otro</option></select>
+  <textarea id="sText" rows="5" placeholder="Ej.: Senna 1988 debería ser 99, no 98…"></textarea>
+  <input id="sMail" placeholder="Tu email (opcional, por si quiero responderte)">
+  <button class="btn cta" id="sSend"><span>Enviar</span></button>
+  <div class="note" id="sOk"></div>
+</div></div>
+
+<div class="modal" id="mFriends"><div class="box"><button class="x" data-close>×</button>
+  <h2>Con amigos</h2>
+  <p class="note" style="margin-top:0">Hasta 22 jugadores, uno por auto. Todos reciben los mismos dados, arman en 3 minutos y ven la misma carrera a la misma hora.</p>
+  <button class="btn cta" disabled><span>Crear sala</span></button>
+  <input placeholder="Código de sala (ej. MONZA-7Q4)" disabled>
+  <div class="note">Llega con la versión online (necesita servidor). En este boceto se juega solo o el desafío del día.</div>
+</div></div>
+
+<div class="modal" id="mLogin"><div class="box"><button class="x" data-close>×</button>
+  <h2>Continuar con Google</h2>
+  <p class="note" style="margin-top:0">En la versión online, al iniciar sesión con tu cuenta de Gmail tu campeonato de pilotos queda guardado para siempre y sincronizado entre dispositivos. En este boceto todavía no hay servidor, así que se guarda solo en este navegador.</p>
+  <button class="btn cta" data-close><span>Entendido</span></button>
+</div></div>
+
+
+<script src="tracks.js"></script>
+<script>
+// ---------- Datos de ejemplo (nombres reales, medias inventadas para el boceto) ----------
+const DATA = {
+  1976:{piloto:[["N. Lauda","Ferrari",96],["J. Hunt","McLaren",93],["J. Scheckter","Tyrrell",88],["C. Regazzoni","Ferrari",85],["P. Depailler","Tyrrell",84],["A. Merzario","March / Wolf",72],["L. Perkins","Brabham",65]],
+        coche:[["Ferrari 312T2","",95],["McLaren M23","",91],["Tyrrell P34 (6 ruedas)","",86],["Ligier JS5","",80]],
+        motor:[["Ferrari flat-12","",94],["Ford DFV V8","",88],["Matra V12","",82]],
+        jefe:[["D. Audetto","Ferrari",85],["T. Mayer","McLaren",86],["K. Tyrrell","Tyrrell",88]],
+        estratega:[["M. Forghieri","Ferrari",93],["G. Coppuck","McLaren",86]]},
+  1988:{piloto:[["A. Senna","McLaren",98],["A. Prost","McLaren",97],["G. Berger","Ferrari",87],["N. Piquet","Lotus",82],["A. Nannini","Benetton",80],["I. Capelli","March",79],["P. Martini","Minardi",72],["S. Johansson","Ligier",70]],
+        coche:[["McLaren MP4/4","15 de 16 victorias",99],["Ferrari F187/88C","",85],["Benetton B188","",80],["Minardi M188","",66]],
+        motor:[["Honda V6 turbo","",98],["Ferrari V6 turbo","",88],["Ford DFR V8","",76],["Judd V8","",74]],
+        jefe:[["R. Dennis","McLaren",95],["P. Rice","Lotus",74],["G. C. Minardi","Minardi",70]],
+        estratega:[["S. Nichols","McLaren",88],["F. Lombardi","Ferrari",80]]},
+  1991:{piloto:[["A. Senna","McLaren",99],["N. Mansell","Williams",95],["A. Prost","Ferrari",93],["R. Patrese","Williams",88],["M. Schumacher","Jordan / Benetton",86],["J. Alesi","Ferrari",84],["N. Piquet","Benetton",82],["E. Pirro","Dallara",72],["A. Suzuki","Lola",68]],
+        coche:[["Williams FW14","",94],["McLaren MP4/6","",93],["Jordan 191","",84],["Ferrari 642/643","",82]],
+        motor:[["Renault V10","",94],["Honda V12","",93],["Ford HB V8","",80],["Lamborghini V12","",70]],
+        jefe:[["R. Dennis","McLaren",94],["F. Williams","Williams",93],["E. Jordan","Jordan",80]],
+        estratega:[["P. Head","Williams",91],["N. Oatley","McLaren",85],["G. Anderson","Jordan",82]]},
+  2004:{piloto:[["M. Schumacher","Ferrari",98],["K. Räikkönen","McLaren",92],["F. Alonso","Renault",91],["J. Button","BAR",89],["J. P. Montoya","Williams",89],["R. Barrichello","Ferrari",88],["G. Fisichella","Sauber",84],["G. Pantano","Jordan",66]],
+        coche:[["Ferrari F2004","15 victorias",98],["BAR 006","",87],["Renault R24","",86],["Minardi PS04B","",62]],
+        motor:[["Ferrari V10","",97],["BMW V10","",92],["Honda V10","",90],["Cosworth V10","",78]],
+        jefe:[["J. Todt","Ferrari",97],["F. Briatore","Renault",90],["P. Stoddart","Minardi",68]],
+        estratega:[["R. Brawn","Ferrari",99],["P. Symonds","Renault",90],["G. Willis","BAR",84]]},
+  2023:{piloto:[["M. Verstappen","Red Bull",98],["F. Alonso","Aston Martin",92],["L. Hamilton","Mercedes",91],["C. Leclerc","Ferrari",90],["L. Norris","McLaren",90],["S. Pérez","Red Bull",82],["K. Magnussen","Haas",76],["L. Stroll","Aston Martin",75],["L. Sargeant","Williams",66]],
+        coche:[["Red Bull RB19","21 de 22 victorias",99],["Mercedes W14","",86],["Ferrari SF-23","",86],["Williams FW45","",74]],
+        motor:[["Honda RBPT V6 híbrido","",95],["Mercedes V6 híbrido","",94],["Ferrari V6 híbrido","",93],["Renault V6 híbrido","",86]],
+        jefe:[["C. Horner","Red Bull",92],["T. Wolff","Mercedes",92],["J. Vowles","Williams",80],["G. Steiner","Haas",78]],
+        estratega:[["H. Lambiase","Red Bull",92],["P. Bonnington","Mercedes",90],["R. Jain","Ferrari",78]]}
+};
+const SLOTS=[["piloto","Piloto"],["coche","Coche"],["motor","Motor"],["jefe","Jefe de equipo"],["estratega","Estratega"]];
+// Rivales: leyendas reales con una media de ejemplo
+const LEGENDS=[["J. M. Fangio",'#4fc3f7',95],["J. Clark",'#81c784',96],["J. Stewart",'#ba68c8',94],["N. Lauda",'#ef5350',95],["A. Prost",'#ffb74d',96],["A. Senna",'#ffd23f',98],["N. Mansell",'#e57373',91],["N. Piquet",'#64b5f6',90],["M. Häkkinen",'#b0bec5',93],["M. Schumacher",'#f44336',98],["F. Alonso",'#29b6f6',95],["K. Räikkönen",'#90a4ae',91],["S. Vettel",'#5c6bc0',93],["L. Hamilton",'#26a69a',97],["N. Rosberg",'#80cbc4',89],["M. Verstappen",'#3949ab',98],["C. Leclerc",'#e53935',91],["L. Norris",'#ff9800',91],["G. Villeneuve",'#d32f2f',92],["D. Hill",'#8d6e63',88],["J. Button",'#cddc39',89],["J. Hunt",'#f06292',90]];
+let TRACK=null;
+const PTS=[25,18,15,12,10,8,6,4,2,1];
+let rnd=Math.random; const pick=a=>a[Math.floor(rnd()*a.length)];
+const LAPS=+(new URLSearchParams(location.search).get('laps')||20);
+
+// ---------- Estado ----------
+let year=null, cat=null, rerolls=2, picks={}, offer={}, FIELD=[], GRID=[];
+const $=id=>document.getElementById(id);
+const rc=r=>r>=95?'r95':r>=90?'r90':r>=80?'r80':'r0';
+const fmt=t=>{const m=Math.floor(t/60), s=(t-m*60).toFixed(3).padStart(6,'0'); return `${m}:${s}`};
+
+function carSVG(color){ // auto de fórmula visto desde arriba, dibujo propio
+  const c=color||'#3d4050', f=Object.keys(picks).length;
+  return `<svg width="250" height="120" viewBox="0 0 250 120">
+   <rect x="18" y="8" width="34" height="26" rx="5" fill="#111"/><rect x="18" y="86" width="34" height="26" rx="5" fill="#111"/>
+   <rect x="172" y="4" width="40" height="30" rx="6" fill="#111"/><rect x="172" y="86" width="40" height="30" rx="6" fill="#111"/>
+   <rect x="2" y="22" width="12" height="76" rx="3" fill="${c}"/>
+   <rect x="228" y="18" width="18" height="84" rx="3" fill="${c}"/>
+   <path d="M10 52 L70 44 L120 38 L190 40 L232 48 L232 72 L190 80 L120 82 L70 76 L10 68 Z" fill="${c}"/>
+   <path d="M95 46 L150 42 L175 50 L175 70 L150 78 L95 74 Z" fill="#000" opacity=".25"/>
+   <ellipse cx="130" cy="60" rx="18" ry="11" fill="#0d0d12"/><circle cx="132" cy="60" r="7" fill="${f>=1?'#ffd23f':'#555'}"/>
+   <text x="70" y="64" fill="#fff" font-family="Titillium Web" font-weight="900" font-style="italic" font-size="14">${f>=1?'01':''}</text>
+  </svg>`;
+}
+function renderSlots(){
+  const filled=Object.keys(picks).length;
+  $('carsvg').innerHTML=carSVG(filled?'#ff3b30':null);
+  $('slots').innerHTML=SLOTS.map(([k,l])=>{
+    const p=picks[k];
+    return `<div class="slot ${p?'filled':''}"><span class="k">${l}</span>${p?`<span class="v">${p.n} <small style="color:var(--muted)">${p.y}</small> <span class="rt ${rc(p.r)}" style="font-size:14px;padding:2px 6px;margin-left:6px">${p.r}</span></span>`:'<span style="color:#555">—</span>'}</div>`}).join('');
+  const vals=Object.values(picks).map(p=>p.r);
+  $('avg').textContent=vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length):'—';
+  $('toRace').disabled=filled<5;
+  $('rollBtn').disabled=filled>=5;
+}
+
+// Cada tirada muestra solo parte de la temporada: las piezas top aparecen menos.
+// Un 99 sale, pero no siempre (≈30% de las tiradas de ese año).
+function makeOffer(y){
+  const o={};
+  for(const [k] of SLOTS){
+    const all=DATA[y][k];
+    let shown=all.filter(it=>rnd() < (it[2]>=97?0.3:it[2]>=93?0.5:it[2]>=88?0.75:1));
+    if(shown.length<2){
+      const rest=all.filter(it=>!shown.includes(it)).sort((a,b)=>a[2]-b[2]);
+      shown=shown.concat(rest.slice(0,2-shown.length));
+    }
+    o[k]={shown:shown.sort((a,b)=>b[2]-a[2]), total:all.length};
+  }
+  return o;
+}
+function renderTabs(){
+  $('tabs').innerHTML=SLOTS.map(([k,l])=>`<div class="tab ${picks[k]?'done':''} ${cat===k?'on':''}" data-k="${k}">${l}</div>`).join('');
+  document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{ if(picks[t.dataset.k]) return; cat=t.dataset.k; renderTabs(); renderList(); });
+}
+function renderList(){
+  if(!year) return;
+  const {shown,total}=offer[cat];
+  $('list').innerHTML=`<div class="note" style="margin:0 0 4px">${shown.length} de ${total} disponibles en esta tirada</div>`+
+    shown.map((it,i)=>`<div class="pick" data-i="${i}"><div class="who"><b>${it[0]}</b><small>${it[1]||year}</small></div><div class="rt ${rc(it[2])}">${it[2]}</div></div>`).join('');
+  document.querySelectorAll('.pick').forEach(el=>el.onclick=()=>{
+    const it=shown[+el.dataset.i]; picks[cat]={n:it[0],y:year,r:it[2]};
+    const y=year; year=null; cat=null;
+    $('year').innerHTML='?<small>Elegiste. Tira de nuevo</small>'; $('rollBtn').querySelector('span').textContent='Tirar';
+    $('list').innerHTML=`<div class="empty">✅ ${it[0]} (${y}) a tu auto. ${Object.keys(picks).length<5?'Tira otra vez.':'¡Auto completo!'}</div>`;
+    $('tabs').innerHTML=''; renderSlots();
+  });
+}
+$('rollBtn').onclick=()=>{
+  if(year && rerolls<=0) return;
+  if(year) rerolls--;
+  const ys=Object.keys(DATA); year=pick(ys); offer=makeOffer(year);
+  $('die').classList.remove('spin'); void $('die').offsetWidth; $('die').classList.add('spin');
+  $('year').innerHTML=`${year}<small>Temporada sorteada</small>`;
+  $('rerolls').textContent=`Re-sortear: ${rerolls} restantes`;
+  $('rollBtn').querySelector('span').textContent='Re-sortear';
+  if(rerolls<=0) $('rollBtn').disabled=true;
+  cat=SLOTS.find(([k])=>!picks[k])[0]; renderTabs(); renderList();
+};
+renderSlots();
+
+function go(screen,step){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$(screen).classList.add('on');
+  ['st1','st2','st3','st4'].forEach((s,i)=>$(s).classList.toggle('on',i+1===step));window.scrollTo(0,0)}
+
+// ---------- Modelo: cada casilla pesa en el ritmo ----------
+// coche > piloto > motor en ritmo puro; jefe = mecánicos (boxes); estratega = cuándo parar.
+const paceOf=c=>(c.c-85)*0.045+(c.d-85)*0.035+(c.m-85)*0.025;
+function buildField(){
+  FIELD=[{name:`${picks.piloto.n} '${String(picks.piloto.y).slice(2)}`,color:'#ff3b30',me:true,
+          d:picks.piloto.r,c:picks.coche.r,m:picks.motor.r,j:picks.jefe.r,s:picks.estratega.r},
+    ...LEGENDS.filter(l=>l[0]!==picks.piloto.n).slice(0,21).map(([n,col,r])=>({name:n,color:col,d:r,
+          c:r-7+Math.round(rnd()*9),m:r-5+Math.round(rnd()*7),j:84+Math.round(rnd()*10),s:82+Math.round(rnd()*12)}))];
+}
+
+// ---------- QUALY ----------
+function setTrack(){
+  TRACK=pick(TRACKS);
+  const s=TRACK.d.match(/M([0-9.]+),([0-9.]+)/), layers=(id)=>`<path ${id} d="${TRACK.d}" fill="none" stroke="url(#kerbp)" stroke-width="34" stroke-linejoin="round"/>
+   <path d="${TRACK.d}" fill="none" stroke="#3a3c44" stroke-width="26" stroke-linejoin="round"/>
+   <path d="${TRACK.d}" fill="none" stroke="#fff" stroke-opacity=".25" stroke-width="1.5" stroke-dasharray="10 12"/>
+   <circle cx="${s[1]}" cy="${s[2]}" r="7" fill="#fff"/>`;
+  $('trackg').innerHTML=layers('id="tp"')+`<text x="${+s[1]+12}" y="${+s[2]+24}" fill="#fff" fill-opacity=".5" font-size="13" font-family="Titillium Web" font-weight="700">LARGADA / META</text>`;
+  $('qtrack').innerHTML='<defs><pattern id="kerbq" width="16" height="16" patternUnits="userSpaceOnUse"><rect width="8" height="16" fill="#ff3b30"/><rect x="8" width="8" height="16" fill="#fff"/></pattern></defs>'+layers('').replace('url(#kerbp)','url(#kerbq)');
+  $('qcircuit').textContent=`Ronda ${TRACK.round} · ${TRACK.circuit} · ${TRACK.km.replace('.',',')} km`;
+  $('raceTitle').innerHTML=`Gran Premio <em>de ${TRACK.gp}</em>`;
+  $('raceSub').textContent=`Ronda ${TRACK.round} · ${TRACK.circuit} · ${TRACK.km.replace('.',',')} km · 22 autos · ${LAPS} vueltas · una parada obligatoria`;
+  $('qsub').textContent=`Gran Premio de ${TRACK.gp}, sorteado del calendario 2026. Una vuelta lanzada por auto: tu piloto y tu auto marcan el ritmo; el dado pone la suerte (o el error).`;
+}
+$('toRace').onclick=()=>{buildField();setTrack();go('s-quali',2)};
+$('qBtn').onclick=()=>{
+  $('qBtn').disabled=true;
+  FIELD.forEach(c=>{
+    c.q=TRACK.lap-1.9-paceOf(c)-(c.d-85)*0.02+(rnd()-0.5)*0.7;
+    c.qErr=rnd()<Math.max(0,88-c.d)*0.015; // piloto flojo: error en la vuelta
+    if(c.qErr){c.qErr=pick(TRACK.corners);c.q+=1.2+rnd()*1.5}
+  });
+  const order=[...FIELD].sort(()=>rnd()-0.5); let i=0, done=[];
+  $('qdie').classList.add('spin');
+  const t=setInterval(()=>{
+    done.push(order[i++]); done.sort((a,b)=>a.q-b.q); const best=done[0].q;
+    $('qtower').innerHTML=done.map((c,k)=>`<div class="trow ${c.me?'me':''}"><span class="p">${k+1}</span><span class="c" style="background:${c.color}"></span><span>${c.name}${c.qErr?` <small style="color:var(--red)">· error en ${c.qErr}</small>`:''}</span><span class="g">${k?'+'+(c.q-best).toFixed(3):fmt(c.q)}</span></div>`).join('');
+    if(i>=order.length){clearInterval(t);
+      GRID=[...FIELD].sort((a,b)=>a.q-b.q); const me=GRID.findIndex(c=>c.me)+1, m=FIELD[0];
+      $('qtime').textContent=fmt(m.q);
+      $('qpos').innerHTML=`Largas <b style="color:var(--red)">P${me}</b>${m.qErr?`<br><small style="color:var(--muted)">Error en ${m.qErr}: perdiste tiempo</small>`:me===1?'<br><small style="color:var(--yellow)">¡POLE POSITION!</small>':''}`;
+      $('qBtn').style.display='none'; $('toRace2').style.display='block';
+    }
+  },110);
+};
+$('toRace2').onclick=()=>{go('s-race',3);startRace()};
+
+// ---------- CARRERA: se calcula vuelta a vuelta y después se anima ----------
+function simulate(){
+  const BASE=TRACK.lap, OPT=Math.round(LAPS/2), cars=GRID.map((c,i)=>({...c,grid:i+1,cum:[i*0.35],ev:[],dnf:0,stops:0}));
+  cars.forEach(c=>{
+    const err=(96-c.s)/5;                                  // estratega malo = se equivoca de vuelta
+    c.pit=Math.max(2,Math.min(LAPS-1,OPT+Math.round((rnd()*2-1)*err)));
+    c.extra=(c.s<84 && rnd()<(84-c.s)*0.05)?Math.min(LAPS-1,c.pit+2+Math.floor(rnd()*3)):0; // parada de más
+    c.stat=+(2.0+(95-c.j)*0.06+rnd()*0.4).toFixed(1);      // jefe de equipo = mecánicos
+  });
+  for(let lap=1;lap<=LAPS;lap++){
+    for(const c of cars){
+      if(c.dnf){continue}
+      const age=lap<=c.pit?lap:lap-c.pit;
+      let t=BASE-paceOf(c)+(rnd()-0.5)*0.6+age*0.22;      // gomas gastadas
+      const T=c.cum[c.cum.length-1];
+      if(lap===c.pit||lap===c.extra){t+=19+c.stat;c.stops++;
+        c.ev.push({T,lap,me:c.me,k:'pit',txt:lap===c.extra?`Box, box… ¿otra vez? Parada de ${c.stat}s y las gomas estaban bien`:`Box, box. Parada de ${c.stat}s${Math.abs(c.pit-OPT)>=3?(c.pit>OPT?' (tarde: las gomas ya estaban muertas)':' (demasiado pronto)'):''}`});}
+      if(c.me && lap===OPT+2 && c.pit>OPT+2) c.ev.push({T,lap,me:true,k:'radio',txt:'¡Estas gomas no dan más! ¿Cuándo paro?'});
+      if(rnd()<Math.max(0,90-c.d)*0.004){const loss=3+rnd()*4;t+=loss;
+        c.ev.push({T,lap,me:c.me,k:'off',txt:`${c.name} se sale de pista en ${pick(TRACK.corners)} (−${loss.toFixed(1)}s)`});}
+      if(rnd()<Math.max(0,80-c.d)*0.004){                 // piloto ≤ 80: puede chocar a otro
+        const near=cars.filter(o=>o!==c&&!o.dnf).sort((a,b)=>Math.abs(a.cum[a.cum.length-1]-T)-Math.abs(b.cum[b.cum.length-1]-T))[0];
+        c.dnf=lap; c.ev.push({T,lap,me:c.me,k:'crash',txt:`Choque de ${c.name} con ${near.name} en ${pick(TRACK.corners)}. ${c.name} abandona`});
+        if(near){ if(rnd()<0.35){near.dnf=lap; near.ev.push({T,lap,me:near.me,k:'crash',txt:`${near.name} también abandona por el choque`});}
+                  else near.cum[near.cum.length-1]+=8; }
+        continue;
+      }
+      if(rnd()<Math.max(0,86-c.m)*0.0012){c.dnf=lap;      // motor flojo: se rompe
+        c.ev.push({T,lap,me:c.me,k:'engine',txt:`Humo en ${c.name}: motor roto, abandona`});continue;}
+      c.cum.push(T+t);
+    }
+  }
+  // radio del jugador: cómo va la carrera cada pocas vueltas
+  const me=cars.find(c=>c.me); let prev=me.grid;
+  for(const lap of [3,6,9,12,15,18].filter(l=>l<LAPS)){
+    if(me.cum.length<=lap) break;
+    const alive=cars.filter(c=>c.cum.length>lap).sort((a,b)=>a.cum[lap]-b.cum[lap]);
+    const p=alive.indexOf(me)+1, ahead=alive[p-2], T=me.cum[lap];
+    const txt=p<prev?`P${p}. ¡Ganaste ${prev-p} puesto${prev-p>1?'s':''}! Sigue así.`
+      :p>prev?`P${p}. Perdimos ${p-prev} puesto${p-prev>1?'s':''}, hay que reaccionar.`
+      :ahead?`P${p}. ${ahead.name} está a ${(me.cum[lap]-ahead.cum[lap]).toFixed(1)}s. Empuja.`:`P${p}. Lideras. Controla el ritmo.`;
+    me.ev.push({T,lap,me:true,k:'radio',who:'eng',txt}); prev=p;
+  }
+  return cars;
+}
+function startRace(){
+  const tp=$('tp'), L=tp.getTotalLength(), cars=simulate();
+  const finishers=cars.filter(c=>!c.dnf), leaderEnd=Math.min(...finishers.map(c=>c.cum[LAPS]||1e9));
+  const endT=leaderEnd+6, scale=endT/32;                   // toda la carrera en ~32 segundos
+  cars.forEach(c=>{c.el=document.createElementNS('http://www.w3.org/2000/svg','g');
+    c.el.innerHTML=`<circle r="${c.me?8:6}" fill="${c.color}" stroke="${c.me?'#fff':'#000'}" stroke-width="2"/>`;$('cars').appendChild(c.el)});
+  const events=cars.flatMap(c=>c.ev).sort((a,b)=>a.T-b.T); let evI=0;
+  const prog=(c,T)=>{const n=c.cum.length-1; if(T>=c.cum[n]) return c.dnf? n+0.5 : n + (T-c.cum[n])/TRACK.lap;
+    let k=0; while(k<n && c.cum[k+1]<=T) k++; return k+(T-c.cum[k])/(c.cum[k+1]-c.cum[k]);};
+  const draw=T=>{cars.forEach(c=>{c.p=Math.min(prog(c,T),c.dnf?c.dnf-0.5:LAPS+0.05);
+    const pt=tp.getPointAtLength(((c.p*L)%L+L)%L); c.el.setAttribute('transform',`translate(${pt.x},${pt.y})`);
+    if(c.dnf && T>=c.cum[c.cum.length-1]) c.el.style.opacity=.3;});
+    const o=[...cars].sort((a,b)=>(!!a.out-!!b.out)||b.p-a.p);
+    tower(o,T);
+    $('lap').textContent=`VUELTA ${Math.min(LAPS,Math.floor(o[0].p)+1)}/${LAPS}`;};
+  cars.forEach(c=>c.out=false); draw(0);
+  const li=$('lights').children; let k=0;
+  const t=setInterval(()=>{ if(k<5){li[k].style.background='#ff3b30';li[k].style.boxShadow='0 0 10px #ff3b30';k++} else {clearInterval(t);$('lights').className='lights go';[...li].forEach(x=>x.style.cssText='');run()} },400);
+  function run(){
+    const t0=performance.now();
+    const tick=()=>{
+      const T=Math.min(endT,(performance.now()-t0)/1000*scale);
+      while(evI<events.length && events[evI].T<=T){const e=events[evI++]; if(e.k==='crash'||e.k==='engine'){cars.forEach(c=>{if(c.dnf && c.cum[c.cum.length-1]<=T) c.out=true})} msg(e)}
+      draw(T);
+      if(T<endT) setTimeout(tick,33); else finish(cars);
+    }; tick();
+  }
+}
+function tower(o){
+  const lead=o[0].p;
+  $('tower').innerHTML=o.map((c,i)=>`<div class="trow ${c.me?'me':''}" style="${c.out?'opacity:.4':''}"><span class="p">${i+1}</span><span class="c" style="background:${c.color}"></span><span>${c.name}</span><span class="g">${c.out?'OUT':i?'+'+((lead-c.p)*TRACK.lap).toFixed(1)+'s':'LÍDER'}</span></div>`).join('');
+}
+function msg(e){
+  if(!e.me && e.k==='pit') return;                        // las paradas de rivales no ensucian la radio
+  const bad=e.k!=='pit'&&e.k!=='radio';
+  const who=e.me?(e.k==='radio'?(e.who==='eng'?`📻 Ingeniero → ${picks.piloto.n}`:`📻 ${picks.piloto.n}`):e.k==='pit'?`📻 Estratega → ${picks.piloto.n}`:'⚠ Dirección de carrera'):'⚠ Dirección de carrera';
+  $('radio').insertAdjacentHTML('afterbegin',`<div class="msg ${bad?'inc':''}"><b>${who} · V${e.lap}</b>${e.k==='radio'?`"${e.txt}"`:e.txt}</div>`);
+  while($('radio').children.length>5)$('radio').lastChild.remove();
+}
+let RESULT=null;
+function finish(cars){
+  const cls=[...cars].sort((a,b)=>(!!a.dnf-!!b.dnf)||(a.dnf&&b.dnf?b.dnf-a.dnf:a.cum[LAPS]-b.cum[LAPS]));
+  const pos=cls.findIndex(c=>c.me)+1, me=cars.find(c=>c.me);
+  RESULT={pos,dnf:me.dnf,grid:me.grid,stops:me.stops};
+  $('radio').insertAdjacentHTML('afterbegin',`<div class="msg" style="border-color:#fff"><b>🏁 Bandera a cuadros</b>${me.dnf?'Abandonaste en la vuelta '+me.dnf:'Terminaste P'+pos}.</div>`);
+  $('toResult').style.display='block';
+  saveRace(cls); saveStats(pos,me.dnf);
+}
+
+// ---------- Campeonato real (en el boceto: localStorage) ----------
+// Cada carrera suma puntos a los 22 pilotos según donde terminaron.
+const KEY='boxbox_campeonato_v2'; let LAST={};
+function loadChamp(){try{return JSON.parse(localStorage.getItem(KEY))||{}}catch(e){return {}}}
+function saveRace(cls){const c=loadChamp(); LAST={};
+  cls.forEach((car,i)=>{const n=car.me?picks.piloto.n:car.name, r=c[n]||{pts:0,races:0,wins:0}, pts=car.dnf?0:(PTS[i]||0);
+    r.pts+=pts; r.races++; if(!car.dnf&&i===0) r.wins++; c[n]=r; LAST[n]=car.dnf?'DNF':pts?'+'+pts:'—';});
+  try{localStorage.setItem(KEY,JSON.stringify(c))}catch(e){}}
+
+$('toResult').onclick=()=>{
+  const {pos,dnf,grid,stops}=RESULT, pts=dnf?0:(PTS[pos-1]||0), p=picks.piloto;
+  $('pos').textContent=dnf?'DNF':'P'+pos; $('pos').className='pos'+(!dnf&&pos===1?' p1':'');
+  $('resmsg').textContent=pts?`+${pts} puntos para ${p.n} en tu campeonato`:dnf?'Abandono: sin puntos':'Sin puntos esta vez';
+  $('share').innerHTML=`BOXBOX · GP de ${TRACK.gp} (${TRACK.city})<br>🏁 ${dnf?'DNF':'P'+pos+'/22'} · largó P${grid} · ${stops} parada${stops===1?'':'s'}<br>${SLOTS.map(([k])=>picks[k].r>=95?'🟪':picks[k].r>=90?'🟩':picks[k].r>=80?'🟨':'⬛').join('')} ${p.n} ${p.y} · media ${$('avg').textContent}`;
+  go('s-result',4);
+};
+$('toChamp').onclick=()=>{
+  const rows=Object.entries(loadChamp()).sort((a,b)=>b[1].pts-a[1].pts);
+  $('champBody').innerHTML=rows.length?rows.map(([n,r],i)=>`<tr class="${n===picks.piloto.n?'hl':''}"><td class="n">${i+1}</td><td><b>${n}</b></td><td>${r.races}</td><td>${r.wins}</td><td style="color:var(--muted)">${LAST[n]||''}</td><td class="pts">${r.pts}</td></tr>`).join('')
+    :'<tr><td colspan="6" class="empty">Todavía sin puntos. ¡Corre tu primera carrera!</td></tr>';
+  $('champ').style.display='block'; $('champ').scrollIntoView({behavior:'smooth'});
+};
+$('again').onclick=()=>{try{sessionStorage.setItem('boxbox_auto',MODE)}catch(e){};location.reload()};
+// ---------- Inicio, navegación, ajustes, perfil, modales ----------
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+let MODE='solo';
+const today=new Date(), DAYKEY=today.getFullYear()*10000+(today.getMonth()+1)*100+today.getDate();
+function startGame(mode){
+  MODE=mode; if(mode==='daily') rnd=mulberry32(DAYKEY);   // desafío del día: mismos dados para todos hoy
+  $('st0').style.display=''; go('s-build',1);
+  $('buildTitle').innerHTML=mode==='daily'?`Desafío <em>del día · ${today.toLocaleDateString('es')}</em>`:'Tira el dado. <em>Arma tu auto.</em>';
+}
+$('hPlay').onclick=()=>startGame('solo');
+$('hDaily').onclick=$('nDaily').onclick=()=>startGame('daily');
+$('hFriends').onclick=()=>openM('mFriends');
+$('hChamp').onclick=$('nChamp').onclick=()=>showChampPage();
+$('nProfile').onclick=()=>showProfile();
+$('logo').onclick=()=>{location.href=location.pathname+location.search};
+$('homeCar').innerHTML=carSVG('#ff3b30');
+// Ajustes: tema claro / oscuro
+function setTheme(t){document.documentElement.dataset.theme=t;try{localStorage.setItem('boxbox_tema',t)}catch(e){}}
+try{setTheme(localStorage.getItem('boxbox_tema')||'dark')}catch(e){setTheme('dark')}
+$('nSettings').onclick=e=>{e.stopPropagation();$('ddm').classList.toggle('open')};
+document.addEventListener('click',()=>$('ddm').classList.remove('open'));
+$('tDark').onclick=()=>setTheme('dark'); $('tLight').onclick=()=>setTheme('light');
+$('dReset').onclick=()=>resetChamp(false); $('dNew').onclick=()=>resetChamp(true);
+// Modales
+function openM(id){$(id).classList.add('open')}
+document.querySelectorAll('.modal').forEach(m=>{m.onclick=e=>{if(e.target===m||e.target.closest('[data-close]'))m.classList.remove('open')}});
+document.querySelectorAll('[data-demo]').forEach(a=>a.onclick=e=>{e.preventDefault();alert('Boceto: acá irá tu enlace real de donación.')});
+$('fDonate').onclick=()=>openM('mDonate');
+$('fSuggest').onclick=()=>{$('sType').selectedIndex=0;openM('mSuggest')};
+$('fRating').onclick=()=>{$('sType').selectedIndex=1;openM('mSuggest')};
+$('pLogin').onclick=()=>openM('mLogin');
+$('sSend').onclick=()=>{ if(!$('sText').value.trim()){$('sOk').textContent='Escribe tu idea primero.';return}
+  try{const a=JSON.parse(localStorage.getItem('boxbox_sugerencias')||'[]');a.push({tipo:$('sType').value,texto:$('sText').value,email:$('sMail').value,fecha:new Date().toISOString()});localStorage.setItem('boxbox_sugerencias',JSON.stringify(a))}catch(e){}
+  $('sText').value='';$('sOk').textContent='¡Gracias! (Boceto: en la versión online te llega a tu panel.)'};
+// Estadísticas del jugador
+function loadStats(){try{return JSON.parse(localStorage.getItem('boxbox_stats'))||{races:0,wins:0,podiums:0,best:null}}catch(e){return {races:0,wins:0,podiums:0,best:null}}}
+function saveStats(pos,dnf){const s=loadStats();s.races++;if(!dnf){if(pos===1)s.wins++;if(pos<=3)s.podiums++;s.best=s.best?Math.min(s.best,pos):pos}try{localStorage.setItem('boxbox_stats',JSON.stringify(s))}catch(e){}}
+function loadHist(){try{return JSON.parse(localStorage.getItem('boxbox_historial'))||[]}catch(e){return []}}
+function resetChamp(archive){
+  const rows=Object.entries(loadChamp()).sort((a,b)=>b[1].pts-a[1].pts);
+  if(!rows.length){alert('Tu campeonato ya está en 0.');return}
+  if(!confirm(archive?'¿Arrancar un nuevo campeonato? El actual se guarda en "campeonatos anteriores".':'¿Resetear el campeonato? Se borran los puntos de todos los pilotos.'))return;
+  if(archive){const h=loadHist();h.unshift({fecha:new Date().toLocaleDateString('es'),carreras:Math.max(...rows.map(r=>r[1].races)),podio:rows.slice(0,3).map(([n,r])=>`${n} (${r.pts})`)});try{localStorage.setItem('boxbox_historial',JSON.stringify(h))}catch(e){}}
+  try{localStorage.removeItem(KEY);localStorage.removeItem('boxbox_stats')}catch(e){}
+  LAST={};
+  if($('s-profile').classList.contains('on'))showProfile(); if($('s-champpage').classList.contains('on'))showChampPage();
+}
+$('pReset').onclick=()=>resetChamp(false); $('pNew').onclick=()=>resetChamp(true);
+function champRows(hl){const rows=Object.entries(loadChamp()).sort((a,b)=>b[1].pts-a[1].pts);
+  return rows.length?rows.map(([n,r],i)=>`<tr class="${n===hl?'hl':''}"><td class="n">${i+1}</td><td><b>${n}</b></td><td>${r.races}</td><td>${r.wins}</td><td style="color:var(--muted)">${LAST[n]||''}</td><td class="pts">${r.pts}</td></tr>`).join('')
+  :'<tr><td colspan="6" class="empty">Todavía sin puntos. ¡Corre tu primera carrera!</td></tr>'}
+function showChampPage(){$('st0').style.display='none';$('cpBody').innerHTML=champRows(picks.piloto&&picks.piloto.n);
+  const s=loadStats();$('cpSub').textContent=`${s.races} carrera${s.races===1?'':'s'} en este campeonato`;go('s-champpage',0)}
+function showProfile(){$('st0').style.display='none';const s=loadStats();
+  $('pStats').innerHTML=`<div><b>${s.races}</b>Carreras</div><div><b>${s.wins}</b>Victorias</div><div><b>${s.podiums}</b>Podios</div><div><b>${s.best?'P'+s.best:'—'}</b>Mejor</div>`;
+  const h=loadHist();$('pHist').innerHTML=h.length?h.map((x,i)=>`<div class="opt"><span><b>Campeonato ${h.length-i}</b><br><small>${x.fecha} · ${x.carreras} carreras</small></span><small style="text-align:right">${x.podio.join('<br>')}</small></div>`).join(''):'Todavía no cerraste ningún campeonato.';
+  go('s-profile',0)}
+(function(){const s=loadStats();$('hCount').textContent=s.races?`${s.races} carrera${s.races===1?'':'s'} en tu campeonato actual`:'Tu campeonato arranca en 0'})();
+// "Otra tirada": vuelve a jugar el mismo modo sin pasar por el inicio
+try{const m=sessionStorage.getItem('boxbox_auto');if(m){sessionStorage.removeItem('boxbox_auto');startGame(m)}}catch(e){}
+
+
+</script>
+</body>
+</html>
