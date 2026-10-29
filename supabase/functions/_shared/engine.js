@@ -371,3 +371,20 @@ export function dailyRoll(DATA, secret, i) {
 // Lo que se le muestra al jugador durante el desafío: sin las medias.
 export const blindView = (roll) => ({ i: roll.i, year: roll.year,
   offer: Object.fromEntries(SLOTS.map((k) => [k, { total: roll.offer[k].total, shown: roll.offer[k].shown.map((x) => [x[0], x[1]]) }])) });
+
+// ---------- modo carrera 2026 ----------
+// Calendario (t = circuito en circuitos.json). El GP de Arabia Saudí figura como cancelado y se saltea.
+// "Bahrein en Malasia" se corre en el trazado de Baréin: no hay trazado de Malasia.
+export const CAL_2026 = [
+  { gp: "Australia", date: "8 mar", t: 0 }, { gp: "China", date: "15 mar", t: 1, sprint: true }, { gp: "Japón", date: "29 mar", t: 2 },
+  { gp: "Arabia Saudí", date: "—", cancel: true },
+  { gp: "Miami", date: "3 may", t: 5, sprint: true }, { gp: "Canadá", date: "24 may", t: 6, sprint: true }, { gp: "Mónaco", date: "7 jun", t: 7 },
+  { gp: "Barcelona-Catalunya", date: "14 jun", t: 8 }, { gp: "Austria", date: "28 jun", t: 9 }, { gp: "Gran Bretaña", date: "5 jul", t: 10, sprint: true },
+  { gp: "Bélgica", date: "19 jul", t: 11 }, { gp: "Hungría", date: "26 jul", t: 12 }, { gp: "Países Bajos", date: "23 ago", t: 13, sprint: true },
+  { gp: "Italia", date: "6 sep", t: 14 }, { gp: "España (Madrid)", date: "13 sep", t: 15 }, { gp: "Azerbaiyán", date: "26 sep", t: 16 },
+  { gp: "Bahrein en Malasia", date: "4 oct", t: 3 }, { gp: "Singapur", date: "11 oct", t: 17, sprint: true }, { gp: "Estados Unidos", date: "25 oct", t: 18 },
+  { gp: "México", date: "1 nov", t: 19 }, { gp: "São Paulo", date: "8 nov", t: 20 }, { gp: "Las Vegas", date: "22 nov", t: 21 },
+  { gp: "Catar", date: "29 nov", t: 22 }, { gp: "Abu Dabi", date: "6 dic", t: 23 }];
+// Eventos de una sala de carrera: en cada fin de semana con sprint, primero la sprint y después el GP (k = "sprint" | "gp").
+export const eventos2026 = () => CAL_2026.flatMap((c, i) => c.cancel ? [] :
+  [...(c.sprint ? [{ i, k: "sprint", t: c.t, gp: c.gp, date: c.date }] : []), { i, k: "gp", t: c.t, gp: c.gp, date: c.date }]);

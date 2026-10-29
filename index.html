@@ -290,6 +290,7 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
 <section class="screen" id="s-lobby">
   <h1>Sala <em id="lCode">—</em></h1>
   <p class="sub">Pásale el código o el link a tus amigos. Cuando estén todos, quien creó la sala larga y tienen 3 minutos para armar.</p>
+  <div class="panel" id="lCareer" style="display:none;margin-bottom:14px"></div>
   <div class="grid">
     <div class="panel"><h3>Pilotos en la sala (<span id="lCount">0</span>/22)</h3><div class="tower" id="lPlayers"></div>
       <div class="note">Los lugares libres los completan leyendas.</div></div>
@@ -542,6 +543,7 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
   <h2>Con amigos</h2>
   <p class="note" style="margin-top:0">Hasta 22 jugadores, uno por auto. Todos reciben los mismos dados, arman en 3 minutos y ven la misma carrera a la misma hora.</p>
   <input id="fName" maxlength="16" placeholder="Tu nombre (lo ven tus amigos)">
+  <label class="note" style="display:flex;gap:8px;align-items:center;margin:2px 0 8px"><input type="checkbox" id="fCareer" style="width:auto;margin:0"> 🏁 Modo carrera 2026: el calendario completo, con sprints y tabla de puntos</label>
   <button class="btn cta" id="fCreate"><span>Crear sala</span></button>
   <div class="note" style="text-align:center;margin:14px 0 2px">o únete con un código</div>
   <input id="fCode" maxlength="20" placeholder="Código (ej. MONZA-7Q4)" style="text-transform:uppercase">
@@ -648,9 +650,9 @@ let RACE=null, MEKEY='h:me', SEED='', HUMANS=[], DECISIONS={}, PIT=null;
 const carByKey=k=>RACE.cars.find(c=>c.key===k);
 // Opciones según el modo: en el modo carrera el circuito y la sprint vienen del calendario. El aviso de tormenta con decisión
 // solo existe en solo, amistoso y carrera (en salas y desafío del día la lluvia, si sale, es la de toda la carrera).
-const raceOpts=()=>MODE==='career'&&CAR_EVT?{trackIdx:CAR_EVT.trackIdx,sprint:CAR_EVT.kind==='sprint',storm:CAR_EVT.kind!=='sprint'}:{storm:MODE==='solo'||MODE==='friendly'};
+const raceOpts=()=>MODE==='room'&&RS&&RS.room.evento?{trackIdx:RS.room.evento.t,sprint:RS.room.evento.k==='sprint',storm:false}:MODE==='career'&&CAR_EVT?{trackIdx:CAR_EVT.trackIdx,sprint:CAR_EVT.kind==='sprint',storm:CAR_EVT.kind!=='sprint'}:{storm:MODE==='solo'||MODE==='friendly'};
 const newRace=(decisions)=>E.runRace({DATA,tracks:TRACKS,seed:SEED,humans:HUMANS,laps:LAPS,decisions,...raceOpts()});
-const GPN=()=>MODE==='career'&&CAR_EVT?CAR_EVT.gp:TRACK.gp;
+const GPN=()=>MODE==='career'&&CAR_EVT?CAR_EVT.gp:MODE==='room'&&RS&&RS.room.evento?RS.room.evento.gp:TRACK.gp;
 const ptsTable=()=>RACE&&RACE.sprint?E.SPRINT_PTS:PTS;
 
 // Solo, amistoso y desafío del día: carrera nueva con el auto que armaste
@@ -832,7 +834,7 @@ function finish(){
   else if(MODE==='friendly'||MODE==='daily'){ /* no suma al campeonato: el amistoso no cuenta y el diario se registra en el servidor */ if(MODE==='daily') dailyFinish(); }
   else { saveRace(me); saveStats(me.pos,me.dnf); }
   // La carrera de la sala terminó: no volver a ella al recargar (el resultado sigue en pantalla).
-  if(MODE==='room'){ try{localStorage.removeItem(ROOM_KEY)}catch(e){} }
+  if(MODE==='room'&&!(RS&&RS.room.modo==='carrera')){ try{localStorage.removeItem(ROOM_KEY)}catch(e){} }    // en modo carrera la sala sigue
 }
 
 // ---------- Por qué terminaste así ----------
@@ -883,11 +885,11 @@ $('toResult').onclick=()=>{
   if(MODE==='room'){
     const rows=RESULT.cls.map((c,i)=>({c,i})).filter(x=>x.c.human);
     $('roomRes').innerHTML=`<h3 style="margin:0 0 8px;font-size:13px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase">Resultado de la sala ${esc(ROOM.code)}</h3>`+
-      rows.map(({c,i})=>`<div class="trow ${c.me?'me':''}" style="margin-bottom:4px"><span class="p">${c.dnf?'—':i+1}</span><span class="c" style="background:${c.color}"></span><span>${c.name}</span><span class="g">${c.dnf?'DNF':(PTS[i]?'+'+PTS[i]+' pts':'')}</span></div>`).join('');
+      rows.map(({c,i})=>`<div class="trow ${c.me?'me':''}" style="margin-bottom:4px"><span class="p">${c.dnf?'—':i+1}</span><span class="c" style="background:${c.color}"></span><span>${c.name}</span><span class="g">${c.dnf?'DNF':(ptsTable()[i]?'+'+ptsTable()[i]+' pts':'')}</span></div>`).join('');
     $('roomRes').style.display='block'; $('again').querySelector('span').textContent='Volver al inicio';
   }
   $('roomRes').style.display=MODE==='room'?'block':'none'; $('dailyRes').style.display='none';
-  $('again').querySelector('span').textContent=career?'Volver al calendario':special?'Volver al desafío':MODE==='room'?'Volver al inicio':'Otra tirada';
+  $('again').querySelector('span').textContent=career?'Volver al calendario':special?'Volver al desafío':MODE==='room'?(RS&&RS.room.modo==='carrera'?'Volver a la sala':'Volver al inicio'):'Otra tirada';
   $('toChamp').style.display=special?'none':'';
   paintStory();
   go('s-result',4);
@@ -900,22 +902,14 @@ $('toChamp').onclick=()=>{
   $('champ').style.display='block'; $('champ').scrollIntoView({behavior:'smooth'});
 };
 $('again').onclick=()=>{ if(MODE==='career'){showCareer();return}
+  if(MODE==='room'&&RS&&RS.room.modo==='carrera'){ location.href=location.pathname+'?sala='+encodeURIComponent(ROOM.code); return }   // vuelve a la sala (la sesión de la sala queda guardada)
   if(MODE==='room'){forgetRoom();location.href=location.pathname;return}
   if(MODE==='daily'||MODE==='friendly'){location.href=location.pathname+'?desafio';return}
   try{sessionStorage.setItem('boxbox_auto',MODE)}catch(e){};location.reload()};
 // ---------- MODO CARRERA 2026 ----------
 // Calendario de la F1 2026 (t = circuito en circuitos.json). El GP de Arabia Saudí figura como cancelado y se saltea.
 // "Bahrein en Malasia" se corre en el trazado de Baréin: no tengo el de Malasia.
-const CAL=[
-  {gp:'Australia',date:'8 mar',t:0},{gp:'China',date:'15 mar',t:1,sprint:true},{gp:'Japón',date:'29 mar',t:2},
-  {gp:'Arabia Saudí',date:'—',cancel:true},
-  {gp:'Miami',date:'3 may',t:5,sprint:true},{gp:'Canadá',date:'24 may',t:6,sprint:true},{gp:'Mónaco',date:'7 jun',t:7},
-  {gp:'Barcelona-Catalunya',date:'14 jun',t:8},{gp:'Austria',date:'28 jun',t:9},{gp:'Gran Bretaña',date:'5 jul',t:10,sprint:true},
-  {gp:'Bélgica',date:'19 jul',t:11},{gp:'Hungría',date:'26 jul',t:12},{gp:'Países Bajos',date:'23 ago',t:13,sprint:true},
-  {gp:'Italia',date:'6 sep',t:14},{gp:'España (Madrid)',date:'13 sep',t:15},{gp:'Azerbaiyán',date:'26 sep',t:16},
-  {gp:'Bahrein en Malasia',date:'4 oct',t:3},{gp:'Singapur',date:'11 oct',t:17,sprint:true},{gp:'Estados Unidos',date:'25 oct',t:18},
-  {gp:'México',date:'1 nov',t:19},{gp:'São Paulo',date:'8 nov',t:20},{gp:'Las Vegas',date:'22 nov',t:21},
-  {gp:'Catar',date:'29 nov',t:22},{gp:'Abu Dabi',date:'6 dic',t:23}];
+let CAL=[];   // = E.CAL_2026 (supabase/functions/_shared/engine.js), se carga con el motor
 const CKEY='boxbox_carrera_2026';
 let CAR=null, CAR_EVT=null;
 function carLoad(){try{return JSON.parse(localStorage.getItem(CKEY))}catch(e){return null}}
@@ -926,7 +920,8 @@ function carNext(){
   const ev=CAL[CAR.i]; if(!ev) return null;
   return {ev,kind:ev.sprint&&!CAR.log.some(l=>l.i===CAR.i&&l.kind==='sprint')?'sprint':'gp'};
 }
-function showCareer(){
+async function showCareer(){
+  await READY; CAL=E.CAL_2026;
   CAR=carLoad()||{i:0,log:[],picks:null}; MODE='solo'; BLIND=false; CAR_EVT=null;
   $('st0').style.display='none'; renderCareer(); go('s-career',0);
 }
@@ -1069,7 +1064,7 @@ async function api(action,extra={}){
   catch(e){ throw new Error('Sin conexión con el servidor. Revisa tu internet.'); }
   if(!r.ok) throw Object.assign(new Error(j.error||'Error del servidor'),{status:r.status});
   if(j.now) OFF=j.now-Date.now();
-  if(ROOM&&/^(start|roll|pick|leave)$/.test(action)) rtPing();
+  if(ROOM&&/^(start|roll|pick|leave|next)$/.test(action)) rtPing();
   return j;
 }
 const srvToLocal=t=>Date.parse(t)-OFF;
@@ -1081,7 +1076,7 @@ try{$('fName').value=localStorage.getItem('boxbox_nombre')||''}catch(e){}
 async function createRoom(){
   const name=myName(); if(!name){$('fErr').textContent='Escribe tu nombre.';return}
   $('fCreate').disabled=true; $('fErr').textContent='';
-  try{ const j=await api('create',{name}); ROOM={code:j.room.code,pid:j.pid,secret:j.secret}; enterRoom(j); }
+  try{ const j=await api('create',{name,modo:$('fCareer').checked?'carrera':'normal'}); ROOM={code:j.room.code,pid:j.pid,secret:j.secret}; enterRoom(j); }
   catch(e){ $('fErr').textContent=e.message } finally{ $('fCreate').disabled=false }
 }
 async function joinRoom(){
@@ -1112,6 +1107,11 @@ function onState(s){
   RS=s; const st=s.room.status;
   if(st==='lobby') return renderLobby(s);
   if(st==='building') return renderRoomBuild(s);
+  if(st==='racing' && s.room.modo==='carrera' && !raceShown){
+    // modo carrera: si esta carrera ya se corrió (o ya se contaron los puntos) se muestra la sala con la tabla, sin repetirla
+    let seen=false; try{ seen=localStorage.getItem('boxbox_raced')===ROOM.code+':'+s.room.ronda }catch(e){}
+    if(seen||s.room.cerrada) return renderLobby(s);
+  }
   if(st==='racing' && !raceShown){ raceShown=true; clearInterval(pollT); rtClose(); READY.then(()=>startRoomRace(s)); }
 }
 
@@ -1121,22 +1121,42 @@ function renderLobby(s){
   if(!$('s-lobby').classList.contains('on')) go('s-lobby',0);
   $('lCode').textContent=s.room.code; $('lCode2').textContent=s.room.code; $('lCount').textContent=s.players.length;
   $('lPlayers').innerHTML=s.players.map((p,i)=>`<div class="trow ${p.pid===ROOM.pid?'me':''}"><span class="p">${i+1}</span><span class="c" style="background:${p.color}"></span><span>${esc(p.name)}</span><span class="g">${p.pid===s.room.host?'anfitrión':''}</span></div>`).join('');
-  const host=s.room.host===ROOM.pid;
-  $('lStart').style.display=host?'':'none';
-  $('lWait').textContent=host?(s.players.length<2?'Puedes largar solo o esperar a tus amigos.':''):'Esperando a que el anfitrión largue…';
+  const host=s.room.host===ROOM.pid, r=s.room, post=r.status==='racing';     // post: modo carrera, la carrera ya se corrió y se espera la siguiente fecha
+  renderRoomCareer(s);
+  const last=r.modo==='carrera'&&r.ronda>=r.total-1;
+  $('lStart').style.display=host&&(!post||(r.cerrada&&!last))?'':'none';
+  if(post){
+    const nx=(typeof E!=='undefined'&&E)?E.eventos2026()[r.ronda+1]:null;
+    $('lStart').querySelector('span').textContent=nx?`Siguiente: ${nx.k==='sprint'?'sprint':'GP'} de ${nx.gp} →`:'Siguiente';
+    $('lWait').textContent=!r.cerrada?'Contando los puntos de la carrera…':last?'🏆 ¡Temporada terminada! Esta es la tabla final.':host?'':'Esperando a que el anfitrión pase a la siguiente fecha…';
+  } else {
+    $('lStart').querySelector('span').textContent='Largar: a armar los autos →';
+    $('lWait').textContent=host?(s.players.length<2?'Puedes largar solo o esperar a tus amigos.':''):'Esperando a que el anfitrión largue…';
+  }
+}
+// Modo carrera: fecha actual y tabla de puntos de la sala
+function renderRoomCareer(s){
+  const r=s.room, box=$('lCareer');
+  if(r.modo!=='carrera'){ box.style.display='none'; return }
+  const ev=r.evento, rows=s.players.map(p=>({p,pts:(r.puntos||{})[p.pid]||0,u:(r.ultimo||{})[p.pid]})).sort((a,b)=>b.pts-a.pts);
+  box.style.display='';
+  box.innerHTML=`<h3>🏁 Modo carrera 2026 · evento ${Math.min(r.ronda+1,r.total)} de ${r.total}</h3>
+    <div style="font-size:22px;font-weight:900;font-style:italic;margin:2px 0 10px">${ev?(ev.k==='sprint'?'Sprint':'GP')+' de '+esc(ev.gp):'Temporada terminada'}<small class="note"> ${ev?'· '+esc(ev.date):''}</small></div>
+    <table class="cal"><thead><tr><th>#</th><th>Piloto</th><th>Última carrera</th><th style="text-align:right">Pts</th></tr></thead><tbody>${rows.map((x,i)=>`<tr class="${x.p.pid===ROOM.pid?'nx':''}"><td class="n">${i+1}</td><td><span class="c" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${x.p.color};margin-right:6px"></span>${esc(x.p.name)}</td><td>${x.u?(x.u.dnf?'DNF':`P${x.u.pos} (+${x.u.pts})`):''}</td><td class="pts">${x.pts}</td></tr>`).join('')}</tbody></table>`;
 }
 $('lCopy').onclick=async()=>{const url=`${location.origin}${location.pathname}?sala=${ROOM.code}`;
   try{await navigator.clipboard.writeText(url);toast('Link copiado: '+url)}catch(e){prompt('Copia este link:',url)}};
-$('lStart').onclick=async()=>{$('lStart').disabled=true;try{onState(await api('start'))}catch(e){toast(e.message)}finally{$('lStart').disabled=false}};
+$('lStart').onclick=async()=>{$('lStart').disabled=true;try{onState(await api(RS&&RS.room.status==='racing'?'next':'start'))}catch(e){toast(e.message)}finally{$('lStart').disabled=false}};
 $('lLeave').onclick=async()=>{try{await api('leave')}catch(e){};forgetRoom();location.href=location.pathname};
 
 // --- armado con el servidor ---
 function renderRoomBuild(s){
   const first=!$('s-build').classList.contains('on');
+  if(first) resetBuild(2);                                  // arranque limpio en cada fecha del modo carrera
   picks={...s.me.picks}; rerolls=2-s.me.rerolls;
   if(first){
     $('st0').style.display=''; go('s-build',1);
-    $('buildTitle').innerHTML=`Sala <em>${esc(s.room.code)}</em>`;
+    $('buildTitle').innerHTML=s.room.evento?`${s.room.evento.k==='sprint'?'Sprint':'GP'} <em>de ${esc(s.room.evento.gp)}</em>`:`Sala <em>${esc(s.room.code)}</em>`;
     $('roomBar').style.display='flex';
     if(s.me.current && !year) showRoll(s.me.current);
   }
@@ -1182,7 +1202,8 @@ async function roomPick(slot,idx,it){
 // Todos los navegadores corren el mismo motor con la misma semilla y los autos que validó el servidor.
 function startRoomRace(s){
   clearInterval(tickT);
-  LAPS=20;                                                   // en salas todos corren las mismas vueltas
+  LAPS=s.room.evento&&s.room.evento.k==='sprint'?E.SPRINT_LAPS:20;   // en salas todos corren las mismas vueltas
+  try{ localStorage.setItem('boxbox_raced',ROOM.code+':'+s.room.ronda) }catch(e){}
   picks={...s.players.find(p=>p.pid===ROOM.pid).picks};
   HUMANS=s.players.map(p=>E.humanFromPicks(p.pid,p.color,p.picks,`${esc(p.name)} · ${p.picks.piloto.n} '${String(p.picks.piloto.y).slice(2)}`));
   MEKEY='h:'+ROOM.pid; SEED=String(s.room.race_seed); DECISIONS={};
@@ -1194,13 +1215,13 @@ function startRoomRace(s){
   // al servidor las decisiones de todos y se vuelve a calcular la carrera con ellas.
   const toRace=async()=>{
     $('mSC').classList.remove('open');
-    if(RACE.sc&&!RACE.rain){ try{
+    if(RACE.sc&&!RACE.nopit){ try{
       const s2=await api('state'), d={}; s2.players.forEach(p=>{ if(p.sc) d[p.pid]=p.sc });
       DECISIONS=d; RACE=newRace(d);
     }catch(e){} }
     go('s-race',3); startRace(syncAt,false);
   };
-  const lockAt=raceAt-3000, sc=RACE.rain?null:RACE.sc, me0=carByKey(MEKEY);
+  const lockAt=raceAt-3000, sc=RACE.nopit?null:RACE.sc, me0=carByKey(MEKEY);
   if(!late && sc && me0 && (!me0.dnf||me0.dnf>sc.lap) && Date.now()<lockAt-1000){
     const stops=me0.ev.filter(e=>e.k==='pit'&&e.lap<=sc.lap), lastStop=stops.length?stops[stops.length-1].lap:0;
     $('scTxt').textContent=`En la vuelta ${sc.lap} saldrá el safety car: ${sc.by} ${sc.why==='choque'?'chocará':'romperá el motor'}. Con el pelotón lento, entrar a boxes cuesta mucho menos.`;

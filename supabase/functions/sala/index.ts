@@ -14,7 +14,8 @@
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 import DATA from "../_shared/temporadas.json" with { type: "json" };
 // Ofertas y reglas: el mismo motor que usa el juego en el navegador (una sola fuente de verdad).
-import { makeOffer, mulberry32, yearsFor } from "../_shared/engine.js";
+import { makeOffer, mulberry32, yearsFor, runRace, humanFromPicks, eventos2026, PTS, SPRINT_PTS, SPRINT_LAPS, LAPS } from "../_shared/engine.js";
+import TRACKS from "../_shared/circuitos.json" with { type: "json" };
 
 type Item = [string, string, number];
 type Offer = Record<string, { shown: Item[]; total: number }>;
@@ -28,6 +29,8 @@ const BUILD_MS = 3 * 60 * 1000;     // tiempo para armar
 const RACE_DELAY_MS = 25 * 1000;    // de cierre a largada (qualy + decisión del safety car + cuenta regresiva)
 const SC_LOCK_MS = 3 * 1000;        // las decisiones del safety car se cierran 3 s antes de largar
 const ROOM_TTL_MS = 24 * 60 * 60 * 1000;
+const RACE_VIEW_MS = 75 * 1000;     // en modo carrera: tiempo después de largar (carrera animada + resultado) antes de contar los puntos
+const EVENTOS = eventos2026();      // modo carrera: 6 sprints + 23 GP en orden de calendario
 const COLORS = ["#ff3b30", "#2fd27a", "#4fc3f7", "#ffd23f", "#b26bff", "#ff9800", "#f06292", "#26a69a",
   "#cddc39", "#90a4ae", "#5c6bc0", "#e57373", "#64b5f6", "#81c784", "#ba68c8", "#ffb74d", "#80cbc4",
   "#8d6e63", "#3949ab", "#f44336", "#29b6f6", "#d32f2f"];
@@ -124,6 +127,30 @@ async function maybeLock(room: Record<string, any>, known?: Record<string, any>[
   return data ?? (await getRoom(room.code));
 }
 
+// Modo carrera: cuando pasó la carrera, el servidor la calcula con el mismo motor y suma los puntos de cada jugador. Idempotente.
+async function maybeClose(room: Record<string, any>, known?: Record<string, any>[]) {
+  if (room.modo !== "carrera" || room.status !== "racing" || room.cerrada || !room.race_start) return room;
+  if (Date.now() < Date.parse(room.race_start) + RACE_VIEW_MS) return room;
+  const ev = EVENTOS[room.ronda];
+  if (!ev) return room;
+  const players = known && known.length && known[0].rolls !== undefined ? known : await getPlayers(room.code, true);
+  const humans = players.map((p: any) => humanFromPicks(p.pid, p.color, p.picks, p.name));
+  const decisions: Record<string, string> = {};
+  for (const p of players as any[]) { const d = (p.rolls ?? []).find((r: any) => r.k === "sc")?.v; if (d) decisions[p.pid] = d; }
+  const sprint = ev.k === "sprint";
+  const race = runRace({ DATA, tracks: TRACKS, seed: String(room.race_seed), humans, laps: sprint ? SPRINT_LAPS : LAPS, decisions, trackIdx: ev.t, sprint });
+  const table: number[] = sprint ? SPRINT_PTS : PTS;
+  const puntos: Record<string, number> = { ...(room.puntos ?? {}) }, ultimo: Record<string, any> = {};
+  for (const p of players as any[]) {
+    const c = race.cars.find((x: any) => x.key === "h:" + p.pid);
+    const pts = !c || c.dnf ? 0 : (table[c.pos - 1] || 0);
+    puntos[p.pid] = (puntos[p.pid] ?? 0) + pts;
+    ultimo[p.pid] = { pos: c?.pos ?? 22, dnf: c?.dnf ? 1 : 0, pts };
+  }
+  const { data } = await db.from("salas").update({ puntos, ultimo, cerrada: true }).eq("code", room.code).eq("cerrada", false).select("*").maybeSingle();
+  return data ?? (await getRoom(room.code));
+}
+
 async function stateFor(room: Record<string, any>, me: Record<string, any> | null, known?: Record<string, any>[]) {
   const racing = room.status === "racing";
   const players = known ?? await getPlayers(room.code, racing);
@@ -140,6 +167,11 @@ async function stateFor(room: Record<string, any>, me: Record<string, any> | nul
       dice_hash: room.dice_hash, race_hash: room.race_hash,
       race_seed: racing ? room.race_seed : null,
       dice_seed: racing ? room.dice_seed : null,
+      modo: room.modo ?? "normal", ronda: room.ronda ?? 0, total: EVENTOS.length,
+      evento: room.modo === "carrera" ? (EVENTOS[room.ronda] ?? null) : null,
+      puntos: room.modo === "carrera" ? (room.puntos ?? {}) : undefined,
+      ultimo: room.modo === "carrera" && room.cerrada ? (room.ultimo ?? {}) : undefined,
+      cerrada: !!room.cerrada,
     },
     players: players.map((p) => ({
       pid: p.pid, name: p.name, color: p.color, done: p.done,
@@ -166,6 +198,7 @@ async function handle(body: Record<string, any>) {
       const { error } = await db.from("salas").insert({
         code: c, host: "pendiente", dice_seed, race_seed,
         dice_hash: await sha256Hex(dice_seed), race_hash: await sha256Hex(race_seed),
+        modo: body.modo === "carrera" ? "carrera" : "normal",
       });
       if (!error) newCode = c;
     }
@@ -193,9 +226,9 @@ async function handle(body: Record<string, any>) {
   if (action === "state") {
     // Camino más pedido (cada jugador cada 3 s): consultas en paralelo y sin repetir lecturas.
     const players = await getPlayers(code, room.status === "racing");
-    const locked = await maybeLock(room, players);
+    const locked = await maybeClose(await maybeLock(room, players), players);
     if (locked === room) return await stateFor(room, me, players);
-    return await stateFor(locked, await auth(code, body.pid, body.secret));   // se cerró el armado: releer
+    return await stateFor(locked, await auth(code, body.pid, body.secret));   // se cerró el armado o la carrera: releer
   }
 
   if (action === "start") {
@@ -259,6 +292,34 @@ async function handle(body: Record<string, any>) {
     const rolls = [...(me.rolls as any[]).filter((r) => r.k !== "sc"), { k: "sc", v: choice, used: true }];
     await db.from("jugadores").update({ rolls }).eq("sala", code).eq("pid", me.pid);
     return { ok: true, now: Date.now() };
+  }
+
+  if (action === "next") {
+    // Modo carrera: el anfitrión pasa a la siguiente fecha (o a la carrera del GP si recién terminó la sprint).
+    if (room.host !== me.pid) throw new Fail("Solo quien creó la sala puede pasar a la siguiente fecha.", 403);
+    if (room.modo !== "carrera") throw new Fail("Esta sala no es de modo carrera.", 409);
+    room = await maybeClose(room);
+    if (room.status !== "racing" || !room.cerrada) throw new Fail("La carrera todavía no terminó.", 409);
+    const cur = EVENTOS[room.ronda], nxt = EVENTOS[room.ronda + 1];
+    if (!nxt) throw new Fail("¡La temporada terminó! Mirá la tabla final.", 409);
+    const sameWeekend = cur.k === "sprint" && nxt.k === "gp" && cur.i === nxt.i;
+    const race_seed = String(randU32());
+    const common = { ronda: room.ronda + 1, cerrada: false, ultimo: null, race_seed, race_hash: await sha256Hex(race_seed) };
+    let ok;
+    if (sameWeekend) {
+      // mismo fin de semana: mismos autos, otra carrera
+      ok = await db.from("salas").update({ ...common, race_start: new Date(Date.now() + RACE_DELAY_MS).toISOString() })
+        .eq("code", code).eq("ronda", room.ronda).select("code").maybeSingle();
+      if (ok.data) for (const p of await getPlayers(code, true) as any[]) {
+        await db.from("jugadores").update({ rolls: (p.rolls ?? []).filter((r: any) => r.k !== "sc") }).eq("sala", code).eq("pid", p.pid);
+      }
+    } else {
+      const dice_seed = String(randU32());
+      ok = await db.from("salas").update({ ...common, status: "lobby", dice_seed, dice_hash: await sha256Hex(dice_seed), deadline: null, race_start: null })
+        .eq("code", code).eq("ronda", room.ronda).select("code").maybeSingle();
+      if (ok.data) await db.from("jugadores").update({ picks: {}, rolls: [], rerolls: 0, done: false }).eq("sala", code);
+    }
+    return await stateFor(await getRoom(code), await auth(code, body.pid, body.secret));
   }
 
   if (action === "leave") {
