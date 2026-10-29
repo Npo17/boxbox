@@ -199,7 +199,17 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
 .rk.me{background:rgba(255,59,48,.14);border-left:3px solid var(--red)}
 .rk .n{color:var(--muted);font-weight:900;font-style:italic}.rk .nm{font-weight:700;overflow:hidden;text-overflow:ellipsis}
 .rk .pt{font-weight:900}.rk .tm{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums;font-size:13px}
+.guia{margin-top:12px;border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--card)}
+.guia summary{cursor:pointer;font-weight:700;font-size:14px}
+.guia ul{margin:10px 0 4px;padding-left:18px;font-size:13px;line-height:1.5;color:var(--muted)}
+.guia li{margin-bottom:6px}.guia li b{color:var(--text)}
+#story ul{margin:6px 0 0;padding:0;list-style:none}
+#story li{padding:8px 10px;border-radius:6px;background:var(--card);border-left:3px solid var(--line);margin-bottom:6px;font-size:14px;line-height:1.4}
+#story li.bad{border-left-color:var(--red)} #story li.good{border-left-color:var(--green)}
 </style>
+<!-- Cloudflare Web Analytics -->
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "d245324330e0486a935c50dcc161c5ef"}'></script>
+<!-- End Cloudflare Web Analytics -->
 </head>
 <body>
 <div class="kerb"></div>
@@ -362,6 +372,17 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
       <div class="slots" id="slots"></div>
       <div class="avg"><span class="k" style="color:var(--muted);font-weight:700;letter-spacing:1px">MEDIA DEL AUTO</span><b id="avg">—</b></div>
       <button class="btn cta" id="toRace" disabled><span>A la clasificación →</span></button>
+      <details id="guia" class="guia"><summary>ℹ️ ¿Cómo influye cada pieza?</summary>
+        <ul>
+          <li><b>🏎️ Coche:</b> es lo que más pesa. Marca el ritmo de cada vuelta, también en la clasificación.</li>
+          <li><b>🧑 Piloto:</b> suma ritmo y manda en la clasificación. Si tiene menos de 90 se sale de pista; con menos de 75 puede <b>chocar y abandonar</b> (y llevarse a otro por delante).</li>
+          <li><b>⚙️ Motor:</b> también suma ritmo. Con menos de 80 se puede <b>romper</b> y te quedas sin carrera.</li>
+          <li><b>🔧 Jefe de equipo:</b> son tus mecánicos. Con media baja las paradas en boxes <b>tardan más</b> (hasta unos 2 segundos).</li>
+          <li><b>🧠 Estratega:</b> decide cuándo parar. Si es malo, paras <b>tarde o demasiado pronto</b> (gomas gastadas) y con menos de 84 hasta puede hacerte parar de más.</li>
+          <li><b>🚨 Safety car:</b> cuando sale, tú decides si entras a boxes por gomas nuevas o te quedas en pista.</li>
+        </ul>
+        <div class="note">El equipo completo cuenta: un buen piloto en un mal coche igual se queda atrás.</div>
+      </details>
     </div>
   </div>
 </section>
@@ -424,6 +445,7 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
       <a class="btn ghost" id="shX" target="_blank" rel="noopener" style="text-decoration:none"><span>X</span></a>
       <button class="btn ghost" id="shCopy"><span>Copiar</span></button>
     </div>
+    <div id="story" class="panel" style="display:none;max-width:520px;margin:16px auto 0;text-align:left"></div>
     <div id="dailyRes" style="display:none;max-width:520px;margin:14px auto 0"></div>
     <div id="roomRes" style="display:none;max-width:520px;margin:18px auto 0;text-align:left"></div>
     <div class="row-actions">
@@ -704,7 +726,7 @@ function startRace(syncAt,interactive){
       playT=Math.min(endT,playT+(now-last)/1000*scale*slow); last=now;
       while(evI<events.length && events[evI].T<=playT) msg(events[evI++]);
       draw(playT);
-      if(!decided && RACE.sc && playT>=RACE.sc.T){ decided=true; const me=carByKey(MEKEY); if(me&&!me.dnf){ paused=true; askSC(); setTimeout(tick,100); return } }
+      if(!decided && RACE.sc && playT>=RACE.sc.T){ decided=true; const me=carByKey(MEKEY); if(me&&(!me.dnf||me.dnf>RACE.sc.lap)){ paused=true; askSC(); setTimeout(tick,100); return } }
       if(playT<endT) setTimeout(tick,33); else finish();
     }; tick();
   }
@@ -738,6 +760,34 @@ function finish(){
   if(MODE==='room'){ try{localStorage.removeItem(ROOM_KEY)}catch(e){} }
 }
 
+// ---------- Por qué terminaste así ----------
+// Explica el resultado con las piezas del jugador: ritmo, errores, paradas y safety car.
+function raceStory(c){
+  const L=[], laps=RACE.laps, OPT=Math.round(laps/2), add=(t,k)=>L.push({t,k});
+  const pace=[...RACE.cars].sort((a,b)=>E.paceOf(b)-E.paceOf(a)), rank=pace.indexOf(c)+1;
+  add(`🏎️ Ritmo: tu auto fue el <b>${rank}.º más rápido</b> de la parrilla (coche ${c.c}, piloto ${c.d}, motor ${c.m}).`, rank<=5?'good':rank>=15?'bad':'');
+  add(`⏱️ Largaste en el puesto <b>${c.grid}</b>${c.qErr?`, con un error en ${c.qErr}`:''}.`, c.grid<=5?'good':c.grid>=15?'bad':'');
+  const offs=c.ev.filter(e=>e.k==='off').length;
+  if(offs) add(`⚠️ Tu piloto (${c.d}) se salió de pista <b>${offs} ${offs===1?'vez':'veces'}</b> y perdió tiempo: con menos de 90 de media pasa seguido.`,'bad');
+  const crash=c.ev.find(e=>e.k==='crash'), eng=c.ev.find(e=>e.k==='engine');
+  if(crash&&/también/.test(crash.txt)) add(`💥 Otro piloto te llevó por delante en la vuelta ${crash.lap}: abandonaste sin culpa.`,'bad');
+  else if(crash) add(`💥 Tu piloto (${c.d}) <b>chocó</b> en la vuelta ${crash.lap}. Con menos de 75 de media es lo más riesgoso.`,'bad');
+  if(eng) add(`🔧 Tu motor (${c.m}) <b>se rompió</b> en la vuelta ${eng.lap}: con menos de 80 puede pasar.`,'bad');
+  for(const e of c.ev.filter(e=>e.k==='pit')){
+    if(e.why==='sc') add(`🚨 Aprovechaste el <b>safety car</b> para parar en la vuelta ${e.lap}.`,'good');
+    else if(e.why==='extra') add(`🧠 Tu estratega (${c.s}) mandó una <b>parada de más</b> en la vuelta ${e.lap}.`,'bad');
+    else { const d=Math.abs(e.lap-OPT);
+      add(d>=3?`🧠 Tu estratega (${c.s}) te hizo parar en la vuelta ${e.lap}, lejos de lo ideal (hacia la ${OPT}): <b>${e.lap>OPT?'gomas gastadas':'demasiado pronto'}</b>.`:`🧠 Tu estratega (${c.s}) te hizo parar en la vuelta ${e.lap}, a buen tiempo.`, d>=3?'bad':'good'); }
+  }
+  if(c.stops) add(c.stat>=3.4?`🔧 Tus mecánicos (jefe ${c.j}) <b>tardaron ${c.stat} s</b> en cada parada: son lentos.`:`🔧 Tus mecánicos (jefe ${c.j}) pararon el auto en <b>${c.stat} s</b>.`, c.stat>=3.4?'bad':c.stat<=2.6?'good':'');
+  return L;
+}
+function paintStory(){
+  const me=carByKey(MEKEY); if(!me){ $('story').style.display='none'; return }
+  $('story').innerHTML='<h3 style="margin:0 0 4px;font-size:13px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase">Por qué terminaste así</h3><ul>'+raceStory(me).map(x=>`<li class="${x.k}">${x.t}</li>`).join('')+'</ul>';
+  $('story').style.display='block';
+}
+
 // ---------- Campeonato real (en el boceto: localStorage) ----------
 // Cada carrera suma puntos a los 22 pilotos según donde terminaron.
 const KEY='boxbox_campeonato_v2'; let LAST={};
@@ -762,6 +812,7 @@ $('toResult').onclick=()=>{
   $('roomRes').style.display=MODE==='room'?'block':'none'; $('dailyRes').style.display='none';
   $('again').querySelector('span').textContent=special?'Volver al desafío':MODE==='room'?'Volver al inicio':'Otra tirada';
   $('toChamp').style.display=special?'none':'';
+  paintStory();
   go('s-result',4);
   if(MODE==='daily') paintDailyResult();
 };
@@ -1240,6 +1291,8 @@ if(sb){
 }
 
 // ---------- ARRANQUE ----------
+{ const g=$('guia'); try{ if(localStorage.getItem('boxbox_guia')!=='1') g.open=true }catch(e){ g.open=true }
+  g.addEventListener('toggle',()=>{ if(!g.open) try{localStorage.setItem('boxbox_guia','1')}catch(e){} }); }
 // boxf1box.com/?desafio abre el desafío del día; ?ver=campeonato y ?ver=perfil abren esas pantallas.
 { const q=new URLSearchParams(location.search), v=q.get('ver');
   if(MODE!=='room'){ if(q.has('desafio')) showDaily(); else if(v==='campeonato') showChampPage(); else if(v==='perfil') showProfile(); } }
