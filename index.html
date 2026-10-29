@@ -106,6 +106,9 @@ h1 em{color:var(--red);font-style:italic}
 .lights.on i{background:var(--red);box-shadow:0 0 10px var(--red)}
 .lights.go i{background:var(--green);box-shadow:0 0 10px var(--green)}
 svg.track{width:100%;height:auto;display:block}
+.drop{stroke:#bfe0ff;stroke-opacity:.6;stroke-width:1.6;animation:rainfall .5s linear infinite}
+@keyframes rainfall{from{transform:translate(0,-30px)}to{transform:translate(-12px,490px)}}
+@media (prefers-reduced-motion:reduce){.drop{animation:none}}
 .tower{display:grid;gap:3px;font-size:14px}
 .trow{display:grid;grid-template-columns:28px 6px 1fr 64px;gap:8px;align-items:center;padding:4px 8px;border-radius:4px;background:var(--card);transition:transform .3s}
 .trow.me{background:rgba(255,59,48,.18);outline:1px solid var(--red)}
@@ -431,6 +434,8 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
         <rect width="800" height="460" fill="#173320" rx="14"/>
         <g id="trackg"></g>
         <g id="cars"></g>
+        <rect id="wetTint" width="800" height="460" rx="14" fill="#0b1b36" opacity="0" style="pointer-events:none"/>
+        <g id="rainfx" style="pointer-events:none"></g>
       </svg>
       <div class="note">Trazado: datos abiertos f1-circuits (MIT)</div>
       <div class="radio" id="radio"></div>
@@ -642,9 +647,9 @@ function setTrack(){
    <text x="${PIT.x+nx*16}" y="${PIT.y+ny*16+4}" text-anchor="middle" fill="#fff" fill-opacity=".6" font-size="11" font-family="Titillium Web" font-weight="700">BOX</text>`);
   $('qtrack').innerHTML='<defs><pattern id="kerbq" width="16" height="16" patternUnits="userSpaceOnUse"><rect width="8" height="16" fill="#ff3b30"/><rect x="8" width="8" height="16" fill="#fff"/></pattern></defs>'+layers('').replace('url(#kerbp)','url(#kerbq)');
   $('qcircuit').textContent=`Ronda ${TRACK.round} · ${TRACK.circuit} · ${TRACK.km.replace('.',',')} km`;
-  $('raceTitle').innerHTML=`Gran Premio <em>de ${TRACK.gp}</em>`;
-  $('raceSub').textContent=`Ronda ${TRACK.round} · ${TRACK.circuit} · ${TRACK.km.replace('.',',')} km · 22 autos · ${RACE.laps} vueltas · una parada obligatoria`;
-  $('qsub').textContent=`Gran Premio de ${TRACK.gp}, sorteado del calendario 2026. Una vuelta lanzada por auto: tu piloto y tu auto marcan el ritmo; el dado pone la suerte (o el error).`;
+  $('raceTitle').innerHTML=`Gran Premio <em>de ${TRACK.gp}</em>${RACE.rain?' 🌧️':''}`;
+  $('raceSub').textContent=`Ronda ${TRACK.round} · ${TRACK.circuit} · ${TRACK.km.replace('.',',')} km · 22 autos · ${RACE.laps} vueltas · ${RACE.rain?'¡lluvia! todos con neumáticos de lluvia, sin paradas':'una parada obligatoria'}`;
+  $('qsub').textContent=`Gran Premio de ${TRACK.gp}, sorteado del calendario 2026.${RACE.rain?' 🌧️ ¡Pista mojada!':''} Una vuelta lanzada por auto: tu piloto y tu auto marcan el ritmo; el dado pone la suerte (o el error).`;
 }
 
 // ---------- QUALY ----------
@@ -676,8 +681,15 @@ $('toRace').onclick=()=>{
 // ---------- ANIMACIÓN DE LA CARRERA ----------
 // syncAt (salas): hora local en que arranca el reloj de carrera para todos; si llegas tarde, se adelanta.
 // interactive: se puede decidir qué hacer con el safety car.
+// Lluvia: gotas animadas sobre la pista y un tinte oscuro
+function paintRain(on){
+  $('wetTint').setAttribute('opacity',on?.28:0);
+  let h=''; if(on) for(let i=0;i<110;i++){ const x=Math.random()*830, y=Math.random()*460; h+=`<line class="drop" x1="${x.toFixed(0)}" y1="${y.toFixed(0)}" x2="${(x-3).toFixed(0)}" y2="${(y+13).toFixed(0)}" style="animation-delay:-${(Math.random()*.5).toFixed(2)}s"/>`; }
+  $('rainfx').innerHTML=h;
+}
 function startRace(syncAt,interactive){
   const tp=$('tp'), L=tp.getTotalLength(), els={};
+  paintRain(!!RACE.rain);
   $('cars').innerHTML=''; $('radio').innerHTML=''; $('scBanner').style.display='none'; $('toResult').style.display='none';
   RACE.cars.forEach(c=>{c.me=c.key===MEKEY});
   RACE.cars.forEach(c=>{const g=document.createElementNS('http://www.w3.org/2000/svg','g');
@@ -689,7 +701,7 @@ function startRace(syncAt,interactive){
   const winnerEnd=()=>Math.min(...cars.filter(c=>!c.dnf).map(c=>c.cum[RACE.laps]));
   let endT=winnerEnd()+6; const scale=endT/32;               // toda la carrera en ~32 segundos
   const hashKey=k=>[...k].reduce((a,ch)=>a+ch.charCodeAt(0),0);
-  let evI=0, playT=0, last=0, paused=false, decided=!interactive||!RACE.sc;
+  let evI=0, playT=0, last=0, paused=false, decided=!interactive||!RACE.sc||!!RACE.rain;   // con lluvia nadie entra a boxes: no hay nada que decidir
 
   const draw=T=>{
     cars.forEach(c=>{const st=E.stateAt(c,T); c.p=Math.min(st.p,RACE.laps); c.out=st.out; c.inPit=st.inPit;
@@ -757,6 +769,7 @@ function msg(e){
   let cls='',who,txt=e.txt;
   if(e.k==='sc'){cls='sc';who='🚨 Safety car'}
   else if(e.k==='green'){cls='ok';who='🟢 Dirección de carrera'}
+  else if(e.k==='rain'){cls='inc';who='🌧️ Dirección de carrera'}
   else if(e.k==='radio'){who=e.who==='eng'?`📻 Ingeniero → ${picks.piloto.n}`:`📻 ${picks.piloto.n}`;txt=`"${e.txt}"`}
   else if(e.k==='pit'){who=`📻 Estratega → ${picks.piloto.n}`}
   else {cls='inc';who='⚠ Dirección de carrera'}
@@ -1072,13 +1085,13 @@ function startRoomRace(s){
   // al servidor las decisiones de todos y se vuelve a calcular la carrera con ellas.
   const toRace=async()=>{
     $('mSC').classList.remove('open');
-    if(RACE.sc){ try{
+    if(RACE.sc&&!RACE.rain){ try{
       const s2=await api('state'), d={}; s2.players.forEach(p=>{ if(p.sc) d[p.pid]=p.sc });
       DECISIONS=d; RACE=newRace(d);
     }catch(e){} }
     go('s-race',3); startRace(syncAt,false);
   };
-  const lockAt=raceAt-3000, sc=RACE.sc, me0=carByKey(MEKEY);
+  const lockAt=raceAt-3000, sc=RACE.rain?null:RACE.sc, me0=carByKey(MEKEY);
   if(!late && sc && me0 && (!me0.dnf||me0.dnf>sc.lap) && Date.now()<lockAt-1000){
     const stops=me0.ev.filter(e=>e.k==='pit'&&e.lap<=sc.lap), lastStop=stops.length?stops[stops.length-1].lap:0;
     $('scTxt').textContent=`En la vuelta ${sc.lap} saldrá el safety car: ${sc.by} ${sc.why==='choque'?'chocará':'romperá el motor'}. Con el pelotón lento, entrar a boxes cuesta mucho menos.`;
@@ -1117,7 +1130,7 @@ function buildShare(R,D){
   const url=MODE==='daily'||MODE==='friendly'?SITE+'/?desafio':SITE;
   const head=MODE==='daily'?`🏁 BoxBox · Desafío del día ${today.toLocaleDateString('es')}`:MODE==='friendly'?'🏁 BoxBox · Desafío amistoso':MODE==='room'?'🏁 BoxBox · Carrera con amigos':'🏁 BoxBox';
   const line=R.dnf?`💥 Abandoné en la vuelta ${R.dnf} (largué P${R.grid})`:`${medal} P${R.pos}/22 (largué P${R.grid})`;
-  const text=`${head}\nGP de ${TRACK.gp}\n${line}\n${team}\n📊 Media total ${avg}\n${D&&!D.error?`#${D.rank} de ${D.total} hoy${D.streak>1?` · 🔥 ${D.streak} días`:''}\n`:''}¿Me ganás? 👉 ${url}`;
+  const text=`${head}\nGP de ${TRACK.gp}${RACE&&RACE.rain?' 🌧️ (con lluvia)':''}\n${line}\n${team}\n📊 Media total ${avg}\n${D&&!D.error?`#${D.rank} de ${D.total} hoy${D.streak>1?` · 🔥 ${D.streak} días`:''}\n`:''}¿Me ganás? 👉 ${url}`;
   $('shWa').href='https://wa.me/?text='+encodeURIComponent(text);
   $('shX').href='https://x.com/intent/tweet?text='+encodeURIComponent(text);
   return {text,url};

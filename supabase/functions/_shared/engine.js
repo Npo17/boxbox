@@ -75,6 +75,11 @@ export const rollYear = (DATA, rng, years) => years[Math.floor(rng() * years.len
 export const paceOf = (c) => (c.c - 85) * 0.045 + (c.d - 85) * 0.035 + (c.m - 85) * 0.025;
 // Probabilidad de choque por vuelta: solo los pilotos de menos de 75 de media.
 export const crashChance = (d) => (d < 75 ? (75 - d) * 0.001 + 0.002 : 0);
+// Con lluvia: todos con neumáticos de lluvia, nadie entra a boxes; se va más lento, la habilidad del piloto pesa más
+// y se cometen más errores (hasta los buenos pilotos pueden irse largos).
+export const RAIN_CHANCE = 0.1;
+export const WET_FACTOR = 1.13;
+export const crashChanceWet = (d) => (d < 90 ? (90 - d) * 0.0005 + 0.0008 : 0.0006);
 
 export function humanFromPicks(id, color, picks, label) {
   const p = picks.piloto;
@@ -113,11 +118,13 @@ function buildRivals(DATA, seed, need, taken, usedColors) {
 // ---------- carrera completa: qualy + carrera ----------
 // humans: [{id, name, driver, year, color, d, c, m, j, s}]
 // decisions: { [humanId]: "pit" | "stay" } (qué hace cada jugador con el safety car; sin dato = automático)
-export function runRace({ DATA, tracks, seed, humans, laps = LAPS, decisions = {} }) {
+// trackIdx: fija el circuito (modo carrera, según el calendario). rain: fuerza lluvia o seco; si no, sale del sorteo de la semilla.
+export function runRace({ DATA, tracks, seed, humans, laps = LAPS, decisions = {}, trackIdx: forcedTrack, rain: forcedRain }) {
   seed = String(seed);
-  const trackIdx = Math.floor(rngFor(seed, "circuito")() * tracks.length);
+  const trackIdx = forcedTrack ?? Math.floor(rngFor(seed, "circuito")() * tracks.length);
   const track = tracks[trackIdx];
-  const BASE = track.lap, OPT = Math.round(laps / 2);
+  const rain = forcedRain ?? rngFor(seed, "lluvia")() < RAIN_CHANCE;
+  const BASE = track.lap, OPT = Math.round(laps / 2), WET = rain ? WET_FACTOR : 1;
 
   const hs = humans.map((h) => ({ ...h, key: "h:" + h.id, human: true }));
   const rivals = buildRivals(DATA, seed, Math.max(0, 22 - hs.length), hs.map((h) => h.driver), new Set(hs.map((h) => h.color)));
@@ -128,10 +135,10 @@ export function runRace({ DATA, tracks, seed, humans, laps = LAPS, decisions = {
     const R = rngFor(seed, "qualy", c.key);
     const n = R();                                   // 1.ª tirada: la suerte de la vuelta (±0,35 s)
     c.luck = Math.min(6, Math.floor((1 - n) * 6) + 1);   // cara del dado: 1 = vuelta mala, 6 = vuelta redonda
-    c.q = BASE - 1.9 - paceOf(c) - (c.d - 85) * 0.02 + (n - 0.5) * 0.7;
+    c.q = BASE * WET - 1.9 - paceOf(c) - (c.d - 85) * (rain ? 0.05 : 0.02) + (n - 0.5) * (rain ? 1.2 : 0.7);
     c.qErr = null;
     const err = R(), corner = R(), loss = R();
-    if (err < Math.max(0, 88 - c.d) * 0.015) { c.qErr = track.corners[Math.floor(corner * track.corners.length)]; c.q += 1.2 + loss * 1.5; }
+    if (err < Math.max(0, (rain ? 94 : 88) - c.d) * 0.015) { c.qErr = track.corners[Math.floor(corner * track.corners.length)]; c.q += 1.2 + loss * 1.5; }
   }
   const gridCars = [...cars].sort((a, b) => a.q - b.q);
   gridCars.forEach((c, i) => { c.grid = i + 1; });
@@ -145,11 +152,13 @@ export function runRace({ DATA, tracks, seed, humans, laps = LAPS, decisions = {
     c.stat = round1(2.0 + (95 - c.j) * 0.06 + R() * 0.4);                                  // jefe de equipo = mecánicos
     c.cum = [(c.grid - 1) * 0.35]; c.tp = [0]; c.ev = [];
     c.dnf = 0; c.dnfT = 0; c.stops = 0; c.stopped = false; c.stopLap = 0;
+    if (rain) { c.pit = 0; c.extra = 0; c.stopped = true; }          // lluvia: nadie entra a boxes
   }
 
   let sc = null;
   const ev = (c, T, lap, k, txt, extra) => c.ev.push({ T, lap, k, txt, carKey: c.key, ...extra });
   const globalEv = [];
+  if (rain) globalEv.push({ T: 0, lap: 1, k: "rain", carKey: null, txt: "🌧️ Pista mojada: todos largan con neumáticos de lluvia y nadie entra a boxes." });
 
   for (let lap = 1; lap <= laps; lap++) {
     const scNow = !!sc && lap > sc.lap && lap <= sc.lap + SC_LAPS;
@@ -159,11 +168,11 @@ export function runRace({ DATA, tracks, seed, humans, laps = LAPS, decisions = {
       const R = rngFor(seed, "vuelta", c.key, lap), r = [];
       for (let i = 0; i < 10; i++) r.push(R());                  // mismas tiradas por auto y vuelta, pase lo que pase
       const T0 = c.cum[lap - 1], age = lap - c.stopLap;
-      let t0 = scNow ? BASE * 1.4 : BASE - paceOf(c) + (r[0] - 0.5) * 0.6 + age * 0.22;     // gomas gastadas
+      let t0 = scNow ? BASE * 1.4 : BASE * WET - paceOf(c) - (rain ? (c.d - 85) * 0.04 : 0) + (r[0] - 0.5) * (rain ? 1.5 : 0.6) + (rain ? 0 : age * 0.22);     // gomas gastadas (con lluvia casi no se gastan)
       let tp = 0, why = null;
 
       // paradas
-      if (scNow && lap === sc.lap + 1) {
+      if (scNow && lap === sc.lap + 1 && !rain) {
         const dec = c.human ? decisions[c.id] : undefined;
         if (dec === "pit") why = "sc";
         else if (dec === "stay") why = null;
@@ -186,11 +195,11 @@ export function runRace({ DATA, tracks, seed, humans, laps = LAPS, decisions = {
       // incidentes (no con safety car en pista)
       c._crash = false; c._dead = false;
       if (!scNow) {
-        if (r[1] < Math.max(0, 90 - c.d) * 0.004) {
+        if (r[1] < Math.max(0, (rain ? 96 : 90) - c.d) * (rain ? 0.005 : 0.004)) {
           const loss = 3 + r[2] * 4; t0 += loss;
           ev(c, T0 + t0 * 0.4, lap, "off", `${c.name} se sale de pista en ${track.corners[Math.floor(r[7] * track.corners.length)]} (−${loss.toFixed(1)}s)`);
         }
-        if (r[3] < crashChance(c.d)) { c._crash = true; crashers.push(c); }
+        if (r[3] < (rain ? crashChanceWet(c.d) : crashChance(c.d))) { c._crash = true; crashers.push(c); }
         else if (c.m < 80 && r[4] < (80 - c.m) * 0.0004) {
           c._dead = true; c.dnf = lap; c.dnfT = T0 + t0 * 0.6;
           ev(c, c.dnfT, lap, "engine", `Humo en ${c.name}: motor roto, abandona`);
@@ -270,7 +279,7 @@ export function runRace({ DATA, tracks, seed, humans, laps = LAPS, decisions = {
   for (const c of cars) for (const k of Object.keys(c)) if (k[0] === "_") delete c[k];
 
   const events = [...cars.flatMap((c) => c.ev), ...globalEv].sort((a, b) => a.T - b.T);
-  return { trackIdx, track, laps, cars, grid: gridCars.map((c) => c.key), classification: classification.map((c) => c.key), sc, events };
+  return { trackIdx, track, rain, laps, cars, grid: gridCars.map((c) => c.key), classification: classification.map((c) => c.key), sc, events };
 }
 
 // Resumen de un jugador: lo que se guarda y se compara en el ranking del desafío del día.
