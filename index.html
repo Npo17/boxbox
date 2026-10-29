@@ -5,6 +5,22 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>BoxBox · Arma tu auto de leyenda</title>
 <meta name="description" content="Tira el dado, arma tu auto con piezas de toda la historia de la Fórmula 1, clasifica y corre en un circuito real. Juego de fans.">
+<!-- Vista previa al compartir el link (WhatsApp, X, Facebook, Discord) -->
+<link rel="canonical" href="https://boxf1box.com/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="BoxBox">
+<meta property="og:url" content="https://boxf1box.com/">
+<meta property="og:title" content="BoxBox · Tira el dado. Arma tu auto de leyenda.">
+<meta property="og:description" content="Senna con el McLaren MP4/4 y Ross Brawn de estratega: arma tu auto con piezas de toda la historia, clasifica y corre en un circuito real. Solo, con amigos o el desafío del día.">
+<meta property="og:image" content="https://boxf1box.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="es_AR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="BoxBox · Tira el dado. Arma tu auto de leyenda.">
+<meta name="twitter:description" content="Arma tu auto con piezas de toda la historia del automovilismo y corre en un circuito real. Solo, con amigos o el desafío del día.">
+<meta name="twitter:image" content="https://boxf1box.com/og.png">
+<meta name="theme-color" content="#14151b">
 <!-- Boceto de diseño, no es el juego final. Datos de ejemplo inventados. Sin marcas, logos ni fotos: todo dibujado en SVG. -->
 <link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700;900&display=swap" rel="stylesheet">
 <style>
@@ -355,6 +371,12 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
     <div class="pos" id="pos">P1</div>
     <div id="resmsg" style="font-size:22px;font-weight:700"></div>
     <div class="share" id="share"></div>
+    <div class="row-actions" style="margin-top:12px">
+      <button class="btn" id="shNative" style="background:var(--green);color:#062"><span>📤 Compartir</span></button>
+      <a class="btn ghost" id="shWa" target="_blank" rel="noopener" style="text-decoration:none"><span>WhatsApp</span></a>
+      <a class="btn ghost" id="shX" target="_blank" rel="noopener" style="text-decoration:none"><span>X</span></a>
+      <button class="btn ghost" id="shCopy"><span>Copiar</span></button>
+    </div>
     <div id="roomRes" style="display:none;max-width:520px;margin:18px auto 0;text-align:left"></div>
     <div class="row-actions">
       <button class="btn" id="again"><span>Otra tirada</span></button>
@@ -672,7 +694,7 @@ $('toResult').onclick=()=>{
   const {pos,dnf,grid,stops}=RESULT, pts=dnf?0:(PTS[pos-1]||0), p=picks.piloto;
   $('pos').textContent=dnf?'DNF':'P'+pos; $('pos').className='pos'+(!dnf&&pos===1?' p1':'');
   $('resmsg').textContent=pts?`+${pts} puntos para ${p.n} en tu campeonato`:dnf?'Abandono: sin puntos':'Sin puntos esta vez';
-  $('share').innerHTML=`BOXBOX · GP de ${TRACK.gp} (${TRACK.city})<br>🏁 ${dnf?'DNF':'P'+pos+'/22'} · largó P${grid} · ${stops} parada${stops===1?'':'s'}<br>${SLOTS.map(([k])=>picks[k].r>=95?'🟪':picks[k].r>=90?'🟩':picks[k].r>=80?'🟨':'⬛').join('')} ${p.n} ${p.y} · media ${$('avg').textContent}`;
+  SHARE=buildShare(RESULT); $('share').innerHTML=esc(SHARE.text).replace(/\n/g,'<br>');
   if(MODE==='room'){
     const rows=RESULT.cls.map((c,i)=>({c,i})).filter(x=>x.c.human);
     $('roomRes').innerHTML=`<h3 style="margin:0 0 8px;font-size:13px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase">Resultado de la sala ${esc(ROOM.code)}</h3>`+
@@ -915,6 +937,34 @@ function startRoomRace(s){
   }
   if(q){ $('fCode').value=q.toUpperCase(); openM('mFriends'); $('fErr').textContent='Te invitaron a esta sala: escribe tu nombre y toca "Unirme".'; }
 })();
+
+// ---------- COMPARTIR RESULTADO ----------
+// Tarjeta de texto tipo Wordle. El desafío del día comparte un link que abre ese mismo desafío.
+const SITE='https://boxf1box.com';
+let SHARE=null;
+function buildShare(R){
+  const p=picks.piloto, avg=$('avg').textContent;
+  const sq=SLOTS.map(([k])=>picks[k].r>=95?'🟪':picks[k].r>=90?'🟩':picks[k].r>=80?'🟨':'⬛').join('');
+  const medal=R.pos===1?'🏆':R.pos<=3?'🍾':R.pos<=10?'✅':'😬';
+  const url=MODE==='daily'?SITE+'/?desafio':SITE;
+  const head=MODE==='daily'?`🏁 BoxBox · Desafío del día ${today.toLocaleDateString('es')}`:MODE==='room'?'🏁 BoxBox · Carrera con amigos':'🏁 BoxBox';
+  const line=R.dnf?`💥 Abandoné en la vuelta ${R.dnf} (largué P${R.grid})`:`${medal} P${R.pos}/22 (largué P${R.grid})`;
+  const text=`${head}\nGP de ${TRACK.gp}\n${line}\n${sq} ${p.n} '${String(p.y).slice(2)} · media ${avg}\n¿Me ganás? 👉 ${url}`;
+  $('shWa').href='https://wa.me/?text='+encodeURIComponent(text);
+  $('shX').href='https://x.com/intent/tweet?text='+encodeURIComponent(text);
+  return {text,url};
+}
+async function copyShare(){
+  try{await navigator.clipboard.writeText(SHARE.text);toast('¡Resultado copiado! Pégalo donde quieras.')}
+  catch(e){prompt('Copia tu resultado:',SHARE.text)}
+}
+$('shCopy').onclick=copyShare;
+$('shNative').onclick=async()=>{
+  if(navigator.share){ try{await navigator.share({title:'BoxBox',text:SHARE.text});return}catch(e){ if(e.name==='AbortError') return } }
+  copyShare();
+};
+// boxf1box.com/?desafio abre directamente el desafío del día
+if(new URLSearchParams(location.search).has('desafio') && MODE!=='room') startGame('daily');
 </script>
 </body>
 </html>
