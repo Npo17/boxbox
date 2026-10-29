@@ -32,7 +32,6 @@ const WORDS = ["MONZA", "SPA", "SUZUKA", "IMOLA", "MONACO", "SENNA", "LAUDA", "F
   "PIQUET", "INTERLAGOS", "SILVER", "EAU-ROUGE", "TARZAN", "PARABOLICA"];
 const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 const ALLOWED_ORIGINS = ["https://boxf1box.com", "https://www.boxf1box.com", "https://npo17.github.io",
-  "http://boxf1box.com", "http://www.boxf1box.com",   // mientras GitHub emite el certificado HTTPS
   "http://localhost:5173", "http://127.0.0.1:5173"];
 
 const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
