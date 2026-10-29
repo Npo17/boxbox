@@ -79,6 +79,13 @@ export const crashChance = (d) => (d < 75 ? (75 - d) * 0.001 + 0.002 : 0);
 // y se cometen más errores (hasta los buenos pilotos pueden irse largos).
 export const RAIN_CHANCE = 0.1;
 export const WET_FACTOR = 1.13;
+export const SLICK_ON_WET = 1.32;     // slicks sobre pista mojada: muchísimo más lento
+export const STORM_CHANCE = 0.07;     // carreras con aviso de tormenta a mitad de carrera (con decisión)
+export const STORM_ARRIVES = 0.55;    // probabilidad de que la lluvia anunciada llegue de verdad
+export const SC_ON_CRASH = 0.72;       // no todos los choques traen safety car (en seco: ~42% de las carreras)
+export const SC_ON_CRASH_WET = 0.5; // con lluvia: ~60%
+export const SPRINT_LAPS = 8;
+export const SPRINT_PTS = [8, 7, 6, 5, 4, 3, 2, 1];
 export const crashChanceWet = (d) => (d < 90 ? (90 - d) * 0.0005 + 0.0008 : 0.0006);
 
 export function humanFromPicks(id, color, picks, label) {
@@ -119,12 +126,19 @@ function buildRivals(DATA, seed, need, taken, usedColors) {
 // humans: [{id, name, driver, year, color, d, c, m, j, s}]
 // decisions: { [humanId]: "pit" | "stay" } (qué hace cada jugador con el safety car; sin dato = automático)
 // trackIdx: fija el circuito (modo carrera, según el calendario). rain: fuerza lluvia o seco; si no, sale del sorteo de la semilla.
-export function runRace({ DATA, tracks, seed, humans, laps = LAPS, decisions = {}, trackIdx: forcedTrack, rain: forcedRain }) {
+// sprint: carrera corta sin paradas. storm: permite el aviso de tormenta a mitad de carrera (el jugador decide en decisions["r:"+id]).
+export function runRace({ DATA, tracks, seed, humans, laps = LAPS, decisions = {}, trackIdx: forcedTrack, rain: forcedRain, sprint = false, storm: allowStorm = false }) {
   seed = String(seed);
   const trackIdx = forcedTrack ?? Math.floor(rngFor(seed, "circuito")() * tracks.length);
   const track = tracks[trackIdx];
   const rain = forcedRain ?? rngFor(seed, "lluvia")() < RAIN_CHANCE;
   const BASE = track.lap, OPT = Math.round(laps / 2), WET = rain ? WET_FACTOR : 1;
+  const noPit = rain || sprint;                       // lluvia total y sprint: nadie entra a boxes
+  let storm = null;
+  if (allowStorm && !rain && !sprint && rngFor(seed, "lluvia")() < RAIN_CHANCE + STORM_CHANCE) {
+    const S = rngFor(seed, "tormenta"), ann = 4 + Math.floor(S() * 8);
+    storm = { ann, rainLap: ann + 2, arrives: S() < STORM_ARRIVES, p: Math.round(STORM_ARRIVES * 100), T: 0, TR: 0 };
+  }
 
   const hs = humans.map((h) => ({ ...h, key: "h:" + h.id, human: true }));
   const rivals = buildRivals(DATA, seed, Math.max(0, 22 - hs.length), hs.map((h) => h.driver), new Set(hs.map((h) => h.color)));
@@ -152,7 +166,8 @@ export function runRace({ DATA, tracks, seed, humans, laps = LAPS, decisions = {
     c.stat = round1(2.0 + (95 - c.j) * 0.06 + R() * 0.4);                                  // jefe de equipo = mecánicos
     c.cum = [(c.grid - 1) * 0.35]; c.tp = [0]; c.ev = [];
     c.dnf = 0; c.dnfT = 0; c.stops = 0; c.stopped = false; c.stopLap = 0;
-    if (rain) { c.pit = 0; c.extra = 0; c.stopped = true; }          // lluvia: nadie entra a boxes
+    if (noPit) { c.pit = 0; c.extra = 0; c.stopped = true; }          // lluvia o sprint: nadie entra a boxes
+    c.tyre = rain ? "wet" : "slick";
   }
 
   let sc = null;
@@ -164,15 +179,36 @@ export function runRace({ DATA, tracks, seed, humans, laps = LAPS, decisions = {
     const scNow = !!sc && lap > sc.lap && lap <= sc.lap + SC_LAPS;
     const running = cars.filter((c) => !c.dnf);
     const crashers = [];
+    const wetNow = rain || (!!storm && storm.arrives && lap >= storm.rainLap);
+    if (storm && lap === storm.ann) {
+      storm.T = Math.min(...running.map((c) => c.cum[lap - 1]));
+      globalEv.push({ T: storm.T, lap, k: "forecast", carKey: null, txt: `⛈️ Pronóstico: se anuncian lluvias o tormentas (${storm.p}% de probabilidad) en las próximas vueltas. ¿Entrar a boxes por gomas de lluvia?` });
+    }
+    if (storm && lap === storm.rainLap) {
+      storm.TR = Math.min(...running.map((c) => c.cum[lap - 1]));
+      globalEv.push(storm.arrives ? { T: storm.TR, lap, k: "rain", carKey: null, txt: "🌧️ ¡Empieza a llover fuerte! Los que siguen con slicks pierden muchísimo tiempo." }
+        : { T: storm.TR, lap, k: "green", carKey: null, txt: "☀️ La lluvia no llegó: la pista sigue seca." });
+    }
     for (const c of running) {
       const R = rngFor(seed, "vuelta", c.key, lap), r = [];
       for (let i = 0; i < 10; i++) r.push(R());                  // mismas tiradas por auto y vuelta, pase lo que pase
       const T0 = c.cum[lap - 1], age = lap - c.stopLap;
-      let t0 = scNow ? BASE * 1.4 : BASE * WET - paceOf(c) - (rain ? (c.d - 85) * 0.04 : 0) + (r[0] - 0.5) * (rain ? 1.5 : 0.6) + (rain ? 0 : age * 0.22);     // gomas gastadas (con lluvia casi no se gastan)
+      const onWet = c.tyre === "wet", mis = !scNow && wetNow && !onWet;       // mis: slicks sobre pista mojada
+      let t0 = scNow ? BASE * 1.4
+        : BASE * (wetNow ? (onWet ? WET_FACTOR : SLICK_ON_WET) : 1) - paceOf(c) - (wetNow ? (c.d - 85) * 0.04 : 0) + (r[0] - 0.5) * (wetNow ? 1.5 : 0.6)
+          + (onWet ? (wetNow ? 0 : 2.8) : (wetNow ? 0 : age * 0.22));     // gomas gastadas (con lluvia casi no se gastan; mojadas sobre seco: lentas)
       let tp = 0, why = null;
 
       // paradas
-      if (scNow && lap === sc.lap + 1 && !rain) {
+      if (storm && !scNow || (storm && scNow && lap !== sc.lap + 1)) {
+        if (lap === storm.ann + 1 && c.tyre === "slick") {
+          const dec = c.human ? decisions["r:" + c.id] : undefined;
+          const want = dec === "pit" ? true : dec === "stay" ? false : rngFor(seed, "tormentaIA", c.key)() < clamp((c.s - 65) / 30, 0.15, 0.9);
+          if (want) why = "wet";
+        } else if (c.tyre === "slick" && storm.arrives && lap >= storm.rainLap + 1) why = "wetlate";
+        else if (c.tyre === "wet" && !storm.arrives && lap >= storm.rainLap + 2) why = "dryback";
+      }
+      if (scNow && lap === sc.lap + 1 && !noPit && !why) {
         const dec = c.human ? decisions[c.id] : undefined;
         if (dec === "pit") why = "sc";
         else if (dec === "stay") why = null;
@@ -184,22 +220,25 @@ export function runRace({ DATA, tracks, seed, humans, laps = LAPS, decisions = {
       if (why) {
         tp = (scNow ? PIT_LOSS_SC : PIT_LOSS) + c.stat; c.stops++;
         const late = why === "plan" && Math.abs(c.pit - OPT) >= 3 ? (c.pit > OPT ? " (tarde: las gomas ya estaban muertas)" : " (demasiado pronto)") : "";
-        const txt = why === "sc" ? `Box, box: aprovechamos el safety car. Parada de ${c.stat}s`
+        const txt = why === "wet" ? `Box, box: gomas de lluvia por el pronóstico. Parada de ${c.stat}s`
+          : why === "wetlate" ? `¡Ya llueve fuerte! Box, box: gomas de lluvia, entramos tarde. Parada de ${c.stat}s`
+          : why === "dryback" ? `La lluvia no llegó: volvemos a slicks. Parada de ${c.stat}s`
+          : why === "sc" ? `Box, box: aprovechamos el safety car. Parada de ${c.stat}s`
           : why === "extra" ? `Box, box… ¿otra vez? Parada de ${c.stat}s y las gomas estaban bien`
           : `Box, box. Parada de ${c.stat}s${late}`;
         ev(c, T0 + t0, lap, "pit", txt, { why });
-        c._stop = true;
-      } else c._stop = false;
+        c._stop = true; c._tyre = why === "wet" || why === "wetlate" ? "wet" : why === "dryback" ? "slick" : null;
+      } else { c._stop = false; c._tyre = null; }
       if (c.human && lap === OPT + 2 && c.pit > OPT + 2 && !c.stopped && !scNow) ev(c, T0 + t0, lap, "radio", "¡Estas gomas no dan más! ¿Cuándo paro?", { who: "pilot" });
 
       // incidentes (no con safety car en pista)
       c._crash = false; c._dead = false;
       if (!scNow) {
-        if (r[1] < Math.max(0, (rain ? 96 : 90) - c.d) * (rain ? 0.005 : 0.004)) {
+        if (r[1] < Math.max(0, (wetNow ? 96 : 90) - c.d) * (wetNow ? 0.005 : 0.004) * (mis ? 3 : 1) + (mis ? 0.04 : 0)) {
           const loss = 3 + r[2] * 4; t0 += loss;
           ev(c, T0 + t0 * 0.4, lap, "off", `${c.name} se sale de pista en ${track.corners[Math.floor(r[7] * track.corners.length)]} (−${loss.toFixed(1)}s)`);
         }
-        if (r[3] < (rain ? crashChanceWet(c.d) : crashChance(c.d))) { c._crash = true; crashers.push(c); }
+        if (r[3] < (wetNow ? crashChanceWet(c.d) : crashChance(c.d)) * (mis ? 3 : 1)) { c._crash = true; crashers.push(c); }
         else if (c.m < 80 && r[4] < (80 - c.m) * 0.0004) {
           c._dead = true; c.dnf = lap; c.dnfT = T0 + t0 * 0.6;
           ev(c, c.dnfT, lap, "engine", `Humo en ${c.name}: motor roto, abandona`);
@@ -223,7 +262,7 @@ export function runRace({ DATA, tracks, seed, humans, laps = LAPS, decisions = {
           ev(near, near.dnfT, lap, "crash", `${near.name} también abandona por el choque`);
         } else near._t0 += 8;
       }
-      if (!sc && lap <= laps - SC_LAPS - 1) sc = { lap, T: Tc, by: c.name, why: "choque", laps: SC_LAPS };
+      if (!sc && lap <= laps - SC_LAPS - 1 && c._r[9] < (wetNow ? SC_ON_CRASH_WET : SC_ON_CRASH)) sc = { lap, T: Tc, by: c.name, why: "choque", laps: SC_LAPS };
     }
     if (sc && sc.lap === lap && !sc.announced) {
       sc.announced = true;
@@ -234,7 +273,7 @@ export function runRace({ DATA, tracks, seed, humans, laps = LAPS, decisions = {
     for (const c of running) {
       if (c.dnf) continue;
       c.cum.push(c._T0 + c._t0 + c._tp); c.tp.push(c._tp);
-      if (c._stop) { c.stopped = true; c.stopLap = lap; }
+      if (c._stop) { c.stopped = true; c.stopLap = lap; if (c._tyre) c.tyre = c._tyre; }
     }
     // con el safety car el pelotón se junta: las diferencias se achican
     if (scNow) {
@@ -279,7 +318,7 @@ export function runRace({ DATA, tracks, seed, humans, laps = LAPS, decisions = {
   for (const c of cars) for (const k of Object.keys(c)) if (k[0] === "_") delete c[k];
 
   const events = [...cars.flatMap((c) => c.ev), ...globalEv].sort((a, b) => a.T - b.T);
-  return { trackIdx, track, rain, laps, cars, grid: gridCars.map((c) => c.key), classification: classification.map((c) => c.key), sc, events };
+  return { trackIdx, track, rain, sprint, storm, nopit: noPit, laps, cars, grid: gridCars.map((c) => c.key), classification: classification.map((c) => c.key), sc, events };
 }
 
 // Resumen de un jugador: lo que se guarda y se compara en el ranking del desafío del día.
