@@ -68,8 +68,9 @@ export function makeOffer(DATA, rng, year) {
 // Años que tienen alguna pieza para las casillas libres (motor, jefe y estratega solo existen
 // en las temporadas curadas a mano).
 export const yearsFor = (DATA, free) => Object.keys(DATA).filter((y) => free.some((k) => (DATA[y][k] || []).length));
-// Años con las 5 casillas completas: son los que usa el desafío del día (misma mano para todos).
-export const fullYears = (DATA) => Object.keys(DATA).filter((y) => SLOTS.every((k) => (DATA[y][k] || []).length >= 2));
+// Años curados a mano (con motores, jefes y estrategas reales): son los que usa el desafío del día.
+// Las demás temporadas tienen esas tres casillas estimadas a partir del resultado de cada escudería.
+export const fullYears = (DATA) => Object.keys(DATA).filter((y) => DATA[y].curada && SLOTS.every((k) => (DATA[y][k] || []).length >= 2));
 export const rollYear = (DATA, rng, years) => years[Math.floor(rng() * years.length)];
 
 // ---------- autos ----------

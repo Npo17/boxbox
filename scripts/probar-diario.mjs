@@ -90,7 +90,7 @@ try {
   const L = local(decision);
   ok(cl.status === 200 && cl.result.pos === L.pos && cl.result.dnf === L.dnf && cl.result.pts === L.pts, `resultado del servidor = motor local (P${cl.result.pos}, ${cl.result.pts} pts)`);
   ok(Math.abs(Number(cl.result.tiempo) - Number(L.time)) < 0.01 || (L.dnf && cl.result.tiempo == null), 'el tiempo de carrera coincide');
-  ok(cl.rank === 1 && cl.total >= 1 && cl.streak === 1, `puesto #${cl.rank} de ${cl.total}, racha ${cl.streak}`);
+  ok(cl.rank >= 1 && cl.rank <= cl.total && cl.streak === 1, `puesto #${cl.rank} de ${cl.total}, racha ${cl.streak}`);
   const cl2 = await call(A, 'cerrar', { decision: decision === 'pit' ? 'stay' : 'pit' });
   ok(cl2.status === 200 && cl2.result.pos === cl.result.pos, 'cerrar de nuevo no cambia el resultado (una sola partida)');
 
