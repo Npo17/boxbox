@@ -2,7 +2,7 @@
 
 Tira el dado, sale una temporada de la historia del automovilismo. Elige un piloto, coche, motor, jefe de equipo o estratega de ese año, completa tu auto de 5 casillas, clasifica a una vuelta y corre un Gran Premio en un circuito real contra una parrilla de leyendas.
 
-**Estado:** prototipo jugable. Las medias de pilotos y piezas son de ejemplo y solo hay 5 temporadas cargadas (1976, 1988, 1991, 2004, 2023).
+**Estado:** prototipo jugable. Las medias de pilotos y piezas son de ejemplo y hay 7 temporadas cargadas (1976, 1988, 1991, 2004, 2023, 2024 y 2025).
 
 ## Cómo se juega
 

@@ -21,6 +21,9 @@
 <meta name="twitter:description" content="Arma tu auto con piezas de toda la historia del automovilismo y corre en un circuito real. Solo, con amigos o el desafío del día.">
 <meta name="twitter:image" content="https://boxf1box.com/og.png">
 <meta name="theme-color" content="#14151b">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <!-- Boceto de diseño, no es el juego final. Datos de ejemplo inventados. Sin marcas, logos ni fotos: todo dibujado en SVG. -->
 <link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700;900&display=swap" rel="stylesheet">
 <style>
@@ -447,7 +450,7 @@ const LEGENDS=[["J. M. Fangio",'#4fc3f7',95],["J. Clark",'#81c784',96],["J. Stew
 let TRACK=null;
 const PTS=[25,18,15,12,10,8,6,4,2,1];
 let rnd=Math.random; const pick=a=>a[Math.floor(rnd()*a.length)];
-const LAPS=+(new URLSearchParams(location.search).get('laps')||20);
+let LAPS=+(new URLSearchParams(location.search).get('laps')||20);   // ?laps=N solo para pruebas; en salas siempre 20
 
 // ---------- Estado ----------
 let year=null, cat=null, rerolls=2, picks={}, offer={}, FIELD=[], GRID=[], MODE='solo';
@@ -679,6 +682,8 @@ function finish(cars){
   $('radio').insertAdjacentHTML('afterbegin',`<div class="msg" style="border-color:#fff"><b>🏁 Bandera a cuadros</b>${me.dnf?'Abandonaste en la vuelta '+me.dnf:'Terminaste P'+pos}.</div>`);
   $('toResult').style.display='block';
   saveRace(cls); saveStats(pos,me.dnf);
+  // La carrera de la sala terminó: no volver a ella al recargar (el resultado sigue en pantalla).
+  if(MODE==='room'){ try{localStorage.removeItem(ROOM_KEY)}catch(e){} }
 }
 
 // ---------- Campeonato real (en el boceto: localStorage) ----------
@@ -725,7 +730,7 @@ $('hDaily').onclick=$('nDaily').onclick=()=>startGame('daily');
 $('hFriends').onclick=()=>openM('mFriends');
 $('hChamp').onclick=$('nChamp').onclick=()=>showChampPage();
 $('nProfile').onclick=()=>showProfile();
-$('logo').onclick=()=>{location.href=location.pathname+location.search};
+$('logo').onclick=()=>{location.href=location.pathname};   // al inicio, sin ?sala ni otros parámetros
 $('homeCar').innerHTML=carSVG('#ff3b30');
 // Ajustes: tema claro / oscuro
 function setTheme(t){document.documentElement.dataset.theme=t;try{localStorage.setItem('boxbox_tema',t)}catch(e){}}
@@ -913,6 +918,7 @@ function buildRoomField(s){
 function startRoomRace(s){
   clearInterval(tickT);
   rnd=mulberry32(Number(s.room.race_seed));               // misma semilla = misma carrera para todos
+  LAPS=20;                                                 // todos con las mismas vueltas
   picks={...s.players.find(p=>p.pid===ROOM.pid).picks};
   setTrack(); buildRoomField(s);
   const raceAt=srvToLocal(s.room.race_start), syncAt=raceAt+2000, late=Date.now()>=raceAt;
@@ -965,6 +971,26 @@ $('shNative').onclick=async()=>{
 };
 // boxf1box.com/?desafio abre directamente el desafío del día
 if(new URLSearchParams(location.search).has('desafio') && MODE!=='room') startGame('daily');
+{ const v=new URLSearchParams(location.search).get('ver');           // ?ver=campeonato | ?ver=perfil
+  if(MODE!=='room'){ if(v==='campeonato') showChampPage(); if(v==='perfil') showProfile(); } }
+
+// ---------- SALIR DE UNA SALA DESDE EL MENÚ ----------
+// Estando en una sala, el logo y el menú preguntan antes de salir. Si no, la sala
+// (que sigue consultando al servidor) te devolvía a ella.
+function leaveRoomAndGo(url){
+  const st=RS&&RS.room.status;
+  const txt=st==='lobby'?'¿Salir de la sala? Vas a dejar de estar en ella.'
+    :st==='building'?'¿Salir de la sala? Tu auto lo completa el servidor y la carrera sigue sin ti.'
+    :'¿Salir de la sala?';
+  if(!confirm(txt)) return;
+  clearInterval(pollT);
+  api('leave').catch(()=>{}).finally(()=>{ forgetRoom(); location.href=url; });
+}
+const inRoom=()=>MODE==='room'&&!!ROOM&&!(RESULT&&RS&&RS.room.status==='racing');
+[['logo',''],['nDaily','?desafio'],['hDaily','?desafio'],['nChamp','?ver=campeonato'],['hChamp','?ver=campeonato'],['nProfile','?ver=perfil']].forEach(([id,q])=>{
+  const orig=$(id).onclick;
+  $(id).onclick=e=>{ if(inRoom()) leaveRoomAndGo(location.pathname+q); else if(MODE==='room') location.href=location.pathname+q; else orig(e); };
+});
 </script>
 </body>
 </html>

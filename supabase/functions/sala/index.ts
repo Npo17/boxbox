@@ -257,7 +257,13 @@ async function handle(body: Record<string, any>) {
   }
 
   if (action === "leave") {
-    if (room.status === "lobby") await db.from("jugadores").delete().eq("sala", code).eq("pid", me.pid);
+    if (room.status === "lobby") {
+      await db.from("jugadores").delete().eq("sala", code).eq("pid", me.pid);
+      const rest = await getPlayers(code);
+      if (!rest.length) await db.from("salas").delete().eq("code", code);          // sala vacía: se borra
+      else if (room.host === me.pid) await db.from("salas").update({ host: rest[0].pid }).eq("code", code); // pasa el anfitrión
+    }
+    // Armando o corriendo: el jugador queda en la parrilla (el servidor completa su auto).
     return { ok: true };
   }
 

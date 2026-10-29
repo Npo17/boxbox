@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Favicon de BoxBox: "B" itálica sobre asfalto con un piano rojo y blanco -->
+  <defs>
+    <clipPath id="r"><rect width="64" height="64" rx="14"/></clipPath>
+    <pattern id="k" width="16" height="10" patternUnits="userSpaceOnUse">
+      <rect width="8" height="10" fill="#ff3b30"/><rect x="8" width="8" height="10" fill="#fff"/>
+    </pattern>
+  </defs>
+  <g clip-path="url(#r)">
+    <rect width="64" height="64" fill="#14151b"/>
+    <rect y="54" width="64" height="10" fill="url(#k)"/>
+    <text x="33" y="47" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-weight="900"
+          font-style="italic" font-size="46" fill="#ffd23f">B</text>
+  </g>
+</svg>
