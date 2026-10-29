@@ -55,11 +55,9 @@ export function makeOffer(DATA, rng, year) {
       shown = shown.concat(rest.slice(0, 2 - shown.length));
     }
     if (shown.length > MAX_SHOWN) {                     // en 1950 hubo 81 pilotos: solo se muestran 12
-      for (let i = 0; i < MAX_SHOWN; i++) {
-        const j = i + Math.floor(rng() * (shown.length - i));
-        [shown[i], shown[j]] = [shown[j], shown[i]];
-      }
-      shown = shown.slice(0, MAX_SHOWN);
+      // Sorteo ponderado: los de más media tienen más chances de entrar (si no, Fangio casi nunca saldría entre 80 pilotos).
+      shown = shown.map((it) => ({ it, key: Math.pow(rng(), 1 / Math.max(0.25, ((it[2] - 50) / 10) ** 2)) }))
+        .sort((a, b) => b.key - a.key).slice(0, MAX_SHOWN).map((x) => x.it);
     }
     o[k] = { shown: shown.sort((a, b) => b[2] - a[2]), total: all.length };
   }

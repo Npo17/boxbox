@@ -42,7 +42,8 @@ const initials = (given) => given.split(/[\s-]+/).filter(Boolean).map((w) => w[0
 const KNOWN = { fangio: 'J. M. Fangio' };
 // Pilotos distintos con el mismo nombre abreviado (Michael/Mick Schumacher, Nelson Piquet padre/hijo):
 // el que corrió más temporadas conserva la abreviatura y los demás usan el nombre completo.
-const NAMES = new Map();   // driverId -> nombre a mostrar (se completa en una primera pasada)
+const MANUAL = {};   // medias fijadas a mano para pilotos sin puntos: 'driverId:año' -> media
+const NAMES = new Map();  // driverId -> nombre a mostrar (se completa en una primera pasada)
 const nameOf = (d) => NAMES.get(d.driverId) ?? KNOWN[d.driverId] ?? `${initials(d.givenName)} ${d.familyName}`;
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 
@@ -113,7 +114,23 @@ for (let y = FIRST; y <= LAST; y++) {
   const c = y >= 1958 ? await get(`${y}/constructorStandings.json?limit=100`) : null;
   const dRows = d.MRData.StandingsTable.StandingsLists[0]?.DriverStandings ?? [];
   const cRows = c?.MRData.StandingsTable.StandingsLists[0]?.ConstructorStandings ?? [];
-  const season = { piloto: rateDrivers(dRows), coche: rateCars(y, cRows, dRows), motor: [], jefe: [], estratega: [] };
+  // La tabla del campeonato solo trae a los que sumaron puntos: se agregan los que corrieron sin puntuar (con su escudería).
+  const inTable = new Set(dRows.map((r) => r.Driver.driverId));
+  const extra = new Map();
+  for (let off = 0; ; off += 100) {
+    const res = await get(`${y}/results.json?limit=100&offset=${off}`);
+    const races = res.MRData.RaceTable.Races;
+    for (const race of races) for (const r of race.Results) {
+      if (inTable.has(r.Driver.driverId)) continue;
+      const e = extra.get(r.Driver.driverId) ?? { Driver: r.Driver, Constructors: [], position: '', points: '0' };
+      if (!e.Constructors.some((c) => c.constructorId === r.Constructor.constructorId)) e.Constructors.push(r.Constructor);
+      extra.set(r.Driver.driverId, e);
+    }
+    if (off + 100 >= +res.MRData.total) break;
+  }
+  const sinPuntos = [...extra.values()].map((r) => [nameOf(r.Driver), r.Constructors.map((c) => c.name).join(' / '), MANUAL[`${r.Driver.driverId}:${y}`] ?? 60]);
+  if (y === 1952) sinPuntos.push(['J. M. Fangio', 'Maserati', 90]);   // la fuente no lo registra en 1952 (corrió Monza, abandonó)
+  const season = { piloto: [...rateDrivers(dRows), ...sinPuntos], coche: rateCars(y, cRows, dRows), motor: [], jefe: [], estratega: [] };
 
   const cur = CURATED[y];
   if (cur) {
