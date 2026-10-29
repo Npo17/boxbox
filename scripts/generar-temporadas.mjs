@@ -169,7 +169,7 @@ for (let y = FIRST; y <= LAST; y++) {
       const usedBoss = season.jefe.some((j) => j[0] === boss?.name);
       season.motor.push([row?.engine ? `Motor ${row.engine}` : `Motor ${team}`, `${team} · media estimada`, clamp(r + wob(y + 'm' + team), 55, 96)]);
       season.jefe.push([boss && !usedBoss ? boss.name : `Jefe de ${team}`, `${team} · media estimada`, clamp(r + wob(y + 'j' + team), 55, 96)]);
-      season.estratega.push([`Estratega de ${team}`, 'media estimada', clamp(r + wob(y + 'e' + team), 55, 96)]);
+      season.estratega.push([`Estratega de ${team}`, 'Media estimada', clamp(r + wob(y + 'e' + team), 55, 96)]);
     }
   }
   for (const k of ['piloto', 'coche', 'motor', 'jefe', 'estratega']) season[k].sort((a, b) => b[2] - a[2]);

@@ -1107,13 +1107,14 @@ function startRoomRace(s){
 const SITE='https://boxf1box.com';
 let SHARE=null;
 function buildShare(R,D){
-  const p=picks.piloto, avg=$('avg').textContent;
-  const sq=SLOTS.map(([k])=>picks[k].r>=95?'🟪':picks[k].r>=90?'🟩':picks[k].r>=80?'🟨':'⬛').join('');
+  const avg=$('avg').textContent;
+  const sq=r=>r>=95?'🟪':r>=90?'🟩':r>=80?'🟨':'⬛';
+  const team=SLOTS.map(([k,l])=>{const x=picks[k];return `${sq(x.r)} ${l}: ${x.n} '${String(x.y).slice(2)} · ${x.r}`}).join('\n');
   const medal=R.pos===1?'🏆':R.pos<=3?'🍾':R.pos<=10?'✅':'😬';
   const url=MODE==='daily'||MODE==='friendly'?SITE+'/?desafio':SITE;
   const head=MODE==='daily'?`🏁 BoxBox · Desafío del día ${today.toLocaleDateString('es')}`:MODE==='friendly'?'🏁 BoxBox · Desafío amistoso':MODE==='room'?'🏁 BoxBox · Carrera con amigos':'🏁 BoxBox';
   const line=R.dnf?`💥 Abandoné en la vuelta ${R.dnf} (largué P${R.grid})`:`${medal} P${R.pos}/22 (largué P${R.grid})`;
-  const text=`${head}\nGP de ${TRACK.gp}\n${line}\n${sq} ${p.n} '${String(p.y).slice(2)} · media ${avg}\n${D&&!D.error?`#${D.rank} de ${D.total} hoy${D.streak>1?` · 🔥 ${D.streak} días`:''}\n`:''}¿Me ganás? 👉 ${url}`;
+  const text=`${head}\nGP de ${TRACK.gp}\n${line}\n${team}\n📊 Media total ${avg}\n${D&&!D.error?`#${D.rank} de ${D.total} hoy${D.streak>1?` · 🔥 ${D.streak} días`:''}\n`:''}¿Me ganás? 👉 ${url}`;
   $('shWa').href='https://wa.me/?text='+encodeURIComponent(text);
   $('shX').href='https://x.com/intent/tweet?text='+encodeURIComponent(text);
   return {text,url};
