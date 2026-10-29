@@ -60,8 +60,7 @@ async function streakOf(uid: string, today: string) {
 }
 async function rankOf(day: string, row: any) {
   const base = () => db.from("desafios").select("user_id", { count: "exact", head: true }).eq("day", day).eq("status", "listo");
-  const a = await base().lt("orden", row.orden);
-  const b = await base().eq("orden", row.orden).lt("created_at", row.created_at);
+  const [a, b] = await Promise.all([base().lt("orden", row.orden), base().eq("orden", row.orden).lt("created_at", row.created_at)]);
   return (a.count ?? 0) + (b.count ?? 0) + 1;
 }
 async function totalOf(day: string) {
@@ -86,12 +85,17 @@ async function finalizar(uid: string, day: string, entry: any, decision?: string
 }
 
 async function fullState(user: { id: string } | null, day: string) {
-  const out: any = { day, now: Date.now(), nextAt: E.nextResetMs(), logged: !!user, nickname: null, entry: null, streak: 0, total: await totalOf(day) };
-  if (!user) return out;
-  out.nickname = await getNick(user.id);
-  let entry = await getEntry(user.id, day);
+  const out: any = { day, now: Date.now(), nextAt: E.nextResetMs(), logged: !!user, nickname: null, entry: null, streak: 0, total: 0 };
+  if (!user) { out.total = await totalOf(day); return out; }
+  // Las cuatro lecturas no dependen entre sí: en paralelo (antes eran una tras otra).
+  const [total, nickname, found, streak] = await Promise.all([totalOf(day), getNick(user.id), getEntry(user.id, day), streakOf(user.id, day)]);
+  out.total = total; out.nickname = nickname; out.streak = streak;
+  let entry = found;
   // si recargó con la carrera a medias, se cierra sin su decisión del safety car
-  if (entry && entry.status === "corriendo") entry = await finalizar(user.id, day, entry);
+  if (entry && entry.status === "corriendo") {
+    entry = await finalizar(user.id, day, entry);
+    if (entry?.status === "listo") out.streak = await streakOf(user.id, day);   // recién terminó: la racha cambió
+  }
   if (entry) {
     out.entry = { status: entry.status, picks: entry.status === "listo" ? entry.picks : pickNames(entry.picks), nPicks: Object.keys(entry.picks).length };
     if (entry.status === "listo") {
@@ -100,7 +104,6 @@ async function fullState(user: { id: string } | null, day: string) {
       out.entry.mano = { rolls: (entry.rolls as any[]).map((r) => ({ i: r.i, year: r.year, offer: r.offer })), raceSeed: await raceSecret(day) };
     }
   }
-  out.streak = await streakOf(user.id, day);
   return out;
 }
 

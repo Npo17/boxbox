@@ -1124,8 +1124,9 @@ function startGame(mode){
 async function showDaily(){
   MODE='solo'; BLIND=false; $('st0').style.display='none'; go('s-daily',0);
   $('dActions').innerHTML='<div class="note" style="text-align:center">Cargando…</div>';
-  try{ await READY; DST=await dApi('estado'); }catch(e){ DST=null; toast(e.message); }
-  renderDaily(); loadRank(dRankDay); startDTimer();
+  loadRank(dRankDay);                                         // el ranking no depende de tu estado: se pide a la vez
+  try{ DST=await dApi('estado'); }catch(e){ DST=null; toast(e.message); }   // sin esperar a que cargue el motor de carrera
+  renderDaily(); startDTimer();
 }
 function renderDaily(){
   const d=new Date(Date.now()+DOFF), st=DST;
