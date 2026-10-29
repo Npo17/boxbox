@@ -14,6 +14,22 @@ Tira el dado, sale una temporada de la historia del automovilismo. Elige un pilo
 
 También hay desafío del día (los mismos dados para todos ese día), perfil, tema claro u oscuro y campeonatos anteriores.
 
+## Con amigos (salas online)
+
+Hasta 22 jugadores, uno por auto, con código de sala o link de invitación. Todos reciben los mismos dados, tienen 3 minutos para armar y ven la misma carrera a la misma hora.
+
+- **Servidor:** Edge Function `sala` en Supabase ([supabase/functions/sala](supabase/functions/sala/index.ts)). Las tablas ([migración](supabase/migrations/20261029000000_salas.sql)) tienen RLS sin políticas: solo la función puede leerlas.
+- **Contra trampas:** las semillas de dados y de carrera son secretas (se publica su hash). Las tiradas se revelan de a una y cada elección se valida en el servidor. Al cerrar el armado se revela la semilla de carrera y cada navegador simula la misma carrera con los autos ya validados.
+- **Datos compartidos:** las temporadas están en [supabase/functions/_shared/temporadas.json](supabase/functions/_shared/temporadas.json), que usan el juego y el servidor.
+
+Para desplegar cambios del servidor:
+
+```bash
+npx supabase@2.122.0 functions deploy sala --project-ref vljuhibzzwtcswirunfr --no-verify-jwt --use-api
+```
+
+Prueba de punta a punta: `node scripts/probar-sala.mjs`.
+
 ## Correr en local
 
 Es una página estática, no necesita instalar nada:

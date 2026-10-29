@@ -218,6 +218,24 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
   </div>
 </section>
 
+<!-- ============ SALA DE ESPERA (con amigos) ============ -->
+<section class="screen" id="s-lobby">
+  <h1>Sala <em id="lCode">—</em></h1>
+  <p class="sub">Pásale el código o el link a tus amigos. Cuando estén todos, quien creó la sala larga y tienen 3 minutos para armar.</p>
+  <div class="grid">
+    <div class="panel"><h3>Pilotos en la sala (<span id="lCount">0</span>/22)</h3><div class="tower" id="lPlayers"></div>
+      <div class="note">Los lugares libres los completan leyendas.</div></div>
+    <div class="panel" style="text-align:center">
+      <h3>Código</h3>
+      <div class="year" id="lCode2" style="font-size:46px;margin:6px 0 10px">—</div>
+      <button class="btn ghost cta" id="lCopy"><span>Copiar link de invitación</span></button>
+      <button class="btn cta" id="lStart"><span>Largar: a armar los autos →</span></button>
+      <div class="note" id="lWait"></div>
+      <button class="link" id="lLeave" style="margin-top:14px">Salir de la sala</button>
+    </div>
+  </div>
+</section>
+
 <!-- ============ PERFIL ============ -->
 <section class="screen" id="s-profile">
   <h1>Tu <em>perfil</em></h1>
@@ -258,6 +276,11 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
 <section class="screen" id="s-build">
   <h1 id="buildTitle">Tira el dado. <em>Arma tu auto.</em></h1>
   <p class="sub">Sale un año. Elige una pieza de esa temporada para una casilla libre. 5 tiradas, un auto de leyenda.</p>
+  <div class="panel" id="roomBar" style="display:none;margin-bottom:16px;display:none;align-items:center;gap:16px;flex-wrap:wrap">
+    <b id="rbTimer" style="font-size:26px;font-style:italic">3:00</b>
+    <span id="rbReady" class="note" style="margin:0"></span>
+    <span id="rbMine" style="margin-left:auto;font-weight:700"></span>
+  </div>
   <div class="grid">
     <div class="panel">
       <div class="rollbox">
@@ -294,6 +317,7 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
       <div id="qpos" style="font-size:20px;font-weight:700;min-height:56px"></div>
       <button class="btn cta" id="qBtn"><span>Tirar la qualy</span></button>
       <button class="btn cta" id="toRace2" style="display:none"><span>A la parrilla →</span></button>
+      <div id="qWait" style="display:none;font-size:20px;font-weight:700;margin-top:10px"></div>
     </div>
   </div>
 </section>
@@ -331,6 +355,7 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
     <div class="pos" id="pos">P1</div>
     <div id="resmsg" style="font-size:22px;font-weight:700"></div>
     <div class="share" id="share"></div>
+    <div id="roomRes" style="display:none;max-width:520px;margin:18px auto 0;text-align:left"></div>
     <div class="row-actions">
       <button class="btn" id="again"><span>Otra tirada</span></button>
       <button class="btn ghost" id="toChamp"><span>Ver campeonato de pilotos</span></button>
@@ -372,10 +397,14 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
 <div class="modal" id="mFriends"><div class="box"><button class="x" data-close>×</button>
   <h2>Con amigos</h2>
   <p class="note" style="margin-top:0">Hasta 22 jugadores, uno por auto. Todos reciben los mismos dados, arman en 3 minutos y ven la misma carrera a la misma hora.</p>
-  <button class="btn cta" disabled><span>Crear sala</span></button>
-  <input placeholder="Código de sala (ej. MONZA-7Q4)" disabled>
-  <div class="note">Llega con la versión online (necesita servidor). En este boceto se juega solo o el desafío del día.</div>
+  <input id="fName" maxlength="16" placeholder="Tu nombre (lo ven tus amigos)">
+  <button class="btn cta" id="fCreate"><span>Crear sala</span></button>
+  <div class="note" style="text-align:center;margin:14px 0 2px">o únete con un código</div>
+  <input id="fCode" maxlength="20" placeholder="Código (ej. MONZA-7Q4)" style="text-transform:uppercase">
+  <button class="btn ghost cta" id="fJoin"><span>Unirme</span></button>
+  <div class="note" id="fErr" style="color:var(--red);min-height:18px"></div>
 </div></div>
+<div id="toast" style="position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--asphalt-2);border:1px solid var(--red);border-radius:8px;padding:10px 16px;z-index:60;display:none;max-width:90vw"></div>
 
 <div class="modal" id="mLogin"><div class="box"><button class="x" data-close>×</button>
   <h2>Continuar con Google</h2>
@@ -387,33 +416,9 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
 <script src="tracks.js"></script>
 <script>
 // ---------- Datos de ejemplo (nombres reales, medias inventadas para el boceto) ----------
-const DATA = {
-  1976:{piloto:[["N. Lauda","Ferrari",96],["J. Hunt","McLaren",93],["J. Scheckter","Tyrrell",88],["C. Regazzoni","Ferrari",85],["P. Depailler","Tyrrell",84],["A. Merzario","March / Wolf",72],["L. Perkins","Brabham",65]],
-        coche:[["Ferrari 312T2","",95],["McLaren M23","",91],["Tyrrell P34 (6 ruedas)","",86],["Ligier JS5","",80]],
-        motor:[["Ferrari flat-12","",94],["Ford DFV V8","",88],["Matra V12","",82]],
-        jefe:[["D. Audetto","Ferrari",85],["T. Mayer","McLaren",86],["K. Tyrrell","Tyrrell",88]],
-        estratega:[["M. Forghieri","Ferrari",93],["G. Coppuck","McLaren",86]]},
-  1988:{piloto:[["A. Senna","McLaren",98],["A. Prost","McLaren",97],["G. Berger","Ferrari",87],["N. Piquet","Lotus",82],["A. Nannini","Benetton",80],["I. Capelli","March",79],["P. Martini","Minardi",72],["S. Johansson","Ligier",70]],
-        coche:[["McLaren MP4/4","15 de 16 victorias",99],["Ferrari F187/88C","",85],["Benetton B188","",80],["Minardi M188","",66]],
-        motor:[["Honda V6 turbo","",98],["Ferrari V6 turbo","",88],["Ford DFR V8","",76],["Judd V8","",74]],
-        jefe:[["R. Dennis","McLaren",95],["P. Rice","Lotus",74],["G. C. Minardi","Minardi",70]],
-        estratega:[["S. Nichols","McLaren",88],["F. Lombardi","Ferrari",80]]},
-  1991:{piloto:[["A. Senna","McLaren",99],["N. Mansell","Williams",95],["A. Prost","Ferrari",93],["R. Patrese","Williams",88],["M. Schumacher","Jordan / Benetton",86],["J. Alesi","Ferrari",84],["N. Piquet","Benetton",82],["E. Pirro","Dallara",72],["A. Suzuki","Lola",68]],
-        coche:[["Williams FW14","",94],["McLaren MP4/6","",93],["Jordan 191","",84],["Ferrari 642/643","",82]],
-        motor:[["Renault V10","",94],["Honda V12","",93],["Ford HB V8","",80],["Lamborghini V12","",70]],
-        jefe:[["R. Dennis","McLaren",94],["F. Williams","Williams",93],["E. Jordan","Jordan",80]],
-        estratega:[["P. Head","Williams",91],["N. Oatley","McLaren",85],["G. Anderson","Jordan",82]]},
-  2004:{piloto:[["M. Schumacher","Ferrari",98],["K. Räikkönen","McLaren",92],["F. Alonso","Renault",91],["J. Button","BAR",89],["J. P. Montoya","Williams",89],["R. Barrichello","Ferrari",88],["G. Fisichella","Sauber",84],["G. Pantano","Jordan",66]],
-        coche:[["Ferrari F2004","15 victorias",98],["BAR 006","",87],["Renault R24","",86],["Minardi PS04B","",62]],
-        motor:[["Ferrari V10","",97],["BMW V10","",92],["Honda V10","",90],["Cosworth V10","",78]],
-        jefe:[["J. Todt","Ferrari",97],["F. Briatore","Renault",90],["P. Stoddart","Minardi",68]],
-        estratega:[["R. Brawn","Ferrari",99],["P. Symonds","Renault",90],["G. Willis","BAR",84]]},
-  2023:{piloto:[["M. Verstappen","Red Bull",98],["F. Alonso","Aston Martin",92],["L. Hamilton","Mercedes",91],["C. Leclerc","Ferrari",90],["L. Norris","McLaren",90],["S. Pérez","Red Bull",82],["K. Magnussen","Haas",76],["L. Stroll","Aston Martin",75],["L. Sargeant","Williams",66]],
-        coche:[["Red Bull RB19","21 de 22 victorias",99],["Mercedes W14","",86],["Ferrari SF-23","",86],["Williams FW45","",74]],
-        motor:[["Honda RBPT V6 híbrido","",95],["Mercedes V6 híbrido","",94],["Ferrari V6 híbrido","",93],["Renault V6 híbrido","",86]],
-        jefe:[["C. Horner","Red Bull",92],["T. Wolff","Mercedes",92],["J. Vowles","Williams",80],["G. Steiner","Haas",78]],
-        estratega:[["H. Lambiase","Red Bull",92],["P. Bonnington","Mercedes",90],["R. Jain","Ferrari",78]]}
-};
+// Temporadas: el mismo archivo que usa el servidor de salas (una sola fuente de datos).
+let DATA={};
+const DATA_READY=fetch('supabase/functions/_shared/temporadas.json').then(r=>r.json()).then(j=>{DATA=j});
 const SLOTS=[["piloto","Piloto"],["coche","Coche"],["motor","Motor"],["jefe","Jefe de equipo"],["estratega","Estratega"]];
 // Rivales: leyendas reales con una media de ejemplo
 const LEGENDS=[["J. M. Fangio",'#4fc3f7',95],["J. Clark",'#81c784',96],["J. Stewart",'#ba68c8',94],["N. Lauda",'#ef5350',95],["A. Prost",'#ffb74d',96],["A. Senna",'#ffd23f',98],["N. Mansell",'#e57373',91],["N. Piquet",'#64b5f6',90],["M. Häkkinen",'#b0bec5',93],["M. Schumacher",'#f44336',98],["F. Alonso",'#29b6f6',95],["K. Räikkönen",'#90a4ae',91],["S. Vettel",'#5c6bc0',93],["L. Hamilton",'#26a69a',97],["N. Rosberg",'#80cbc4',89],["M. Verstappen",'#3949ab',98],["C. Leclerc",'#e53935',91],["L. Norris",'#ff9800',91],["G. Villeneuve",'#d32f2f',92],["D. Hill",'#8d6e63',88],["J. Button",'#cddc39',89],["J. Hunt",'#f06292',90]];
@@ -423,7 +428,7 @@ let rnd=Math.random; const pick=a=>a[Math.floor(rnd()*a.length)];
 const LAPS=+(new URLSearchParams(location.search).get('laps')||20);
 
 // ---------- Estado ----------
-let year=null, cat=null, rerolls=2, picks={}, offer={}, FIELD=[], GRID=[];
+let year=null, cat=null, rerolls=2, picks={}, offer={}, FIELD=[], GRID=[], MODE='solo';
 const $=id=>document.getElementById(id);
 const rc=r=>r>=95?'r95':r>=90?'r90':r>=80?'r80':'r0';
 const fmt=t=>{const m=Math.floor(t/60), s=(t-m*60).toFixed(3).padStart(6,'0'); return `${m}:${s}`};
@@ -450,6 +455,7 @@ function renderSlots(){
   const vals=Object.values(picks).map(p=>p.r);
   $('avg').textContent=vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length):'—';
   $('toRace').disabled=filled<5;
+  $('toRace').style.display=MODE==='room'?'none':'';
   $('rollBtn').disabled=filled>=5;
 }
 
@@ -478,6 +484,7 @@ function renderList(){
   $('list').innerHTML=`<div class="note" style="margin:0 0 4px">${shown.length} de ${total} disponibles en esta tirada</div>`+
     shown.map((it,i)=>`<div class="pick" data-i="${i}"><div class="who"><b>${it[0]}</b><small>${it[1]||year}</small></div><div class="rt ${rc(it[2])}">${it[2]}</div></div>`).join('');
   document.querySelectorAll('.pick').forEach(el=>el.onclick=()=>{
+    if(MODE==='room'){roomPick(cat,+el.dataset.i,shown[+el.dataset.i]);return}
     const it=shown[+el.dataset.i]; picks[cat]={n:it[0],y:year,r:it[2]};
     const y=year; year=null; cat=null;
     $('year').innerHTML='?<small>Elegiste. Tira de nuevo</small>'; $('rollBtn').querySelector('span').textContent='Tirar';
@@ -485,7 +492,9 @@ function renderList(){
     $('tabs').innerHTML=''; renderSlots();
   });
 }
-$('rollBtn').onclick=()=>{
+$('rollBtn').onclick=async()=>{
+  if(MODE==='room'){roomRoll();return}
+  await DATA_READY;
   if(year && rerolls<=0) return;
   if(year) rerolls--;
   const ys=Object.keys(DATA); year=pick(ys); offer=makeOffer(year);
@@ -505,9 +514,9 @@ function go(screen,step){document.querySelectorAll('.screen').forEach(s=>s.class
 // coche > piloto > motor en ritmo puro; jefe = mecánicos (boxes); estratega = cuándo parar.
 const paceOf=c=>(c.c-85)*0.045+(c.d-85)*0.035+(c.m-85)*0.025;
 function buildField(){
-  FIELD=[{name:`${picks.piloto.n} '${String(picks.piloto.y).slice(2)}`,color:'#ff3b30',me:true,
+  FIELD=[{name:`${picks.piloto.n} '${String(picks.piloto.y).slice(2)}`,driver:picks.piloto.n,color:'#ff3b30',me:true,
           d:picks.piloto.r,c:picks.coche.r,m:picks.motor.r,j:picks.jefe.r,s:picks.estratega.r},
-    ...LEGENDS.filter(l=>l[0]!==picks.piloto.n).slice(0,21).map(([n,col,r])=>({name:n,color:col,d:r,
+    ...LEGENDS.filter(l=>l[0]!==picks.piloto.n).slice(0,21).map(([n,col,r])=>({name:n,driver:n,color:col,d:r,
           c:r-7+Math.round(rnd()*9),m:r-5+Math.round(rnd()*7),j:84+Math.round(rnd()*10),s:82+Math.round(rnd()*12)}))];
 }
 
@@ -526,26 +535,29 @@ function setTrack(){
   $('qsub').textContent=`Gran Premio de ${TRACK.gp}, sorteado del calendario 2026. Una vuelta lanzada por auto: tu piloto y tu auto marcan el ritmo; el dado pone la suerte (o el error).`;
 }
 $('toRace').onclick=()=>{buildField();setTrack();go('s-quali',2)};
-$('qBtn').onclick=()=>{
-  $('qBtn').disabled=true;
+// Calcula la qualy (usa rnd: en salas es la semilla compartida) y la muestra.
+// El orden en que aparecen los tiempos es solo visual y usa Math.random para no
+// alterar la secuencia de la carrera, que debe ser idéntica en todos los navegadores.
+function runQualy(animate,onDone){
   FIELD.forEach(c=>{
     c.q=TRACK.lap-1.9-paceOf(c)-(c.d-85)*0.02+(rnd()-0.5)*0.7;
     c.qErr=rnd()<Math.max(0,88-c.d)*0.015; // piloto flojo: error en la vuelta
     if(c.qErr){c.qErr=pick(TRACK.corners);c.q+=1.2+rnd()*1.5}
   });
-  const order=[...FIELD].sort(()=>rnd()-0.5); let i=0, done=[];
+  GRID=[...FIELD].sort((a,b)=>a.q-b.q);
+  const order=[...FIELD]; for(let k=order.length-1;k>0;k--){const j=Math.floor(Math.random()*(k+1));[order[k],order[j]]=[order[j],order[k]]}
+  let i=animate?0:order.length, done=animate?[]:[...order];
+  const paint=()=>{done.sort((a,b)=>a.q-b.q); const best=done[0].q;
+    $('qtower').innerHTML=done.map((c,k)=>`<div class="trow ${c.me?'me':''}"><span class="p">${k+1}</span><span class="c" style="background:${c.color}"></span><span>${c.name}${c.qErr?` <small style="color:var(--red)">· error en ${c.qErr}</small>`:''}</span><span class="g">${k?'+'+(c.q-best).toFixed(3):fmt(c.q)}</span></div>`).join('')};
+  const end=()=>{ const me=GRID.findIndex(c=>c.me)+1, m=FIELD.find(c=>c.me);
+    $('qtime').textContent=fmt(m.q);
+    $('qpos').innerHTML=`Largas <b style="color:var(--red)">P${me}</b>${m.qErr?`<br><small style="color:var(--muted)">Error en ${m.qErr}: perdiste tiempo</small>`:me===1?'<br><small style="color:var(--yellow)">¡POLE POSITION!</small>':''}`;
+    $('qBtn').style.display='none'; onDone&&onDone(); };
+  if(!animate){paint();end();return}
   $('qdie').classList.add('spin');
-  const t=setInterval(()=>{
-    done.push(order[i++]); done.sort((a,b)=>a.q-b.q); const best=done[0].q;
-    $('qtower').innerHTML=done.map((c,k)=>`<div class="trow ${c.me?'me':''}"><span class="p">${k+1}</span><span class="c" style="background:${c.color}"></span><span>${c.name}${c.qErr?` <small style="color:var(--red)">· error en ${c.qErr}</small>`:''}</span><span class="g">${k?'+'+(c.q-best).toFixed(3):fmt(c.q)}</span></div>`).join('');
-    if(i>=order.length){clearInterval(t);
-      GRID=[...FIELD].sort((a,b)=>a.q-b.q); const me=GRID.findIndex(c=>c.me)+1, m=FIELD[0];
-      $('qtime').textContent=fmt(m.q);
-      $('qpos').innerHTML=`Largas <b style="color:var(--red)">P${me}</b>${m.qErr?`<br><small style="color:var(--muted)">Error en ${m.qErr}: perdiste tiempo</small>`:me===1?'<br><small style="color:var(--yellow)">¡POLE POSITION!</small>':''}`;
-      $('qBtn').style.display='none'; $('toRace2').style.display='block';
-    }
-  },110);
-};
+  const t=setInterval(()=>{ done.push(order[i++]); paint(); if(i>=order.length){clearInterval(t);end()} },110);
+}
+$('qBtn').onclick=()=>{ $('qBtn').disabled=true; runQualy(true,()=>{$('toRace2').style.display='block'}); };
 $('toRace2').onclick=()=>{go('s-race',3);startRace()};
 
 // ---------- CARRERA: se calcula vuelta a vuelta y después se anima ----------
@@ -593,7 +605,9 @@ function simulate(){
   }
   return cars;
 }
-function startRace(){
+// syncAt (opcional, salas): hora local en que arranca el reloj de carrera para todos.
+// Si llegas tarde, la carrera se adelanta hasta el punto en que van los demás.
+function startRace(syncAt){
   const tp=$('tp'), L=tp.getTotalLength(), cars=simulate();
   const finishers=cars.filter(c=>!c.dnf), leaderEnd=Math.min(...finishers.map(c=>c.cum[LAPS]||1e9));
   const endT=leaderEnd+6, scale=endT/32;                   // toda la carrera en ~32 segundos
@@ -610,9 +624,12 @@ function startRace(){
     $('lap').textContent=`VUELTA ${Math.min(LAPS,Math.floor(o[0].p)+1)}/${LAPS}`;};
   cars.forEach(c=>c.out=false); draw(0);
   const li=$('lights').children; let k=0;
-  const t=setInterval(()=>{ if(k<5){li[k].style.background='#ff3b30';li[k].style.boxShadow='0 0 10px #ff3b30';k++} else {clearInterval(t);$('lights').className='lights go';[...li].forEach(x=>x.style.cssText='');run()} },400);
-  function run(){
-    const t0=performance.now();
+  const lights=()=>{const t=setInterval(()=>{ if(k<5){li[k].style.background='#ff3b30';li[k].style.boxShadow='0 0 10px #ff3b30';k++} else {clearInterval(t);$('lights').className='lights go';[...li].forEach(x=>x.style.cssText='');run(syncAt?Math.max(0,Date.now()-syncAt):0)} },400)};
+  if(!syncAt) lights();
+  else { const wait=syncAt-2000-Date.now();
+    if(wait>=0) setTimeout(lights,wait); else { $('lights').className='lights go'; run(Math.max(0,Date.now()-syncAt)); } }
+  function run(lateMs){
+    const t0=performance.now()-lateMs;
     const tick=()=>{
       const T=Math.min(endT,(performance.now()-t0)/1000*scale);
       while(evI<events.length && events[evI].T<=T){const e=events[evI++]; if(e.k==='crash'||e.k==='engine'){cars.forEach(c=>{if(c.dnf && c.cum[c.cum.length-1]<=T) c.out=true})} msg(e)}
@@ -636,7 +653,7 @@ let RESULT=null;
 function finish(cars){
   const cls=[...cars].sort((a,b)=>(!!a.dnf-!!b.dnf)||(a.dnf&&b.dnf?b.dnf-a.dnf:a.cum[LAPS]-b.cum[LAPS]));
   const pos=cls.findIndex(c=>c.me)+1, me=cars.find(c=>c.me);
-  RESULT={pos,dnf:me.dnf,grid:me.grid,stops:me.stops};
+  RESULT={pos,dnf:me.dnf,grid:me.grid,stops:me.stops,cls};
   $('radio').insertAdjacentHTML('afterbegin',`<div class="msg" style="border-color:#fff"><b>🏁 Bandera a cuadros</b>${me.dnf?'Abandonaste en la vuelta '+me.dnf:'Terminaste P'+pos}.</div>`);
   $('toResult').style.display='block';
   saveRace(cls); saveStats(pos,me.dnf);
@@ -647,7 +664,7 @@ function finish(cars){
 const KEY='boxbox_campeonato_v2'; let LAST={};
 function loadChamp(){try{return JSON.parse(localStorage.getItem(KEY))||{}}catch(e){return {}}}
 function saveRace(cls){const c=loadChamp(); LAST={};
-  cls.forEach((car,i)=>{const n=car.me?picks.piloto.n:car.name, r=c[n]||{pts:0,races:0,wins:0}, pts=car.dnf?0:(PTS[i]||0);
+  cls.forEach((car,i)=>{const n=car.driver||car.name, r=c[n]||{pts:0,races:0,wins:0}, pts=car.dnf?0:(PTS[i]||0);
     r.pts+=pts; r.races++; if(!car.dnf&&i===0) r.wins++; c[n]=r; LAST[n]=car.dnf?'DNF':pts?'+'+pts:'—';});
   try{localStorage.setItem(KEY,JSON.stringify(c))}catch(e){}}
 
@@ -656,6 +673,12 @@ $('toResult').onclick=()=>{
   $('pos').textContent=dnf?'DNF':'P'+pos; $('pos').className='pos'+(!dnf&&pos===1?' p1':'');
   $('resmsg').textContent=pts?`+${pts} puntos para ${p.n} en tu campeonato`:dnf?'Abandono: sin puntos':'Sin puntos esta vez';
   $('share').innerHTML=`BOXBOX · GP de ${TRACK.gp} (${TRACK.city})<br>🏁 ${dnf?'DNF':'P'+pos+'/22'} · largó P${grid} · ${stops} parada${stops===1?'':'s'}<br>${SLOTS.map(([k])=>picks[k].r>=95?'🟪':picks[k].r>=90?'🟩':picks[k].r>=80?'🟨':'⬛').join('')} ${p.n} ${p.y} · media ${$('avg').textContent}`;
+  if(MODE==='room'){
+    const rows=RESULT.cls.map((c,i)=>({c,i})).filter(x=>x.c.human);
+    $('roomRes').innerHTML=`<h3 style="margin:0 0 8px;font-size:13px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase">Resultado de la sala ${esc(ROOM.code)}</h3>`+
+      rows.map(({c,i})=>`<div class="trow ${c.me?'me':''}" style="margin-bottom:4px"><span class="p">${c.dnf?'—':i+1}</span><span class="c" style="background:${c.color}"></span><span>${c.name}</span><span class="g">${c.dnf?'DNF':(PTS[i]?'+'+PTS[i]+' pts':'')}</span></div>`).join('');
+    $('roomRes').style.display='block'; $('again').querySelector('span').textContent='Volver al inicio';
+  }
   go('s-result',4);
 };
 $('toChamp').onclick=()=>{
@@ -664,10 +687,11 @@ $('toChamp').onclick=()=>{
     :'<tr><td colspan="6" class="empty">Todavía sin puntos. ¡Corre tu primera carrera!</td></tr>';
   $('champ').style.display='block'; $('champ').scrollIntoView({behavior:'smooth'});
 };
-$('again').onclick=()=>{try{sessionStorage.setItem('boxbox_auto',MODE)}catch(e){};location.reload()};
+$('again').onclick=()=>{ if(MODE==='room'){forgetRoom();location.href=location.pathname;return}
+  try{sessionStorage.setItem('boxbox_auto',MODE)}catch(e){};location.reload()};
 // ---------- Inicio, navegación, ajustes, perfil, modales ----------
 function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
-let MODE='solo';
+// MODE se declara arriba, junto al estado del juego
 const today=new Date(), DAYKEY=today.getFullYear()*10000+(today.getMonth()+1)*100+today.getDate();
 function startGame(mode){
   MODE=mode; if(mode==='daily') rnd=mulberry32(DAYKEY);   // desafío del día: mismos dados para todos hoy
@@ -732,6 +756,165 @@ function showProfile(){$('st0').style.display='none';const s=loadStats();
 try{const m=sessionStorage.getItem('boxbox_auto');if(m){sessionStorage.removeItem('boxbox_auto');startGame(m)}}catch(e){}
 
 
+
+// ---------- SALAS CON AMIGOS ----------
+// El servidor (Edge Function "sala" en Supabase) guarda las salas, revela los dados de a uno
+// y valida cada elección. Al cerrar el armado revela la semilla de carrera: cada navegador
+// simula la misma carrera con esa semilla y los autos ya validados.
+const SALA_URL='https://vljuhibzzwtcswirunfr.supabase.co/functions/v1/sala';
+const ROOM_KEY='boxbox_sala';
+let ROOM=null, RS=null, OFF=0, pollT=null, tickT=null, raceShown=false;
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function toast(t){const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display='none',3500)}
+async function api(action,extra={}){
+  const body={action,...(ROOM?{code:ROOM.code,pid:ROOM.pid,secret:ROOM.secret}:{}),...extra};
+  let r,j;
+  try{ r=await fetch(SALA_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); j=await r.json(); }
+  catch(e){ throw new Error('Sin conexión con el servidor. Revisa tu internet.'); }
+  if(!r.ok) throw Object.assign(new Error(j.error||'Error del servidor'),{status:r.status});
+  if(j.now) OFF=j.now-Date.now();
+  return j;
+}
+const srvToLocal=t=>Date.parse(t)-OFF;
+function rememberRoom(){try{localStorage.setItem(ROOM_KEY,JSON.stringify(ROOM))}catch(e){}}
+function forgetRoom(){ROOM=null;clearInterval(pollT);clearInterval(tickT);try{localStorage.removeItem(ROOM_KEY)}catch(e){}}
+function myName(){const n=$('fName').value.trim();try{localStorage.setItem('boxbox_nombre',n)}catch(e){};return n}
+try{$('fName').value=localStorage.getItem('boxbox_nombre')||''}catch(e){}
+
+async function createRoom(){
+  const name=myName(); if(!name){$('fErr').textContent='Escribe tu nombre.';return}
+  $('fCreate').disabled=true; $('fErr').textContent='';
+  try{ const j=await api('create',{name}); ROOM={code:j.room.code,pid:j.pid,secret:j.secret}; enterRoom(j); }
+  catch(e){ $('fErr').textContent=e.message } finally{ $('fCreate').disabled=false }
+}
+async function joinRoom(){
+  const name=myName(), code=$('fCode').value.trim().toUpperCase();
+  if(!name){$('fErr').textContent='Escribe tu nombre.';return}
+  if(!code){$('fErr').textContent='Escribe el código de la sala.';return}
+  $('fJoin').disabled=true; $('fErr').textContent='';
+  try{ const j=await api('join',{code,name}); ROOM={code:j.room.code,pid:j.pid,secret:j.secret}; enterRoom(j); }
+  catch(e){ $('fErr').textContent=e.message } finally{ $('fJoin').disabled=false }
+}
+$('fCreate').onclick=createRoom; $('fJoin').onclick=joinRoom;
+$('fCode').onkeydown=e=>{if(e.key==='Enter')joinRoom()};
+
+function enterRoom(state){
+  MODE='room'; rememberRoom();
+  document.querySelectorAll('.modal').forEach(m=>m.classList.remove('open'));
+  history.replaceState(null,'',location.pathname+'?sala='+encodeURIComponent(ROOM.code));
+  clearInterval(pollT); pollT=setInterval(poll,1500);
+  clearInterval(tickT); tickT=setInterval(paintTimer,500);
+  onState(state);
+}
+async function poll(){
+  try{ onState(await api('state')) }
+  catch(e){ if(e.status===403||e.status===404||e.status===410){forgetRoom();toast(e.message);location.href=location.pathname} }
+}
+function onState(s){
+  RS=s; const st=s.room.status;
+  if(st==='lobby') return renderLobby(s);
+  if(st==='building') return renderRoomBuild(s);
+  if(st==='racing' && !raceShown){ raceShown=true; clearInterval(pollT); startRoomRace(s); }
+}
+
+// --- sala de espera ---
+function renderLobby(s){
+  $('st0').style.display='none';
+  if(!$('s-lobby').classList.contains('on')) go('s-lobby',0);
+  $('lCode').textContent=s.room.code; $('lCode2').textContent=s.room.code; $('lCount').textContent=s.players.length;
+  $('lPlayers').innerHTML=s.players.map((p,i)=>`<div class="trow ${p.pid===ROOM.pid?'me':''}"><span class="p">${i+1}</span><span class="c" style="background:${p.color}"></span><span>${esc(p.name)}</span><span class="g">${p.pid===s.room.host?'anfitrión':''}</span></div>`).join('');
+  const host=s.room.host===ROOM.pid;
+  $('lStart').style.display=host?'':'none';
+  $('lWait').textContent=host?(s.players.length<2?'Puedes largar solo o esperar a tus amigos.':''):'Esperando a que el anfitrión largue…';
+}
+$('lCopy').onclick=async()=>{const url=`${location.origin}${location.pathname}?sala=${ROOM.code}`;
+  try{await navigator.clipboard.writeText(url);toast('Link copiado: '+url)}catch(e){prompt('Copia este link:',url)}};
+$('lStart').onclick=async()=>{$('lStart').disabled=true;try{onState(await api('start'))}catch(e){toast(e.message)}finally{$('lStart').disabled=false}};
+$('lLeave').onclick=async()=>{try{await api('leave')}catch(e){};forgetRoom();location.href=location.pathname};
+
+// --- armado con el servidor ---
+function renderRoomBuild(s){
+  const first=!$('s-build').classList.contains('on');
+  picks={...s.me.picks}; rerolls=2-s.me.rerolls;
+  if(first){
+    $('st0').style.display=''; go('s-build',1);
+    $('buildTitle').innerHTML=`Sala <em>${esc(s.room.code)}</em>`;
+    $('roomBar').style.display='flex';
+    if(s.me.current && !year) showRoll(s.me.current);
+  }
+  renderSlots(); paintTimer();
+  const ready=s.players.filter(p=>p.done).length;
+  $('rbReady').textContent=`${ready} de ${s.players.length} jugador${s.players.length===1?'':'es'} con el auto listo`;
+  const mine=Object.keys(picks).length;
+  $('rbMine').textContent=mine>=5?'✅ Tu auto está listo. Esperando a los demás…':`Tu auto: ${mine}/5`;
+}
+function paintTimer(){
+  if(!RS||RS.room.status!=='building'||!RS.room.deadline) return;
+  const ms=Math.max(0,srvToLocal(RS.room.deadline)-Date.now()), s=Math.ceil(ms/1000);
+  $('rbTimer').textContent=`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+  $('rbTimer').style.color=s<=30?'var(--red)':'';
+}
+function showRoll(roll){
+  year=roll.year; offer=roll.offer;
+  $('die').classList.remove('spin'); void $('die').offsetWidth; $('die').classList.add('spin');
+  $('year').innerHTML=`${year}<small>Temporada sorteada</small>`;
+  $('rerolls').textContent=`Re-sortear: ${rerolls} restantes`;
+  $('rollBtn').querySelector('span').textContent='Re-sortear';
+  $('rollBtn').disabled=rerolls<=0;
+  cat=SLOTS.find(([k])=>!picks[k])[0]; renderTabs(); renderList();
+}
+async function roomRoll(){
+  const reroll=!!year; if(reroll&&rerolls<=0) return;
+  $('rollBtn').disabled=true;
+  try{ const j=await api('roll',{reroll}); rerolls=2-j.rerolls; showRoll(j.roll); }
+  catch(e){ toast(e.message); $('rollBtn').disabled=false; }
+}
+async function roomPick(slot,idx,it){
+  document.querySelectorAll('.pick').forEach(el=>el.style.pointerEvents='none');
+  try{
+    const s=await api('pick',{slot,idx}); const y=year; year=null; cat=null;
+    $('year').innerHTML='?<small>Elegiste. Tira de nuevo</small>'; $('rollBtn').querySelector('span').textContent='Tirar';
+    $('list').innerHTML=`<div class="empty">✅ ${esc(it[0])} (${y}) a tu auto. ${Object.keys(s.me.picks).length<5?'Tira otra vez.':'¡Auto completo! Esperando a los demás…'}</div>`;
+    $('tabs').innerHTML=''; onState(s);
+  }catch(e){ toast(e.message); document.querySelectorAll('.pick').forEach(el=>el.style.pointerEvents=''); }
+}
+
+// --- carrera sincronizada ---
+function buildRoomField(s){
+  const pl=s.players, taken=new Set(pl.map(p=>p.picks.piloto.n));
+  FIELD=[...pl.map(p=>({name:`${esc(p.name)} · ${esc(p.picks.piloto.n)} '${String(p.picks.piloto.y).slice(2)}`,driver:p.picks.piloto.n,
+      color:p.color,me:p.pid===ROOM.pid,human:true,
+      d:p.picks.piloto.r,c:p.picks.coche.r,m:p.picks.motor.r,j:p.picks.jefe.r,s:p.picks.estratega.r})),
+    ...LEGENDS.filter(l=>!taken.has(l[0])).slice(0,Math.max(0,22-pl.length)).map(([n,col,r])=>({name:n,driver:n,color:col,d:r,
+      c:r-7+Math.round(rnd()*9),m:r-5+Math.round(rnd()*7),j:84+Math.round(rnd()*10),s:82+Math.round(rnd()*12)}))];
+}
+function startRoomRace(s){
+  clearInterval(tickT);
+  rnd=mulberry32(Number(s.room.race_seed));               // misma semilla = misma carrera para todos
+  picks={...s.players.find(p=>p.pid===ROOM.pid).picks};
+  setTrack(); buildRoomField(s);
+  const raceAt=srvToLocal(s.room.race_start), syncAt=raceAt+2000, late=Date.now()>=raceAt;
+  $('qBtn').style.display='none'; $('toRace2').style.display='none';
+  go('s-quali',2);
+  const toRace=()=>{ go('s-race',3); startRace(syncAt); };
+  if(late){ runQualy(false); toRace(); return; }
+  runQualy(true,()=>{
+    $('qWait').style.display='block';
+    const t=setInterval(()=>{ const left=Math.ceil((raceAt-Date.now())/1000);
+      if(left<=0){clearInterval(t);toRace()} else $('qWait').textContent=`La carrera larga en ${left}s…`; },250);
+  });
+}
+
+// --- volver a la sala al recargar, o entrar por link ---
+(async function(){
+  const q=new URLSearchParams(location.search).get('sala');
+  let saved=null; try{saved=JSON.parse(localStorage.getItem(ROOM_KEY))}catch(e){}
+  if(saved && (!q || q.toUpperCase()===saved.code)){
+    ROOM=saved;
+    try{ enterRoom(await api('state')); return }catch(e){ forgetRoom() }
+  }
+  if(q){ $('fCode').value=q.toUpperCase(); openM('mFriends'); $('fErr').textContent='Te invitaron a esta sala: escribe tu nombre y toca "Unirme".'; }
+})();
 </script>
 </body>
 </html>

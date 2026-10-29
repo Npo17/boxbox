@@ -247,3 +247,13 @@ issues verified: 2 of 2
 
 Verification is deterministic: a fix counts when its `applied_text` is in the current design and absent from the round-2 snapshot. It confirms applied edits, never a review verdict; no reviewer was launched past the cap.
 <!-- gstack:office-hours:concerns:end -->
+
+---
+
+## Implementación v1 de salas (2026-10-29)
+
+Hecho según "Salas de amigos", con una simplificación deliberada:
+
+- **Igual que el diseño:** semillas secretas con hash publicado, tiradas reveladas de a una, validación de cada elección, autocompletado en el servidor al vencer el tiempo, autos ajenos ocultos hasta largar, salas que expiran a las 24 h, sincronía por hora del servidor.
+- **Simplificado:** el servidor no recalcula la carrera. Cada navegador la simula con la semilla revelada y los autos validados por el servidor, así que un jugador que modifique su navegador solo cambia lo que ve él, no lo que ven los demás. El resultado oficial en el servidor se agrega cuando el campeonato se guarde en la cuenta (login con Google).
+- **Identidad:** sin login por ahora. Cada jugador recibe un secreto de sala que vive en su navegador (permite volver si recarga).
