@@ -616,10 +616,11 @@ function forgetRoom(){rtClose();ROOM=null;clearInterval(pollT);clearInterval(tic
 function myName(){const n=$('fName').value.trim();try{localStorage.setItem('boxbox_nombre',n)}catch(e){};return n}
 try{$('fName').value=localStorage.getItem('boxbox_nombre')||''}catch(e){}
 
+async function frToken(){ try{ const {data}=await sb.auth.getSession(); return data&&data.session?data.session.access_token:undefined }catch(e){ return undefined } }
 async function createRoom(){
   const name=myName(); if(!name){$('fErr').textContent='Escribe tu nombre.';return}
   $('fCreate').disabled=true; $('fErr').textContent='';
-  try{ const j=await api('create',{name,modo:$('fCareer').checked?'carrera':'normal'}); ROOM={code:j.room.code,pid:j.pid,secret:j.secret}; enterRoom(j); }
+  try{ const j=await api('create',{name,modo:$('fCareer').checked?'carrera':'normal',token:await frToken()}); ROOM={code:j.room.code,pid:j.pid,secret:j.secret}; enterRoom(j); }
   catch(e){ $('fErr').textContent=e.message } finally{ $('fCreate').disabled=false }
 }
 async function joinRoom(){
@@ -627,7 +628,7 @@ async function joinRoom(){
   if(!name){$('fErr').textContent='Escribe tu nombre.';return}
   if(!code){$('fErr').textContent='Escribe el código de la sala.';return}
   $('fJoin').disabled=true; $('fErr').textContent='';
-  try{ const j=await api('join',{code,name}); ROOM={code:j.room.code,pid:j.pid,secret:j.secret}; enterRoom(j); }
+  try{ const j=await api('join',{code,name,token:await frToken()}); ROOM={code:j.room.code,pid:j.pid,secret:j.secret}; enterRoom(j); }
   catch(e){ $('fErr').textContent=e.message } finally{ $('fJoin').disabled=false }
 }
 $('fCreate').onclick=createRoom; $('fJoin').onclick=joinRoom;
@@ -664,7 +665,7 @@ function renderLobby(s){
   $('st0').style.display='none';
   if(!$('s-lobby').classList.contains('on')) go('s-lobby',0);
   $('lCode').textContent=s.room.code; $('lCode2').textContent=s.room.code; $('lCount').textContent=s.players.length;
-  $('lPlayers').innerHTML=s.players.map((p,i)=>`<div class="trow ${p.pid===ROOM.pid?'me':''}"><span class="p">${i+1}</span><span class="c" style="background:${p.color}"></span><span>${esc(p.name)}</span><span class="g">${p.pid===s.room.host?'anfitrión':''}</span></div>`).join('');
+  $('lPlayers').innerHTML=s.players.map((p,i)=>`<div class="trow ${p.pid===ROOM.pid?'me':''}"><span class="p">${i+1}</span><span class="c" style="background:${p.color}"></span><span>${esc(p.name)}</span><span class="g">${p.uid&&USER&&p.uid!==USER.id?`<button class="btn ghost" data-uid="${p.uid}" title="Ver perfil" style="padding:2px 8px;font-size:12px"><span>👤</span></button> `:''}${p.pid===s.room.host?'anfitrión':''}</span></div>`).join('');
   const host=s.room.host===ROOM.pid, r=s.room, post=r.status==='racing';     // post: modo carrera, la carrera ya se corrió y se espera la siguiente fecha
   renderRoomCareer(s);
   const last=r.modo==='carrera'&&r.ronda>=r.total-1;
@@ -688,7 +689,7 @@ function celebrarCampeon(s){
   if(seen===key) return;
   try{ localStorage.setItem('boxbox_trofeo_visto',key) }catch(e){}
   if(mine){ const t=loadTrofeos().filter(x=>x.sala!==ROOM.code); t.unshift({anio:2026,sala:ROOM.code,pts:c.pts,fecha:new Date().toLocaleDateString(LOCALES[LANG]||'es'),final:c.final});
-    try{ localStorage.setItem('boxbox_trofeos',JSON.stringify(t.slice(0,50))) }catch(e){} }
+    try{ localStorage.setItem('boxbox_trofeos',JSON.stringify(t.slice(0,50))) }catch(e){} if(USER) syncUp() }
   $('trEmoji').textContent=mine?'🏆':'🥇';
   $('trTitle').textContent=mine?'¡Sos el campeón de pilotos 2026!':`🏆 ¡${c.name} es campeón de pilotos 2026!`;
   $('trTxt').textContent=(c.final?'Terminó la temporada con ':'Campeón matemático: nadie lo puede alcanzar con ')+(c.final?`${c.pts} puntos.`:`los puntos que quedan. Tiene ${c.pts} puntos.`);
@@ -1020,7 +1021,7 @@ function paintUser(){
   $('pLogin').disabled=!USER&&!GOOGLE_ON; $('pLogin').style.opacity=$('pLogin').disabled?.5:1;
   $('nProfile').textContent=USER?('Perfil · '+String(m.full_name||m.name||USER.email).split(/[ @]/)[0]):'Perfil';
 }
-function cloudRow(){ return {user_id:USER.id,campeonato:loadRaw(),stats:loadStats(),historial:loadHist(),updated_at:new Date().toISOString()} }
+function cloudRow(){ return {user_id:USER.id,campeonato:loadRaw(),stats:loadStats(),historial:loadHist(),trofeos:loadTrofeos(),updated_at:new Date().toISOString()} }
 async function syncUp(){
   if(!sb||!USER) return;
   const {error}=await sb.from('campeonatos').upsert(cloudRow());
@@ -1035,6 +1036,7 @@ async function syncDown(){
   else {
     // La cuenta manda: es lo que se ve en todos tus dispositivos.
     try{ localStorage.setItem(KEY,JSON.stringify(data.campeonato||{})); localStorage.setItem('boxbox_stats',JSON.stringify(data.stats||{races:0,wins:0,podiums:0,best:null})); localStorage.setItem('boxbox_historial',JSON.stringify(data.historial||[])); }catch(e){}
+    try{ const t=[...(data.trofeos||[])]; for(const x of loadTrofeos()) if(!t.some(y=>y.sala===x.sala)) t.push(x); localStorage.setItem('boxbox_trofeos',JSON.stringify(t.slice(0,50))) }catch(e){}
     toast('Campeonato cargado desde tu cuenta.');
   }
   if($('s-profile').classList.contains('on')) showProfile();
@@ -1059,10 +1061,128 @@ fetch(SB_URL+'/auth/v1/settings',{headers:{apikey:SB_KEY}}).then(r=>r.json()).th
 // Cada vez que cambia el campeonato, se guarda también en la cuenta.
 { const _s=saveStats; saveStats=function(...a){ _s(...a); syncUp(); };
   const _r=resetChamp; resetChamp=function(...a){ _r(...a); syncUp(); }; }
+
+// ---------- AMIGOS ----------
+// Hace falta iniciar sesión con Google y tener apodo. Los pedidos y la lista viven en el servidor (función "amigos");
+// quién está conectado y las invitaciones viajan por Supabase Realtime (un canal por persona: "p-<id>").
+const FR_URL='https://vljuhibzzwtcswirunfr.supabase.co/functions/v1/amigos';
+let FR=null, FR_ON={}, FR_CH={}, FR_ME=null;
+async function frApi(action,extra={}){
+  const headers={'Content-Type':'application/json'};
+  try{ const {data}=await sb.auth.getSession(); if(data&&data.session) headers.Authorization='Bearer '+data.session.access_token }catch(e){}
+  let r,j;
+  try{ r=await fetch(FR_URL,{method:'POST',headers,body:JSON.stringify({action,...extra})}); j=await r.json() }
+  catch(e){ throw new Error('Sin conexión con el servidor. Revisa tu internet.') }
+  if(!r.ok) throw Object.assign(new Error(j.error||'Error del servidor'),{status:r.status,code:j.code});
+  return j;
+}
+function frClose(){ try{ Object.values(FR_CH).forEach(c=>sb.removeChannel(c)); if(FR_ME) sb.removeChannel(FR_ME) }catch(e){} FR_CH={}; FR_ME=null; FR_ON={} }
+// Conexión: yo aparezco "en línea" en mi canal y miro el canal de cada amigo
+function frPresence(){
+  if(!sb||!USER||!FR||!FR.nick) return;
+  const ids=new Set(FR.amigos.map(a=>a.uid));
+  if(!FR_ME){
+    FR_ME=sb.channel('p-'+USER.id,{config:{presence:{key:USER.id}}});
+    FR_ME.on('broadcast',{event:'invite'},({payload})=>frInvitacion(payload));
+    FR_ME.subscribe(st=>{ if(st==='SUBSCRIBED') FR_ME.track({nick:FR.nick}) });
+  }
+  for(const [uid,ch] of Object.entries(FR_CH)) if(!ids.has(uid)){ try{ sb.removeChannel(ch) }catch(e){} delete FR_CH[uid]; delete FR_ON[uid] }
+  for(const uid of ids) if(!FR_CH[uid]){
+    const ch=sb.channel('p-'+uid);
+    ch.on('presence',{event:'sync'},()=>{ const on=Object.keys(ch.presenceState()).length>0; if(FR_ON[uid]!==on){ FR_ON[uid]=on; if($('s-friends').classList.contains('on')) renderFriends(); if($('mFriend').classList.contains('open')&&FRP&&FRP.uid===uid) paintFriend() } });
+    ch.subscribe(); FR_CH[uid]=ch;
+  }
+}
+async function frLoad(){
+  if(!sb||!USER){ FR=null; frClose(); renderFrBadge(); return }
+  try{ FR=await frApi('yo') }catch(e){ FR=null; if(e.code!=='login') console.warn(e) }
+  frPresence(); renderFrBadge(); if($('s-friends').classList.contains('on')) renderFriends();
+}
+function renderFrBadge(){ const n=FR?FR.recibidas.length:0; $('nFriends').textContent=n?`👥 Amigos (${n})`:'👥 Amigos' }
+async function showFriends(){
+  $('st0').style.display='none'; go('s-friends',0);
+  if(USER&&!FR) await frLoad();
+  renderFriends();
+}
+function frDot(uid){ return `<span style="display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:8px;background:${FR_ON[uid]?'var(--green)':'#555a66'}" title="${FR_ON[uid]?'En línea':'Desconectado'}"></span>` }
+function renderFriends(){
+  const box=$('frBody'); $('frSub').textContent='Agregá amigos para invitarlos rápido a tu sala y ver su perfil.';
+  if(!USER){ box.innerHTML=`<div class="note">Iniciá sesión con Google para usar amigos.</div><div class="cta-row" style="margin-top:12px"><button class="btn" id="frLogin"><span>Continuar con Google</span></button></div>`;
+    $('frLogin').onclick=()=>signIn('?ver=amigos'); return }
+  if(!FR){ box.innerHTML='<div class="note">Cargando…</div>'; return }
+  if(!FR.nick){ box.innerHTML=`<div class="note">Elegí tu apodo (es como te ven tus amigos y el ranking del desafío del día):</div>
+    <input id="frNick" maxlength="16" placeholder="Tu apodo" style="margin:10px 0"><div class="note" id="frErr" style="color:var(--red);min-height:18px"></div>
+    <button class="btn" id="frNickGo"><span>Guardar</span></button>`;
+    $('frNickGo').onclick=async()=>{ try{ FR=await frApi('nick',{nickname:$('frNick').value}); frPresence(); renderFriends() }catch(e){ $('frErr').textContent=e.message } }; return }
+  const inRoomNow=!!(ROOM&&RS&&RS.room&&RS.room.status==='lobby');
+  const sec=(t,h)=>h?`<h3 style="margin:16px 0 6px">${t}</h3>${h}`:'';
+  const row=(a,btns)=>`<div class="opt" style="align-items:center"><span>${frDot(a.uid)}<b>${esc(a.nick)}</b>${FR_ON[a.uid]?' <small style="color:var(--green)">En línea</small>':''}</span><span style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">${btns}</span></div>`;
+  const btn=(k,uid,l,ex='')=>`<button class="btn ghost" data-fr="${k}" data-uid="${uid}" style="padding:6px 12px;font-size:13px" ${ex}><span>${l}</span></button>`;
+  box.innerHTML=`<div class="note">Tu apodo: <b>${esc(FR.nick)}</b></div>`
+    +sec('Pedidos recibidos',FR.recibidas.map(a=>row(a,btn('si',a.uid,'Aceptar')+btn('no',a.uid,'Rechazar'))).join(''))
+    +`<h3 style="margin:16px 0 6px">Mis amigos</h3>`+(FR.amigos.length?FR.amigos.map(a=>row(a,btn('perfil',a.uid,'Ver perfil')+btn('inv',a.uid,'Invitar a la sala',FR_ON[a.uid]&&inRoomNow?'':'disabled'))).join(''):'<div class="note">Todavía no tenés amigos. Agregalos desde una sala o por apodo.</div>')
+    +sec('Pedidos enviados',FR.enviadas.map(a=>row(a,btn('quitar',a.uid,'Cancelar'))).join(''))
+    +`<h3 style="margin:16px 0 6px">Agregar por apodo</h3><div style="display:flex;gap:8px"><input id="frAdd" maxlength="16" placeholder="Apodo de tu amigo" style="flex:1"><button class="btn" id="frAddGo"><span>Enviar pedido</span></button></div><div class="note" id="frErr" style="color:var(--red);min-height:18px"></div>`
+    +(inRoomNow?'':'<div class="note">Para invitar a un amigo, primero creá o entrá a una sala y esperá en la sala de espera.</div>');
+  $('frAddGo').onclick=()=>frAccion('solicitar',{nick:$('frAdd').value},'frErr');
+}
+async function frAccion(action,extra,errId){
+  try{ FR=await frApi(action,extra); frPresence(); renderFrBadge(); renderFriends(); if($('mFriend').classList.contains('open')) await showFriendProfile(FRP.uid); if(action==='solicitar') toast('Pedido enviado') }
+  catch(e){ if(errId&&$(errId)) $(errId).textContent=e.message; else toast(e.message); if(e.code==='nick'&&!FR) showFriends() }
+}
+$('frBody').onclick=e=>{ const b=e.target.closest('[data-fr]'); if(!b||b.disabled) return; const uid=b.dataset.uid, k=b.dataset.fr;
+  if(k==='si') frAccion('responder',{uid,aceptar:true}); else if(k==='no') frAccion('responder',{uid,aceptar:false});
+  else if(k==='quitar') frAccion('quitar',{uid}); else if(k==='perfil') showFriendProfile(uid); else if(k==='inv') frInvitar(uid) };
+// Perfil de otra persona (amigo: completo; si no, solo el apodo y el botón de agregar)
+let FRP=null;
+async function showFriendProfile(uid){
+  if(!USER){ toast('Iniciá sesión con Google para usar amigos.'); return }
+  if(!FR) await frLoad();
+  if(!FR||!FR.nick){ showFriends(); toast('Primero elegí tu apodo.'); return }
+  $('mfBody').innerHTML='<div class="note">Cargando…</div>'; openM('mFriend');
+  try{ FRP=await frApi('perfil',{uid}); paintFriend() }catch(e){ $('mfBody').innerHTML=`<div class="note">${esc(e.message)}</div>` }
+}
+function paintFriend(){
+  const p=FRP; if(!p) return;
+  const st=p.stats, inRoomNow=!!(ROOM&&RS&&RS.room&&RS.room.status==='lobby');
+  let h=`<h2 style="margin:0 0 4px">${esc(p.nick)}</h2><div class="note" style="margin:0 0 10px">${FR_ON[p.uid]?'<span style="color:var(--green)">● En línea</span>':'Desconectado'}</div>`;
+  if(p.relacion==='amigo'){
+    h+=`<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center">${[['Carreras',st.races],['Victorias',st.wins],['Podios',st.podiums],['Mejor',st.best?'P'+st.best:'—']].map(([l,v])=>`<div><b style="display:block;font-size:24px">${v}</b><small>${l}</small></div>`).join('')}</div>`
+      +`<h3 style="margin:14px 0 6px">Trofeos</h3>`+(p.trofeos.length?p.trofeos.map(x=>`<div class="opt"><span><b>🏆 Campeón de pilotos ${x.anio}</b><br><small>${esc(x.fecha)} · sala ${esc(x.sala)}</small></span><small style="text-align:right">${x.pts} pts${x.final?'':' (campeón matemático)'}</small></div>`).join(''):'<div class="note">Este jugador no tiene trofeos todavía.</div>')
+      +`<div class="cta-row" style="margin-top:14px">${FR_ON[p.uid]&&inRoomNow?`<button class="btn" data-mf="inv"><span>Invitar a mi sala</span></button>`:''}<button class="btn ghost" data-mf="quitar"><span>Quitar amigo</span></button></div>`;
+  } else if(p.relacion==='ninguna') h+=`<div class="note">Hacete amigo de ${esc(p.nick)} para ver su perfil y poder invitarlo a tu sala.</div><div class="cta-row" style="margin-top:12px"><button class="btn" data-mf="add"><span>Agregar como amigo</span></button></div>`;
+  else if(p.relacion==='enviada') h+=`<div class="note">Pedido enviado. Cuando lo acepte vas a ver su perfil.</div><div class="cta-row" style="margin-top:12px"><button class="btn ghost" data-mf="quitar"><span>Cancelar</span></button></div>`;
+  else if(p.relacion==='recibida') h+=`<div class="note">${esc(p.nick)} quiere ser tu amigo.</div><div class="cta-row" style="margin-top:12px"><button class="btn" data-mf="si"><span>Aceptar</span></button><button class="btn ghost" data-mf="no"><span>Rechazar</span></button></div>`;
+  $('mfBody').innerHTML=h;
+}
+$('mfBody').onclick=e=>{ const b=e.target.closest('[data-mf]'); if(!b||!FRP) return; const k=b.dataset.mf, uid=FRP.uid;
+  if(k==='add') frAccion('solicitar',{uid}); else if(k==='quitar') frAccion('quitar',{uid}); else if(k==='si') frAccion('responder',{uid,aceptar:true});
+  else if(k==='no') frAccion('responder',{uid,aceptar:false}); else if(k==='inv') frInvitar(uid) };
+// Invitaciones a una sala: aviso por el canal del amigo; solo se muestran si vienen de un amigo
+function frInvitar(uid){
+  if(!(ROOM&&RS&&RS.room&&RS.room.status==='lobby')){ toast('Armá o entrá a una sala para invitar.'); return }
+  const ch=FR_CH[uid]; const a=FR&&FR.amigos.find(x=>x.uid===uid); if(!ch||!a) return;
+  ch.send({type:'broadcast',event:'invite',payload:{from:USER.id,nick:FR.nick,code:ROOM.code}}).then(()=>toast('Invitación enviada a '+a.nick)).catch(()=>toast('No se pudo enviar la invitación.'));
+}
+function frInvitacion(p){
+  if(!p||!FR||!FR.amigos.some(a=>a.uid===p.from)||!/^[A-Z0-9-]{4,24}$/.test(String(p.code||''))) return;
+  clearTimeout(frInvitacion.t);
+  $('invBar').innerHTML=`<span><b>${esc(p.nick)}</b> te invita a su sala <b>${esc(p.code)}</b></span><span style="display:flex;gap:6px"><button class="btn" id="invYes" style="padding:6px 14px"><span>Unirme</span></button><button class="btn ghost" id="invNo" style="padding:6px 14px"><span>Ignorar</span></button></span>`;
+  $('invBar').style.display='flex';
+  $('invNo').onclick=()=>{ $('invBar').style.display='none' };
+  $('invYes').onclick=()=>{ $('invBar').style.display='none';
+    if(ROOM){ location.href=location.pathname+'?sala='+encodeURIComponent(p.code); return }
+    $('fCode').value=p.code; if(!$('fName').value) $('fName').value=FR.nick; joinRoom() };
+  frInvitacion.t=setTimeout(()=>{ $('invBar').style.display='none' },45000);
+}
+// Botón "perfil" de cada jugador de la sala de espera
+$('lPlayers').onclick=e=>{ const b=e.target.closest('[data-uid]'); if(b) showFriendProfile(b.dataset.uid) };
+$('nFriends').onclick=()=>showFriends();
 if(sb){
   sb.auth.onAuthStateChange((ev,session)=>{
     const u=session&&session.user||null, changed=(u&&u.id)!==(USER&&USER.id);
     USER=u; paintUser();
+    if(changed) setTimeout(frLoad,0);
     if(u&&changed) setTimeout(syncDown,0);
     if(changed&&$('s-daily').classList.contains('on')) setTimeout(showDaily,0);
   });
@@ -1073,4 +1193,4 @@ if(sb){
   g.addEventListener('toggle',()=>{ if(!g.open) try{localStorage.setItem('boxbox_guia','1')}catch(e){} }); }
 // boxf1box.com/?desafio abre el desafío del día; ?ver=campeonato y ?ver=perfil abren esas pantallas.
 { const q=new URLSearchParams(location.search), v=q.get('ver');
-  if(MODE!=='room'){ if(q.has('desafio')) showDaily(); else if(v==='campeonato') showChampPage(); else if(v==='perfil') showProfile(); else if(v==='carrera') showCareer(); } }
+  if(MODE!=='room'){ if(q.has('desafio')) showDaily(); else if(v==='campeonato') showChampPage(); else if(v==='perfil') showProfile(); else if(v==='carrera') showCareer(); else if(v==='amigos') showFriends(); } }

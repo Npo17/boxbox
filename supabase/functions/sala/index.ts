@@ -104,7 +104,7 @@ async function getRoom(code: string) {
 async function getPlayers(code: string, withRolls = false) {
   // Sin las tiradas ni el hash secreto: con 22 jugadores es lo más pesado y nadie lo necesita acá
   // (salvo en carrera, donde en "rolls" queda guardada la decisión del safety car).
-  const { data, error } = await db.from("jugadores").select(withRolls ? "pid,name,color,done,picks,rolls" : "pid,name,color,done,picks").eq("sala", code).order("joined_at");
+  const { data, error } = await db.from("jugadores").select(withRolls ? "pid,name,color,done,picks,rolls,user_id" : "pid,name,color,done,picks,user_id").eq("sala", code).order("joined_at");
   if (error) throw new Fail("Error leyendo jugadores", 500);
   return data ?? [];
 }
@@ -113,9 +113,15 @@ async function auth(code: string, pid: string, secret: string) {
   if (!data || data.secret_hash !== (await sha256Hex(String(secret ?? "")))) throw new Fail("No estás en esta sala.", 403);
   return data;
 }
-async function newPlayer(code: string, name: string, color: string) {
+// Si el jugador inició sesión, la sala guarda quién es (para poder agregarlo como amigo). Sin sesión sigue siendo anónimo.
+async function uidFromToken(token: unknown): Promise<string | null> {
+  if (typeof token !== "string" || token.length < 20) return null;
+  const { data, error } = await db.auth.getUser(token);
+  return error || !data.user ? null : data.user.id;
+}
+async function newPlayer(code: string, name: string, color: string, userId: string | null = null) {
   const pid = randStr(10), secret = crypto.randomUUID() + randStr(8);
-  const { error } = await db.from("jugadores").insert({ sala: code, pid, secret_hash: await sha256Hex(secret), name, color });
+  const { error } = await db.from("jugadores").insert({ sala: code, pid, secret_hash: await sha256Hex(secret), name, color, user_id: userId });
   if (error) throw new Fail("No se pudo entrar a la sala", 500);
   return { pid, secret };
 }
@@ -227,7 +233,7 @@ async function stateFor(room: Record<string, any>, me: Record<string, any> | nul
       })() : undefined,
     },
     players: players.map((p) => ({
-      pid: p.pid, name: p.name, color: p.color, done: p.done,
+      pid: p.pid, name: p.name, color: p.color, done: p.done, uid: p.user_id ?? undefined,
       filled: Object.keys(p.picks).length,
       picks: racing ? p.picks : undefined,          // ocultas hasta la largada
       sc: showSc ? scOf(p) : undefined,
@@ -256,7 +262,7 @@ async function handle(body: Record<string, any>) {
       if (!error) newCode = c;
     }
     if (!newCode) throw new Fail("No se pudo crear la sala, prueba de nuevo.", 500);
-    const p = await newPlayer(newCode, cleanName(body.name), COLORS[0]);
+    const p = await newPlayer(newCode, cleanName(body.name), COLORS[0], await uidFromToken(body.token));
     await db.from("salas").update({ host: p.pid }).eq("code", newCode);
     const room = await getRoom(newCode);
     return { ...p, ...(await stateFor(room, await auth(newCode, p.pid, p.secret))) };
@@ -269,7 +275,7 @@ async function handle(body: Record<string, any>) {
     if (players.length >= MAX_PLAYERS) throw new Fail("La sala está llena (22 autos).", 409);
     const used = new Set(players.map((p) => p.color));
     const color = COLORS.find((c) => !used.has(c)) ?? COLORS[players.length % COLORS.length];
-    const p = await newPlayer(code, cleanName(body.name), color);
+    const p = await newPlayer(code, cleanName(body.name), color, await uidFromToken(body.token));
     return { ...p, ...(await stateFor(room, await auth(code, p.pid, p.secret))) };
   }
 
