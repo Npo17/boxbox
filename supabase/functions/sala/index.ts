@@ -270,12 +270,20 @@ async function handle(body: Record<string, any>) {
 
   if (action === "join") {
     const room = await getRoom(code);
-    if (room.status !== "lobby") throw new Fail("La carrera de esa sala ya empezó.", 409);
     const players = await getPlayers(code);
+    // Volver a entrar: si ya estabas en la sala (con tu cuenta, o sin cuenta con el mismo nombre) recuperás tu lugar con una llave nueva, también con la sala ya largada.
+    const uid = await uidFromToken(body.token), nm = cleanName(body.name).toLowerCase();
+    const prev = (uid ? players.find((p: any) => p.user_id === uid) : null) ?? (!uid && room.status !== "lobby" ? players.find((p: any) => !p.user_id && String(p.name).toLowerCase() === nm) : null);
+    if (prev) {
+      const secret = crypto.randomUUID() + randStr(8);
+      await db.from("jugadores").update({ secret_hash: await sha256Hex(secret) }).eq("sala", code).eq("pid", prev.pid);
+      return { pid: prev.pid, secret, ...(await stateFor(room, await auth(code, prev.pid, secret))) };
+    }
+    if (room.status !== "lobby") throw new Fail("La carrera de esa sala ya empezó.", 409);
     if (players.length >= MAX_PLAYERS) throw new Fail("La sala está llena (22 autos).", 409);
     const used = new Set(players.map((p) => p.color));
     const color = COLORS.find((c) => !used.has(c)) ?? COLORS[players.length % COLORS.length];
-    const p = await newPlayer(code, cleanName(body.name), color, await uidFromToken(body.token));
+    const p = await newPlayer(code, cleanName(body.name), color, uid);
     return { ...p, ...(await stateFor(room, await auth(code, p.pid, p.secret))) };
   }
 

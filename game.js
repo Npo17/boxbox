@@ -880,7 +880,7 @@ function startRoomRace(s){
     ROOM=saved;
     try{ enterRoom(await api('state')); return }catch(e){ forgetRoom() }
   }
-  if(q){ $('fCode').value=q.toUpperCase(); openM('mFriends'); $('fErr').textContent='Te invitaron a esta sala: escribe tu nombre y toca "Unirme".'; }
+  if(q){ $('fCode').value=q.toUpperCase(); openM('mFriends'); $('fErr').textContent='Te invitaron a esta sala: escribe tu nombre y toca "Unirme". Si ya estabas en ella, escribe el mismo nombre para volver a tu lugar.'; }
 })();
 
 // ---------- COMPARTIR RESULTADO ----------
