@@ -84,6 +84,7 @@ export const STORM_CHANCE = 0.07;     // carreras con aviso de tormenta a mitad 
 export const STORM_ARRIVES = 0.55;    // probabilidad de que la lluvia anunciada llegue de verdad
 export const SC_ON_CRASH = 0.72;       // no todos los choques traen safety car (en seco: ~42% de las carreras)
 export const SC_ON_CRASH_WET = 0.65; // con lluvia: ~60%
+export const SC_ON_CRASH_SPRINT = 0.2;  // sprint de 8 vueltas: el safety car (3 vueltas) se come media carrera, casi nunca sale
 export const SPRINT_LAPS = 8;
 export const SPRINT_PTS = [8, 7, 6, 5, 4, 3, 2, 1];
 export const crashChanceWet = (d) => (d < 90 ? (90 - d) * 0.00025 + 0.0004 : 0.0003);
@@ -242,7 +243,7 @@ export function runRace({ DATA, tracks, seed, humans, laps = LAPS, decisions = {
         else if (c.m < 80 && r[4] < (80 - c.m) * 0.0004) {
           c._dead = true; c.dnf = lap; c.dnfT = T0 + t0 * 0.6;
           ev(c, c.dnfT, lap, "engine", `Humo en ${c.name}: motor roto, abandona`);
-          if (!sc && r[8] < 0.25 && lap <= laps - SC_LAPS - 1) sc = { lap, T: c.dnfT, by: c.name, why: "motor", laps: SC_LAPS };
+          if (!sc && r[8] < (sprint ? 0.08 : 0.25) && lap <= laps - SC_LAPS - 1) sc = { lap, T: c.dnfT, by: c.name, why: "motor", laps: SC_LAPS };
         }
       }
       c._t0 = t0; c._tp = tp; c._T0 = T0; c._r = r;
@@ -262,7 +263,7 @@ export function runRace({ DATA, tracks, seed, humans, laps = LAPS, decisions = {
           ev(near, near.dnfT, lap, "crash", `${near.name} también abandona por el choque`);
         } else near._t0 += 8;
       }
-      if (!sc && lap <= laps - SC_LAPS - 1 && c._r[9] < (wetNow ? SC_ON_CRASH_WET : SC_ON_CRASH)) sc = { lap, T: Tc, by: c.name, why: "choque", laps: SC_LAPS };
+      if (!sc && lap <= laps - SC_LAPS - 1 && c._r[9] < (sprint ? SC_ON_CRASH_SPRINT : wetNow ? SC_ON_CRASH_WET : SC_ON_CRASH)) sc = { lap, T: Tc, by: c.name, why: "choque", laps: SC_LAPS };
     }
     if (sc && sc.lap === lap && !sc.announced) {
       sc.announced = true;

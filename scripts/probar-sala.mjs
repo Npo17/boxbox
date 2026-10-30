@@ -58,8 +58,14 @@ ok(Date.parse(fin.room.race_start) - fin.now > 15000, 'la largada está programa
 console.log('sala de prueba:', code);
 
 // Decisión del safety car: se guarda, se oculta hasta cerrar el plazo y se rechaza lo inválido.
-const dec = await call({ action: 'decide', code, pid: a.pid, secret: a.secret, choice: 'pit' });
-ok(dec.ok, 'se puede decidir el safety car antes de largar');
+if (fin.room.deadline) {   // esta carrera tiene safety car: el plazo abre cuando sale en pantalla (después de largar), no antes
+  ok(Date.parse(fin.room.deadline) - Date.parse(fin.room.race_start) > 2000, 'el plazo para decidir cierra después de largar la carrera');
+  const dec = await call({ action: 'decide', code, pid: a.pid, secret: a.secret, choice: 'pit' });
+  ok(dec.ok, 'se puede decidir el safety car mientras el plazo está abierto');
+} else {
+  try { await call({ action: 'decide', code, pid: a.pid, secret: a.secret, choice: 'pit' }); ok(false, 'sin safety car no hay nada que decidir'); }
+  catch (e) { ok(e.status === 409, 'sin safety car no hay nada que decidir'); }
+}
 try { await call({ action: 'decide', code, pid: b.pid, secret: b.secret, choice: 'volar' }); ok(false, 'decisión inválida rechazada'); }
 catch (e) { ok(true, 'decisión inválida rechazada'); }
 const afterDec = await call({ action: 'state', code, pid: b.pid, secret: b.secret });

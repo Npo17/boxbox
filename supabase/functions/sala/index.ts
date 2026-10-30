@@ -27,7 +27,7 @@ const MAX_PLAYERS = 22;
 const MAX_REROLLS = 2;
 const BUILD_MS = 3 * 60 * 1000;     // tiempo para armar
 const RACE_DELAY_MS = 25 * 1000;    // de cierre a largada (qualy + decisión del safety car + cuenta regresiva)
-const SC_LOCK_MS = 3 * 1000;        // las decisiones del safety car se cierran 3 s antes de largar
+const SC_WINDOW_MS = 9 * 1000;      // plazo para decidir qué hacer con el safety car, desde que sale en la carrera
 const ROOM_TTL_MS = 24 * 60 * 60 * 1000;
 const RACE_VIEW_MS = 75 * 1000;     // en modo carrera: tiempo después de largar (carrera animada + resultado) antes de contar los puntos
 const EVENTOS = eventos2026();      // modo carrera: 6 sprints + 23 GP en orden de calendario
@@ -104,6 +104,23 @@ async function newPlayer(code: string, name: string, color: string) {
 }
 
 // Cierre del armado: completa autos incompletos y pasa a carrera. Idempotente.
+// Safety car en salas: la carrera es la misma para todos, así que las decisiones se juntan en un plazo común.
+// El servidor corre la carrera (sin decisiones) para saber cuándo sale el safety car en pantalla y fija el cierre del plazo
+// (se guarda en "deadline", que durante la carrera no se usa para otra cosa). Hasta ese momento las decisiones quedan ocultas.
+async function scDeadline(room: Record<string, any>, race_seed: string, race_start: string, ronda = room.ronda): Promise<string | null> {
+  try {
+    const ev = room.modo === "carrera" ? EVENTOS[ronda] : null;
+    if (ev?.k === "sprint") return null;
+    const players = await getPlayers(room.code);
+    if (!players.length || players.some((p: any) => !p.picks?.estratega)) return null;
+    const humans = players.map((p: any) => humanFromPicks(p.pid, p.color, p.picks, p.name));
+    const race = runRace({ DATA, tracks: TRACKS, seed: String(race_seed), humans, ...(ev ? { trackIdx: ev.t } : {}) });
+    if (!race.sc || race.nopit) return null;
+    const endT = Math.min(...race.cars.filter((c: any) => !c.dnf).map((c: any) => c.cum[race.laps])) + 6, scale = endT / 32;   // igual que la animación del navegador
+    return new Date(Date.parse(race_start) + 2000 + (race.sc.T / scale) * 1000 + SC_WINDOW_MS).toISOString();
+  } catch (e) { console.error("scDeadline", e); return null; }
+}
+
 async function maybeLock(room: Record<string, any>, known?: Record<string, any>[]) {
   if (room.status !== "building") return room;
   const players = known ?? await getPlayers(room.code);
@@ -122,7 +139,8 @@ async function maybeLock(room: Record<string, any>, known?: Record<string, any>[
     await db.from("jugadores").update({ picks, done: true }).eq("sala", room.code).eq("pid", p.pid);
   }
   const race_start = new Date(Date.now() + RACE_DELAY_MS).toISOString();
-  const { data } = await db.from("salas").update({ status: "racing", race_start })
+  const deadline = await scDeadline(room, room.race_seed, race_start);
+  const { data } = await db.from("salas").update({ status: "racing", race_start, deadline })
     .eq("code", room.code).eq("status", "building").select("*").maybeSingle();
   return data ?? (await getRoom(room.code));
 }
@@ -163,8 +181,7 @@ async function stateFor(room: Record<string, any>, me: Record<string, any> | nul
   const racing = room.status === "racing";
   const players = known ?? await getPlayers(room.code, racing);
   // Decisiones de safety car: se muestran recién cuando se cierra el plazo (para que nadie copie la de otro).
-  const lockAt = room.race_start ? Date.parse(room.race_start) - SC_LOCK_MS : Infinity;
-  const showSc = racing && Date.now() >= lockAt;
+  const showSc = racing && !!room.deadline && Date.now() >= Date.parse(room.deadline);
   const scOf = (p: Record<string, any>) => (p.rolls ?? []).find((r: any) => r.k === "sc")?.v;
   const current = me ? (me.rolls as Roll[]).find((r) => !r.used) ?? null : null;
   return {
@@ -302,7 +319,8 @@ async function handle(body: Record<string, any>) {
   if (action === "decide") {
     // Qué hacer con el safety car: se decide antes de largar para que todos corran la misma carrera.
     if (room.status !== "racing") throw new Fail("Ahora no se puede decidir.", 409);
-    if (Date.now() >= Date.parse(room.race_start) - SC_LOCK_MS) throw new Fail("Se acabó el tiempo para decidir.", 409);
+    if (!room.deadline) throw new Fail("En esta carrera no hay nada que decidir.", 409);
+    if (Date.now() >= Date.parse(room.deadline)) throw new Fail("Se acabó el tiempo para decidir.", 409);
     const choice = String(body.choice ?? "");
     if (choice !== "pit" && choice !== "stay") throw new Fail("Decisión inválida.");
     const rolls = [...(me.rolls as any[]).filter((r) => r.k !== "sc"), { k: "sc", v: choice, used: true }];
@@ -324,7 +342,8 @@ async function handle(body: Record<string, any>) {
     let ok;
     if (sameWeekend) {
       // mismo fin de semana: mismos autos, otra carrera
-      ok = await db.from("salas").update({ ...common, race_start: new Date(Date.now() + RACE_DELAY_MS).toISOString() })
+      const rs = new Date(Date.now() + RACE_DELAY_MS).toISOString();
+      ok = await db.from("salas").update({ ...common, race_start: rs, deadline: await scDeadline(room, race_seed, rs, room.ronda + 1) })
         .eq("code", code).eq("ronda", room.ronda).select("code").maybeSingle();
       if (ok.data) for (const p of await getPlayers(code, true) as any[]) {
         await db.from("jugadores").update({ rolls: (p.rolls ?? []).filter((r: any) => r.k !== "sc") }).eq("sala", code).eq("pid", p.pid);
