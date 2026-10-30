@@ -18,3 +18,7 @@
 | Solo falla algo menor del cliente | Revertir ese commit con `git revert <commit>` y `git push`. |
 
 La migración es compatible hacia atrás: la función `sala` anterior y la web anterior funcionan igual con las columnas nuevas presentes.
+
+# Rollback del proxy de Cloudflare (DNS)
+Antes: los 4 registros A de `boxf1box.com` (185.199.108/109/110/111.153) y el CNAME `www` -> `npo17.github.io` estaban en **solo DNS** (sin proxy).
+Para volver a eso en un minuto: `node scripts/cloudflare-proxy.mjs off` (cambia en segundos; la caché de DNS puede tardar unos minutos).
