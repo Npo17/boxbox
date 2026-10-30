@@ -375,6 +375,7 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
   <div class="panel">
     <table class="cal"><thead><tr><th>#</th><th>Gran Premio</th><th>Fecha</th><th>Resultado</th><th style="text-align:right">Pts</th></tr></thead><tbody id="carBody"></tbody></table>
     <div class="note">Seguí el calendario de la F1 2026, un fin de semana tras otro. En cada uno armás un auto nuevo con los dados. En las sprints (🏃) corrés primero una carrera corta de 8 vueltas, sin paradas (puntos 8-7-6-5-4-3-2-1), y después el GP con el mismo auto. Tu progreso se guarda en este navegador.</div>
+    <div id="carTables"></div>
     <div class="cta-row" style="margin-top:14px"><button class="btn" id="carGo"><span>Empezar</span></button><button class="btn ghost" id="carFriends"><span>👥 Con amigos</span></button><button class="btn ghost" id="carReset"><span>Reiniciar temporada</span></button></div>
     <div class="note" style="margin-top:8px"><b>Con amigos:</b> creá una sala de carrera (hasta 22 jugadores) o entrá con un código. La sala corre el mismo calendario, con una tabla de puntos compartida.</div>
   </div>
@@ -941,7 +942,18 @@ function renderCareer(){
     const r=[s?`🏃 ${res(s)}`:'',g?`${res(g)}${g.rain?' 🌧️':''}`:isNx?'▶ Siguiente':''].filter(Boolean).join(' · ');
     return `<tr class="${isNx?'nx':''}"><td class="n">${k+1}</td><td><b>${c.gp}</b>${c.sprint?'<span class="sprb">SPRINT</span>':''}</td><td>${c.date}</td><td>${r}</td><td class="pts">${(s?s.pts:0)+(g?g.pts:0)||(s||g?0:'')}</td></tr>`;
   }).join('');
+  const tp={}, tc={};
+  CAR.log.filter(l=>l.kind!=='cancel'&&l.pilot).forEach(l=>{ const w=!l.dnf&&l.pos===1&&l.kind==='gp';
+    [[tp,l.pilot],[tc,l.car]].forEach(([m,k])=>{ if(!k) return; const r=m[k]||(m[k]={pts:0,races:0,wins:0}); r.pts+=l.pts||0; r.races++; if(w) r.wins++ }) });
+  $('carTables').innerHTML=champBlock('Campeonato de pilotos','Piloto',tp)+champBlock('Campeonato de constructores','Constructor',tc)
+    +'<div class="note">Suma puntos el piloto y el coche que elegiste en cada carrera (los de tus rivales no cuentan).</div>';
   $('carGo').querySelector('span').textContent=!nx?'Nueva temporada':!CAR.log.some(l=>l.kind!=='cancel')?'Empezar la temporada':nx.kind==='sprint'?`Correr la sprint de ${nx.ev.gp}`:`Correr el GP de ${nx.ev.gp}`;
+}
+// Tabla de campeonato (pilotos o constructores) a partir de {nombre:{pts,races,wins}}
+function champBlock(title,col,map){
+  const rows=Object.entries(map).sort((a,b)=>b[1].pts-a[1].pts||b[1].wins-a[1].wins);
+  return `<h3 style="margin:16px 0 6px">${title}</h3><table class="cal"><thead><tr><th>#</th><th>${col}</th><th>Carreras</th><th>Victorias</th><th style="text-align:right">Pts</th></tr></thead><tbody>`
+    +(rows.length?rows.map(([n,r],i)=>`<tr><td class="n">${i+1}</td><td><b>${esc(n)}</b></td><td>${r.races}</td><td>${r.wins}</td><td class="pts">${r.pts}</td></tr>`).join(''):'<tr><td colspan="5" class="empty">Todavía sin puntos. ¡Corre tu primera carrera!</td></tr>')+'</tbody></table>';
 }
 $('carGo').onclick=async()=>{
   await READY; const nx=carNext();
@@ -958,7 +970,7 @@ $('carGo').onclick=async()=>{
 $('carReset').onclick=()=>{ if(!confirm('¿Reiniciar la temporada? Se borra tu progreso del modo carrera.')) return; CAR={i:0,log:[],picks:null}; renderCareer() };
 function careerRecord(me){
   const kind=CAR_EVT.kind, pts=me.dnf?0:((kind==='sprint'?E.SPRINT_PTS:PTS)[me.pos-1]||0);
-  CAR.log.push({i:CAR_EVT.i,kind,pos:me.pos,dnf:me.dnf?1:0,pts,rain:RACE.rain?1:0,pilot:picks.piloto.n});
+  CAR.log.push({i:CAR_EVT.i,kind,pos:me.pos,dnf:me.dnf?1:0,pts,rain:RACE.rain?1:0,pilot:picks.piloto.n,car:picks.coche.n});
   if(kind==='sprint') CAR.picks=picks; else { CAR.picks=null; CAR.i=CAR_EVT.i+1 }
   carSave();
 }
@@ -1117,7 +1129,7 @@ const ROOM_KEY='boxbox_sala';
 let ROOM=null, RS=null, OFF=0, pollT=null, tickT=null, raceShown=false;
 // Aviso en vivo (Supabase Realtime, canal de difusión): cuando alguien hace algo en la sala avisa a los demás y consultan al instante.
 // Si el canal no conecta, vuelve a consultar cada 3 s como antes.
-let RT=null, RT_OK=false, rtT=null, pollN=0;
+let RT=null, RT_OK=false, rtT=null, pollN=0, LTAB='j';
 function rtClose(){ clearTimeout(rtT); RT_OK=false; try{ if(RT&&sb) sb.removeChannel(RT) }catch(e){} RT=null }
 function rtOpen(){
   rtClose(); if(!sb||!ROOM) return;
@@ -1212,10 +1224,18 @@ function renderLobby(s){
 function renderRoomCareer(s){
   const r=s.room, box=$('lCareer');
   if(r.modo!=='carrera'){ box.style.display='none'; return }
-  const ev=r.evento, rows=s.players.map(p=>({p,pts:(r.puntos||{})[p.pid]||0,u:(r.ultimo||{})[p.pid]})).sort((a,b)=>b.pts-a.pts);
+  const ev=r.evento, rows=s.players.map(p=>({p,pts:+(r.puntos||{})[p.pid]||0,u:(r.ultimo||{})[p.pid]})).sort((a,b)=>b.pts-a.pts);
   box.style.display='';
+  const tab=LTAB, T=(r.puntos&&r.puntos._t)||{p:{},c:{}};
+  const tabs=`<div style="display:flex;gap:6px;margin:0 0 8px">${[['j','Jugadores'],['p','Pilotos'],['c','Constructores']].map(([k,l])=>`<button class="btn ghost" data-tab="${k}" style="padding:6px 12px;font-size:13px;${k===tab?'border-color:var(--yellow);color:var(--yellow)':''}"><span>${l}</span></button>`).join('')}</div>`;
+  box.onclick=e=>{ const b=e.target.closest('[data-tab]'); if(b){ LTAB=b.dataset.tab; renderRoomCareer(RS) } };
+  if(tab!=='j'){
+    box.innerHTML=`<h3>🏁 Modo carrera 2026 · evento ${Math.min(r.ronda+1,r.total)} de ${r.total}</h3><div style="font-size:22px;font-weight:900;font-style:italic;margin:2px 0 10px">${ev?(ev.k==='sprint'?'Sprint':'GP')+' de '+esc(ev.gp):'Temporada terminada'}<small class="note"> ${ev?'· '+esc(ev.date):''}</small></div>${tabs}`
+      +champBlock(tab==='p'?'Campeonato de pilotos':'Campeonato de constructores',tab==='p'?'Piloto':'Constructor',tab==='p'?T.p:T.c);
+    return;
+  }
   box.innerHTML=`<h3>🏁 Modo carrera 2026 · evento ${Math.min(r.ronda+1,r.total)} de ${r.total}</h3>
-    <div style="font-size:22px;font-weight:900;font-style:italic;margin:2px 0 10px">${ev?(ev.k==='sprint'?'Sprint':'GP')+' de '+esc(ev.gp):'Temporada terminada'}<small class="note"> ${ev?'· '+esc(ev.date):''}</small></div>
+    <div style="font-size:22px;font-weight:900;font-style:italic;margin:2px 0 10px">${ev?(ev.k==='sprint'?'Sprint':'GP')+' de '+esc(ev.gp):'Temporada terminada'}<small class="note"> ${ev?'· '+esc(ev.date):''}</small></div>${tabs}
     <table class="cal"><thead><tr><th>#</th><th>Piloto</th><th>Última carrera</th><th style="text-align:right">Pts</th></tr></thead><tbody>${rows.map((x,i)=>`<tr class="${x.p.pid===ROOM.pid?'nx':''}"><td class="n">${i+1}</td><td><span class="c" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${x.p.color};margin-right:6px"></span>${esc(x.p.name)}</td><td>${x.u?(x.u.dnf?'DNF':`P${x.u.pos} (+${x.u.pts})`):''}</td><td class="pts">${x.pts}</td></tr>`).join('')}</tbody></table>`;
 }
 $('lCopy').onclick=async()=>{const url=`${location.origin}${location.pathname}?sala=${ROOM.code}`;

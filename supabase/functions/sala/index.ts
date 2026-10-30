@@ -140,13 +140,21 @@ async function maybeClose(room: Record<string, any>, known?: Record<string, any>
   const sprint = ev.k === "sprint";
   const race = runRace({ DATA, tracks: TRACKS, seed: String(room.race_seed), humans, laps: sprint ? SPRINT_LAPS : LAPS, decisions, trackIdx: ev.t, sprint });
   const table: number[] = sprint ? SPRINT_PTS : PTS;
-  const puntos: Record<string, number> = { ...(room.puntos ?? {}) }, ultimo: Record<string, any> = {};
+  const puntos: Record<string, any> = { ...(room.puntos ?? {}) }, ultimo: Record<string, any> = {};
+  // Campeonatos de pilotos y de constructores: solo cuentan los pilotos y los coches que usaron los jugadores (clave reservada "_t" dentro de puntos).
+  const tabs: { p: Record<string, any>; c: Record<string, any> } = puntos._t ?? { p: {}, c: {} };
+  const bump = (m: Record<string, any>, k: string, pts: number, win: boolean) => {
+    const r = m[k] ?? { pts: 0, races: 0, wins: 0 }; r.pts += pts; r.races++; if (win) r.wins++; m[k] = r;
+  };
   for (const p of players as any[]) {
     const c = race.cars.find((x: any) => x.key === "h:" + p.pid);
     const pts = !c || c.dnf ? 0 : (table[c.pos - 1] || 0);
     puntos[p.pid] = (puntos[p.pid] ?? 0) + pts;
+    const win = !!c && !c.dnf && c.pos === 1;
+    bump(tabs.p, p.picks?.piloto?.n ?? "?", pts, win); bump(tabs.c, p.picks?.coche?.n ?? "?", pts, win);
     ultimo[p.pid] = { pos: c?.pos ?? 22, dnf: c?.dnf ? 1 : 0, pts };
   }
+  puntos._t = tabs;
   const { data } = await db.from("salas").update({ puntos, ultimo, cerrada: true }).eq("code", room.code).eq("cerrada", false).select("*").maybeSingle();
   return data ?? (await getRoom(room.code));
 }

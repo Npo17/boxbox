@@ -1,6 +1,12 @@
 // Türkçe. s = tam metinler; p = değişken parçalı metinler ({0}, {1}…); w = tek tek kelimeler (ülkeler).
 export default {
   s: {
+    "Campeonato de constructores": "Konstrüktörler şampiyonası",
+    "Constructor": "Konstrüktör",
+    "Jugadores": "Oyuncular",
+    "Pilotos": "Pilotlar",
+    "Constructores": "Konstrüktörler",
+    "Suma puntos el piloto y el coche que elegiste en cada carrera (los de tus rivales no cuentan).": "Her yarışta seçtiğin pilot ve araba puan alır (rakiplerinkiler sayılmaz).",
     "1 · Arma": "1 · Kur", "2 · Qualy": "2 · Sıralama", "3 · Carrera": "3 · Yarış", "4 · Resultado": "4 · Sonuç",
     "Desafío del día": "Günün görevi", "🏆 Campeonato": "🏆 Şampiyona", "Perfil": "Profil", "Ajustes ▾": "Ayarlar ▾",
     "Tema": "Tema", "🌙 Oscuro": "🌙 Koyu", "☀️ Claro": "☀️ Açık", "Idioma": "Dil",

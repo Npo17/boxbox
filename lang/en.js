@@ -1,6 +1,12 @@
 // English. s = exact texts; p = patterns with {0}, {1}… (the captured parts are kept as they are); w = words replaced inside any translated text.
 export default {
   s: {
+    "Campeonato de constructores": "Constructors' championship",
+    "Constructor": "Constructor",
+    "Jugadores": "Players",
+    "Pilotos": "Drivers",
+    "Constructores": "Constructors",
+    "Suma puntos el piloto y el coche que elegiste en cada carrera (los de tus rivales no cuentan).": "The driver and the car you picked in each race score points (your rivals' don't count).",
     "1 · Arma": "1 · Build", "2 · Qualy": "2 · Qualy", "3 · Carrera": "3 · Race", "4 · Resultado": "4 · Result",
     "Desafío del día": "Daily challenge", "🏆 Campeonato": "🏆 Championship", "Perfil": "Profile", "Ajustes ▾": "Settings ▾",
     "Tema": "Theme", "🌙 Oscuro": "🌙 Dark", "☀️ Claro": "☀️ Light", "Idioma": "Language",

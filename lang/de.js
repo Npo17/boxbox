@@ -1,6 +1,12 @@
 // Deutsch. s = exakte Texte; p = Texte mit variablen Teilen ({0}, {1}…); w = einzelne Wörter (Länder).
 export default {
   s: {
+    "Campeonato de constructores": "Konstrukteursmeisterschaft",
+    "Constructor": "Konstrukteur",
+    "Jugadores": "Spieler",
+    "Pilotos": "Fahrer",
+    "Constructores": "Konstrukteure",
+    "Suma puntos el piloto y el coche que elegiste en cada carrera (los de tus rivales no cuentan).": "Der Fahrer und das Auto, die du in jedem Rennen gewählt hast, punkten (die deiner Rivalen zählen nicht).",
     "1 · Arma": "1 · Bauen", "2 · Qualy": "2 · Quali", "3 · Carrera": "3 · Rennen", "4 · Resultado": "4 · Ergebnis",
     "Desafío del día": "Tagesaufgabe", "🏆 Campeonato": "🏆 Meisterschaft", "Perfil": "Profil", "Ajustes ▾": "Einstellungen ▾",
     "Tema": "Design", "🌙 Oscuro": "🌙 Dunkel", "☀️ Claro": "☀️ Hell", "Idioma": "Sprache",

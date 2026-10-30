@@ -1,6 +1,12 @@
 // Italiano. s = testi esatti; p = testi con parti variabili ({0}, {1}…); w = parole singole (paesi).
 export default {
   s: {
+    "Campeonato de constructores": "Campionato costruttori",
+    "Constructor": "Costruttore",
+    "Jugadores": "Giocatori",
+    "Pilotos": "Piloti",
+    "Constructores": "Costruttori",
+    "Suma puntos el piloto y el coche que elegiste en cada carrera (los de tus rivales no cuentan).": "Il pilota e l'auto che scegli in ogni gara segnano punti (quelli dei tuoi rivali non contano).",
     "1 · Arma": "1 · Costruisci", "2 · Qualy": "2 · Qualifica", "3 · Carrera": "3 · Gara", "4 · Resultado": "4 · Risultato",
     "Desafío del día": "Sfida del giorno", "🏆 Campeonato": "🏆 Campionato", "Perfil": "Profilo", "Ajustes ▾": "Impostazioni ▾",
     "Tema": "Tema", "🌙 Oscuro": "🌙 Scuro", "☀️ Claro": "☀️ Chiaro", "Idioma": "Lingua",

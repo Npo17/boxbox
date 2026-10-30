@@ -36,8 +36,11 @@ try { await call({ action: 'next', ...A }); ok(false, 'no se puede pasar de fech
 console.log('esperando que termine la carrera de Australia (~100 s)…');
 s = await waitFor((x) => x.room.cerrada, 150000);
 ok(s.room.cerrada, 'carrera contada por el servidor');
-const pts = Object.values(s.room.puntos).reduce((t, x) => t + x, 0);
+const pts = Object.values(s.room.puntos).filter((x) => typeof x === 'number').reduce((t, x) => t + x, 0);
 ok(Object.keys(s.room.ultimo).length === 2, 'resultado de cada jugador guardado');
+const T = s.room.puntos._t || { p: {}, c: {} };
+ok(Object.keys(T.p).length >= 1 && Object.keys(T.c).length >= 1, `tablas de pilotos (${Object.keys(T.p).length}) y constructores (${Object.keys(T.c).length}) armadas`);
+ok(Object.values(T.p).reduce((t, x) => t + x.pts, 0) === pts && Object.values(T.c).reduce((t, x) => t + x.pts, 0) === pts, 'las tablas suman los mismos puntos que los jugadores');
 console.log('   puntos:', JSON.stringify(s.room.puntos), 'último:', JSON.stringify(s.room.ultimo));
 
 s = await call({ action: 'next', ...A });
@@ -52,7 +55,7 @@ const pilotos = s.players.map((p) => p.picks.piloto.n).join('|');
 console.log('esperando que termine la sprint (~100 s)…');
 s = await waitFor((x) => x.room.cerrada, 150000);
 ok(s.room.cerrada, 'sprint contada');
-const sprintTotal = Object.values(s.room.puntos).reduce((t, x) => t + x, 0);
+const sprintTotal = Object.values(s.room.puntos).filter((x) => typeof x === 'number').reduce((t, x) => t + x, 0);
 ok(sprintTotal > pts && sprintTotal - pts <= 8 + 7, `la sprint sumó ${sprintTotal - pts} puntos (máximo 8 + 7)`);
 
 s = await call({ action: 'next', ...A });

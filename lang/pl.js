@@ -1,6 +1,12 @@
 // Polski. s = dokładne teksty; p = teksty ze zmiennymi częściami ({0}, {1}…); w = pojedyncze słowa (kraje).
 export default {
   s: {
+    "Campeonato de constructores": "Mistrzostwa konstruktorów",
+    "Constructor": "Konstruktor",
+    "Jugadores": "Gracze",
+    "Pilotos": "Kierowcy",
+    "Constructores": "Konstruktorzy",
+    "Suma puntos el piloto y el coche que elegiste en cada carrera (los de tus rivales no cuentan).": "Punkty zdobywa kierowca i bolid wybrane przez ciebie w każdym wyścigu (rywali się nie liczy).",
     "1 · Arma": "1 · Zbuduj", "2 · Qualy": "2 · Kwalifikacje", "3 · Carrera": "3 · Wyścig", "4 · Resultado": "4 · Wynik",
     "Desafío del día": "Wyzwanie dnia", "🏆 Campeonato": "🏆 Mistrzostwa", "Perfil": "Profil", "Ajustes ▾": "Ustawienia ▾",
     "Tema": "Motyw", "🌙 Oscuro": "🌙 Ciemny", "☀️ Claro": "☀️ Jasny", "Idioma": "Język",
