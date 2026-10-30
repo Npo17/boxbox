@@ -117,7 +117,7 @@ function paintFondo(){
   else if(FONDO==='d'){ const fs=Math.min(120,Math.round(720/(gp.length*0.56))); low=`<ellipse cx="400" cy="230" rx="330" ry="210" fill="url(#glow)"/><text x="400" y="${230+Math.round(fs*0.33)}" text-anchor="middle" fill="#fff" fill-opacity=".05" font-family="Titillium Web" font-weight="900" font-style="italic" font-size="${fs}" letter-spacing="-3">${gp}</text><path d="${d}" fill="none" stroke="#ff3b30" stroke-opacity=".55" stroke-width="40" stroke-linejoin="round" filter="url(#blurbg)"/>`; top=`${R} fill="url(#vig)"/>` }
   $('bgl').innerHTML=low; $('bgfx').innerHTML=top;
 }
-$('fondoSw').onclick=e=>{ const b=e.target.closest('[data-f]'); if(!b) return; FONDO=b.dataset.f; try{ localStorage.setItem('boxbox_fondo',FONDO) }catch(err){} paintFondo() };
+$('fondoSw').onclick=e=>{ const b=e.target.closest('[data-f]'); if(!b) return; FONDO=b.dataset.f; ev('fondo',{f:FONDO}); try{ localStorage.setItem('boxbox_fondo',FONDO) }catch(err){} paintFondo() };
 paintFondo();
 function setTrack(){
   TRACK=TRACKS[RACE.trackIdx];
@@ -295,7 +295,7 @@ function gapOf(o,i){
   return Math.max(0,fin?c.cum[RACE.laps]-ref.cum[RACE.laps]:(ref.p-c.p)*TRACK.lap);
 }
 function paintGapSw(){ document.querySelectorAll('#gapSw [data-gap]').forEach(b=>b.classList.toggle('on',b.dataset.gap===GAP)) }
-$('gapSw').onclick=e=>{ const b=e.target.closest('[data-gap]'); if(!b) return; GAP=b.dataset.gap; try{ localStorage.setItem('boxbox_gap',GAP) }catch(err){} paintGapSw(); if(TOW) tower(TOW) };
+$('gapSw').onclick=e=>{ const b=e.target.closest('[data-gap]'); if(!b) return; GAP=b.dataset.gap; ev('intervalo',{g:GAP}); try{ localStorage.setItem('boxbox_gap',GAP) }catch(err){} paintGapSw(); if(TOW) tower(TOW) };
 paintGapSw();
 function tower(o){
   TOW=o;
@@ -371,7 +371,7 @@ function saveRace(me){const c=loadRaw(); LAST={};
 $('toResult').onclick=()=>{
   if(BLIND){BLIND=false;renderSlots()}   // ahora sí se ven las medias
   const {pos,dnf,grid,stops}=RESULT, pts=dnf?0:(ptsTable()[pos-1]||0), p=picks.piloto, career=MODE==='career', special=MODE==='daily'||MODE==='friendly'||career;
-  $('pos').textContent=dnf?'DNF':'P'+pos; $('pos').className='pos'+(!dnf&&pos===1?' p1':'');
+  ev('carrera_fin',{modo:MODE,pos:dnf?0:pos,dnf:!!dnf}); $('pos').textContent=dnf?'DNF':'P'+pos; $('pos').className='pos'+(!dnf&&pos===1?' p1':'');
   $('resmsg').textContent=career?`${dnf?'Abandono: sin puntos':'+'+pts+' punto'+(pts===1?'':'s')} · tu temporada 2026 va por ${carPts()} puntos`:special?(MODE==='daily'?'Desafío del día: no suma a tu campeonato de pilotos':'Amistoso: no cuenta para el ranking ni para la racha'):pts?`+${pts} puntos para ${p.n} en tu campeonato`:dnf?'Abandono: sin puntos':'Sin puntos esta vez';
   SHARE=buildShare(RESULT); $('share').innerHTML=esc(SHARE.text).replace(/\n/g,'<br>');
   if(MODE==='room'){
@@ -560,6 +560,7 @@ new MutationObserver(ms=>{
   } }finally{ xlateBusy=false }
 }).observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:ATTRS});
 async function setLang(code){
+  ev('idioma',{l:code});
   if(!LANGS.some(l=>l[0]===code)) code='es';
   if(code!=='es'){ try{ TR=trCompile((await import('./lang/'+code+'.js?v='+BUILD)).default) }catch(e){ console.warn(e); toast('No se pudo cargar el idioma.'); return } }
   LANG=code; document.documentElement.lang=code;
@@ -598,7 +599,7 @@ if(CAFECITO_USER){$('cafLink').href='https://cafecito.app/'+encodeURIComponent(C
 $('mpCopy').onclick=async()=>{const a=$('mpAlias').textContent;
   try{await navigator.clipboard.writeText(a)}catch(e){const r=document.createRange();r.selectNodeContents($('mpAlias'));const s=getSelection();s.removeAllRanges();s.addRange(r);document.execCommand('copy')}
   $('mpCopy').textContent='¡Copiado!';setTimeout(()=>$('mpCopy').textContent='Copiar alias',1800)};
-$('fDonate').onclick=()=>openM('mDonate');
+$('fDonate').onclick=()=>{ ev('apoyo_abre'); openM('mDonate') };
 $('fSuggest').onclick=()=>{$('sType').selectedIndex=0;openM('mSuggest')};
 $('fRating').onclick=()=>{$('sType').selectedIndex=1;openM('mSuggest')};
 $('pLogin').onclick=()=>openM('mLogin');
@@ -692,7 +693,7 @@ async function frToken(){ try{ const {data}=await sb.auth.getSession(); return d
 async function createRoom(){
   const name=myName(); if(!name){$('fErr').textContent='Escribe tu nombre.';return}
   $('fCreate').disabled=true; $('fErr').textContent='';
-  try{ const j=await api('create',{name,modo:$('fCareer').checked?'carrera':'normal',...($('fCareer').checked&&CUSTOM_CAL?{calendario:CUSTOM_CAL}:{}),token:await frToken()}); CUSTOM_CAL=null; $('fCalTxt').textContent=calTxt(null); ROOM={code:j.room.code,pid:j.pid,secret:j.secret}; enterRoom(j); }
+  try{ const j=await api('create',{name,modo:$('fCareer').checked?'carrera':'normal',...($('fCareer').checked&&CUSTOM_CAL?{calendario:CUSTOM_CAL}:{}),token:await frToken()}); CUSTOM_CAL=null; $('fCalTxt').textContent=calTxt(null); ROOM={code:j.room.code,pid:j.pid,secret:j.secret}; ev('sala_creada',{carrera:j.room.modo==='carrera'}); enterRoom(j); }
   catch(e){ $('fErr').textContent=e.message } finally{ $('fCreate').disabled=false }
 }
 async function joinRoom(){
@@ -700,7 +701,7 @@ async function joinRoom(){
   if(!name){$('fErr').textContent='Escribe tu nombre.';return}
   if(!code){$('fErr').textContent='Escribe el código de la sala.';return}
   $('fJoin').disabled=true; $('fErr').textContent='';
-  try{ const j=await api('join',{code,name,token:await frToken()}); ROOM={code:j.room.code,pid:j.pid,secret:j.secret}; enterRoom(j); }
+  try{ const j=await api('join',{code,name,token:await frToken()}); ROOM={code:j.room.code,pid:j.pid,secret:j.secret}; ev('sala_unida'); enterRoom(j); }
   catch(e){ $('fErr').textContent=e.message } finally{ $('fJoin').disabled=false }
 }
 $('fCreate').onclick=createRoom; $('fJoin').onclick=joinRoom;
@@ -956,6 +957,25 @@ function startRoomRace(s){
   if(q){ $('fCode').value=q.toUpperCase(); openM('mFriends'); $('fErr').textContent='Te invitaron a esta sala: escribe tu nombre y toca "Unirme". Si ya estabas en ella, escribe el mismo nombre para volver a tu lugar.'; }
 })();
 
+// ---------- MEDICIÓN ANÓNIMA DEL RECORRIDO (versión de prueba) ----------
+// Cuenta pasos del juego (visita, empieza partida, termina carrera, comparte…) sin datos personales: solo un id al azar por navegador.
+// Por ahora NO se envía nada a ningún servidor: queda en este navegador y se ve abriendo la página con ?metricas.
+const MET={max:400}, SESION=Math.random().toString(36).slice(2,10);
+function aid(){ try{ let a=localStorage.getItem('boxbox_aid'); if(!a){ a=Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4); localStorage.setItem('boxbox_aid',a); localStorage.setItem('boxbox_aid_t',String(Date.now())) } return a }catch(e){ return 'anon' } }
+function ev(nombre,datos){ try{ const q=JSON.parse(localStorage.getItem('boxbox_ev')||'[]'); q.push({t:Date.now(),e:nombre,d:datos||{},a:aid(),s:SESION}); localStorage.setItem('boxbox_ev',JSON.stringify(q.slice(-MET.max))) }catch(e){} }
+(function(){
+  const u=new URLSearchParams(location.search); let ref=''; try{ ref=document.referrer?new URL(document.referrer).hostname:'' }catch(e){}
+  const primera=(()=>{ try{ return !localStorage.getItem('boxbox_aid') }catch(e){ return false } })();   // primera visita de este navegador
+  ev('visita',{ref,utm:u.get('utm_source')||'',nueva:primera,movil:matchMedia('(pointer:coarse)').matches});
+  if(u.has('metricas')){
+    const p=document.createElement('div'); p.style.cssText='position:fixed;left:8px;bottom:8px;z-index:90;background:#0b0c10;color:#f2f2f5;border:1px solid #ffd23f;border-radius:10px;padding:10px 12px;font:12px/1.4 monospace;max-width:92vw;max-height:70vh;overflow:auto';
+    const pinta=()=>{ let q=[]; try{ q=JSON.parse(localStorage.getItem('boxbox_ev')||'[]') }catch(e){}
+      const c={}; q.forEach(x=>c[x.e]=(c[x.e]||0)+1); const ses=new Set(q.map(x=>x.s)).size;
+      p.innerHTML='<b>Métricas (solo en este navegador, no se envían)</b><br>eventos: '+q.length+' · sesiones: '+ses+'<br>'+Object.entries(c).sort((a,b)=>b[1]-a[1]).map(([k,v])=>k+': '+v).join('<br>')+'<hr style="border-color:#333">últimos:<br>'+q.slice(-8).reverse().map(x=>new Date(x.t).toLocaleTimeString()+' '+x.e+' '+JSON.stringify(x.d)).join('<br>')+'<br><button id="metBorrar" style="margin-top:6px">Borrar</button> <button id="metCerrar">Cerrar</button>';
+      p.querySelector('#metBorrar').onclick=()=>{ try{ localStorage.removeItem('boxbox_ev') }catch(e){} pinta() }; p.querySelector('#metCerrar').onclick=()=>p.remove() };
+    document.body.appendChild(p); pinta(); setInterval(()=>{ if(document.body.contains(p)) pinta() },2000);
+  }
+})();
 // ---------- COMPARTIR RESULTADO ----------
 // Tarjeta de texto tipo Wordle. El desafío del día comparte un link que abre ese mismo desafío.
 const SITE='https://boxf1box.com';
@@ -971,14 +991,70 @@ function buildShare(R,D){
   const text=`${head}\n${RACE&&RACE.sprint?'Sprint':'GP'} de ${GPN()}${RACE&&RACE.rain?' 🌧️ (con lluvia)':''}\n${line}\n${team}\n📊 Media total ${avg}\n${D&&!D.error?`#${D.rank} de ${D.total} hoy${D.streak>1?` · 🔥 ${D.streak} días`:''}\n`:''}¿Me ganás? 👉 ${url}`;
   $('shWa').href='https://wa.me/?text='+encodeURIComponent(text);
   $('shX').href='https://x.com/intent/tweet?text='+encodeURIComponent(text);
-  return {text,url};
+  const heads={career:'Modo carrera 2026'+(RACE&&RACE.sprint?' · Sprint':''),daily:'Desafío del día',friendly:'Desafío amistoso',room:'Carrera con amigos'};
+  const data={head:heads[MODE]||'Carrera',gp:GPN(),sprint:!!(RACE&&RACE.sprint),rain:!!(RACE&&RACE.rain),pos:R.pos,dnf:R.dnf,grid:R.grid,avg,
+    team:SLOTS.map(([k,l])=>({l,n:picks[k].n,y:picks[k].y,r:picks[k].r})),daily:D&&!D.error?{rank:D.rank,total:D.total,streak:D.streak}:null,url};
+  return {text,url,data};
 }
 async function copyShare(){
   try{await navigator.clipboard.writeText(SHARE.text);toast('¡Resultado copiado! Pégalo donde quieras.')}
   catch(e){prompt('Copia tu resultado:',SHARE.text)}
 }
-$('shCopy').onclick=copyShare;
+$('shCopy').onclick=()=>{ ev('compartir',{via:'copiar'}); copyShare() };
+['shWa','shX'].forEach(k=>$(k).addEventListener('click',()=>ev('compartir',{via:k==='shWa'?'whatsapp':'x'})));
+// Tarjeta en imagen (1080x1350) para compartir el resultado: se dibuja en el navegador, no se sube a ningún lado.
+let SHIMG=null;
+async function shareImageBuild(){
+  const D=SHARE&&SHARE.data; if(!D) return null;
+  try{ await Promise.all([document.fonts.load('900 80px "Titillium Web"'),document.fonts.load('700 30px "Titillium Web"')]) }catch(e){}
+  const T=s=>(typeof LANG!=='undefined'&&LANG!=='es'&&TR)?trText(s):s, F='"Titillium Web",Arial,sans-serif';
+  const W=1080,H=1350,c=document.createElement('canvas'); c.width=W; c.height=H; const x=c.getContext('2d');
+  const bg=x.createLinearGradient(0,0,0,H); bg.addColorStop(0,'#1d1f28'); bg.addColorStop(1,'#0c0d12'); x.fillStyle=bg; x.fillRect(0,0,W,H);
+  const rg=x.createRadialGradient(W*.88,40,0,W*.88,40,760); rg.addColorStop(0,'rgba(255,59,48,.30)'); rg.addColorStop(1,'rgba(255,59,48,0)'); x.fillStyle=rg; x.fillRect(0,0,W,H);
+  for(let i=0;i<W/60+1;i++){ x.fillStyle=i%2?'#fff':'#ff3b30'; x.fillRect(i*60,0,60,20); x.fillRect(i*60,H-20,60,20) }
+  const txt=(s,px,py,o={})=>{ x.font=`${o.it?'italic ':''}${o.w||700} ${o.s||36}px ${F}`; x.fillStyle=o.c||'#f2f2f5'; x.textAlign=o.a||'left'; x.textBaseline=o.b||'alphabetic'; if(o.sp) x.letterSpacing=o.sp+'px'; else x.letterSpacing='0px'; x.fillText(s,px,py) };
+  // logo
+  txt('BOX',70,130,{w:900,s:92,it:1,c:'#ffd23f',sp:-3}); const bw=x.measureText('BOX').width; txt('BOX',70+bw+4,130,{w:900,s:92,it:1,c:'#ff3b30',sp:-3});
+  txt(T(D.head).toUpperCase(),W-70,112,{w:700,s:30,c:'#9a9db0',a:'right',sp:3});
+  // circuito
+  txt((D.sprint?T('Sprint'):T('Gran Premio')).toUpperCase(),70,230,{w:700,s:30,c:'#9a9db0',sp:4});
+  let gs=82; x.font=`italic 900 ${gs}px ${F}`; while(x.measureText(D.gp).width>W-140&&gs>40){ gs-=4; x.font=`italic 900 ${gs}px ${F}` }
+  txt(D.gp,70,230+gs+4,{w:900,s:gs,it:1,c:'#fff'});
+  if(D.rain) txt('🌧️ '+T('con lluvia'),70,230+gs+60,{w:700,s:32,c:'#4fc3f7'});
+  // posición
+  const py=620, big=D.dnf?'DNF':'P'+D.pos, col=D.dnf?'#ff3b30':D.pos===1?'#ffd23f':D.pos<=3?'#fff':'#f2f2f5';
+  txt(big,70,py,{w:900,s:300,it:1,c:col,sp:-8}); const pw=x.measureText(big).width;
+  if(!D.dnf) txt('/ 22',70+pw+24,py-6,{w:700,s:64,c:'#9a9db0'});
+  txt(D.dnf?T('Abandoné'):T('Largué')+' P'+D.grid,70,py+64,{w:700,s:38,c:'#9a9db0'});
+  if(!D.dnf&&D.pos===1) txt('🏆',W-170,py-70,{s:150,a:'left'});
+  // auto
+  let y=py+150; txt(T('MI AUTO').toUpperCase(),70,y,{w:700,s:26,c:'#9a9db0',sp:4}); y+=26;
+  for(const p of D.team){ y+=58; const cc=p.r>=95?'#b26bff':p.r>=90?'#2fd27a':p.r>=80?'#ffd23f':'#6b6f80';
+    x.fillStyle=cc; x.beginPath(); x.roundRect(70,y-30,30,30,6); x.fill();
+    txt(T(p.l),116,y-2,{w:700,s:32,c:'#9a9db0'}); txt(p.n+" '"+String(p.y).slice(2),380,y-2,{w:700,s:32}); txt(String(p.r),W-70,y-2,{w:900,s:36,c:cc,a:'right'}) }
+  y+=78; txt(T('Media total')+' '+D.avg,70,y,{w:900,s:40,c:'#ffd23f'});
+  if(D.daily){ txt('#'+D.daily.rank+' '+T('de')+' '+D.daily.total+' '+T('hoy')+(D.daily.streak>1?'  ·  🔥 '+D.daily.streak+' '+T('días'):''),W-70,y,{w:700,s:34,a:'right'}) }
+  // pie
+  x.fillStyle='#ffd23f'; x.beginPath(); x.roundRect(70,H-176,520,78,39); x.fill(); txt('boxf1box.com',330,H-122,{w:900,s:44,c:'#1a1300',a:'center'});
+  txt(T('¿Me ganás?'),620,H-122,{w:900,s:44,it:1});
+  txt(T('Proyecto de fans · sin afiliación con la F1, equipos ni pilotos'),W/2,H-52,{w:700,s:22,c:'#6b6f80',a:'center'});
+  return new Promise(res=>c.toBlob(b=>res(b),'image/png'));
+}
+async function shareImageOpen(){
+  ev('compartir',{via:'imagen'});
+  $('shImg').disabled=true;
+  try{ const b=await shareImageBuild(); if(!b) return; SHIMG=new File([b],'boxbox-resultado.png',{type:'image/png'});
+    if($('shImgPrev').src) URL.revokeObjectURL($('shImgPrev').src); $('shImgPrev').src=URL.createObjectURL(b); openM('mShareImg') }
+  catch(e){ console.warn(e); toast('No se pudo armar la imagen.') } finally{ $('shImg').disabled=false }
+}
+$('shImg').onclick=shareImageOpen;
+$('shImgDl').onclick=()=>{ if(!SHIMG) return; const a=document.createElement('a'); a.href=URL.createObjectURL(SHIMG); a.download='boxbox-resultado.png'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),4000); ev('compartir',{via:'descarga'}) };
+$('shImgShare').onclick=async()=>{ if(!SHIMG) return;
+  if(navigator.canShare&&navigator.canShare({files:[SHIMG]})){ try{ await navigator.share({files:[SHIMG],title:'BoxBox',text:SHARE.text}); ev('compartir',{via:'imagen-nativo'}); return }catch(e){ if(e.name==='AbortError') return } }
+  $('shImgDl').click() };
+
 $('shNative').onclick=async()=>{
+  ev('compartir',{via:'nativo'});
   if(navigator.share){ try{await navigator.share({title:'BoxBox',text:SHARE.text});return}catch(e){ if(e.name==='AbortError') return } }
   copyShare();
 };
@@ -1010,7 +1086,7 @@ function resetBuild(rr){
   $('roomBar').style.display='none'; renderSlots();
 }
 function startGame(mode){
-  MODE=mode; BLIND=(mode==='daily'||mode==='friendly'); if(BLIND) LAPS=20;
+  ev('inicio',{modo:mode}); MODE=mode; BLIND=(mode==='daily'||mode==='friendly'); if(BLIND) LAPS=20;
   resetBuild(BLIND?0:2);
   $('st0').style.display=''; go('s-build',1);
   $('buildTitle').innerHTML=mode==='daily'?'Desafío <em>del día</em>':mode==='friendly'?'Desafío <em>amistoso</em>':'Tira el dado. <em>Arma tu auto.</em>';
@@ -1274,7 +1350,7 @@ function renderFriends(){
   $('frAddGo').onclick=()=>frAccion('solicitar',{nick:$('frAdd').value},'frErr');
 }
 async function frAccion(action,extra,errId){
-  try{ FR=await frApi(action,extra); frPresence(); renderFrBadge(); renderFriends(); if($('mFriend').classList.contains('open')) await showFriendProfile(FRP.uid); if(action==='solicitar') toast('Pedido enviado') }
+  try{ FR=await frApi(action,extra); frPresence(); renderFrBadge(); renderFriends(); if($('mFriend').classList.contains('open')) await showFriendProfile(FRP.uid); if(action==='solicitar'){ ev('amigo_pedido'); toast('Pedido enviado') } }
   catch(e){ if(errId&&$(errId)) $(errId).textContent=e.message; else toast(e.message); if(e.code==='nick'&&!FR) showFriends() }
 }
 $('frBody').onclick=e=>{ const b=e.target.closest('[data-fr]'); if(!b||b.disabled) return; const uid=b.dataset.uid, k=b.dataset.fr;
