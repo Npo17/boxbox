@@ -268,9 +268,19 @@ function startRace(syncAt,interactive){
     }; tick();
   }
 }
+// Diferencias de la tabla: "Líder" (a cuánto del primero) o "Intervalo" (a cuánto del auto de adelante, como en la TV de la F1). Se recuerda la elección.
+let GAP=(()=>{ try{ return localStorage.getItem('boxbox_gap')==='int'?'int':'lider' }catch(e){ return 'lider' } })(), TOW=null;
+function gapOf(o,i){
+  const c=o[i], ref=GAP==='int'?o[i-1]:o[0];
+  const fin=c.p>=RACE.laps&&ref.p>=RACE.laps;
+  return Math.max(0,fin?c.cum[RACE.laps]-ref.cum[RACE.laps]:(ref.p-c.p)*TRACK.lap);
+}
+function paintGapSw(){ document.querySelectorAll('#gapSw [data-gap]').forEach(b=>b.classList.toggle('on',b.dataset.gap===GAP)) }
+$('gapSw').onclick=e=>{ const b=e.target.closest('[data-gap]'); if(!b) return; GAP=b.dataset.gap; try{ localStorage.setItem('boxbox_gap',GAP) }catch(err){} paintGapSw(); if(TOW) tower(TOW) };
+paintGapSw();
 function tower(o){
-  const lead=o[0].p;
-  $('tower').innerHTML=o.map((c,i)=>`<div class="trow ${c.me?'me':''}" style="${c.out?'opacity:.4':''}"><span class="p">${i+1}</span><span class="c" style="background:${c.color}"></span><span>${c.name}</span><span class="g">${c.out?'OUT':c.inPit?'<b style="color:var(--yellow)">BOX</b>':i?'+'+(c.p>=RACE.laps&&o[0].p>=RACE.laps?c.cum[RACE.laps]-o[0].cum[RACE.laps]:(lead-c.p)*TRACK.lap).toFixed(1)+'s':'LÍDER'}</span></div>`).join('');
+  TOW=o;
+  $('tower').innerHTML=o.map((c,i)=>`<div class="trow ${c.me?'me':''}" style="${c.out?'opacity:.4':''}"><span class="p">${i+1}</span><span class="c" style="background:${c.color}"></span><span>${c.name}</span><span class="g">${c.out?'OUT':c.inPit?'<b style="color:var(--yellow)">BOX</b>':i?'+'+gapOf(o,i).toFixed(1)+'s':'LÍDER'}</span></div>`).join('');
 }
 function msg(e){
   const mine=e.carKey===MEKEY;

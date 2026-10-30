@@ -92,7 +92,7 @@ export default {
     "media es estimada": "rating is estimated", "con el resultado de esa escudería ese año. Si no hay dato del nombre, aparece «Jefe de [escudería]». Los estrategas no figuran en ninguna base pública: siempre son estimados.":
       "from that team's results that year. If the name is unknown, it shows \"Principal of [team]\". Strategists are not in any public database: they are always estimated.",
     "a una vuelta": "one lap", "Tiempos": "Times", "Esperando la tanda…": "Waiting for the session…", "Tu vuelta": "Your lap", "Tirar la qualy": "Roll the qualy", "A la parrilla →": "To the grid →",
-    "VUELTA 0/20": "LAP 0/20", "🚨 SAFETY CAR": "🚨 SAFETY CAR", "Trazado: datos abiertos f1-circuits (MIT)": "Track layout: open data f1-circuits (MIT)", "Posiciones": "Positions", "Ver resultado →": "See result →",
+    "VUELTA 0/20": "LAP 0/20", "🚨 SAFETY CAR": "🚨 SAFETY CAR", "Trazado: datos abiertos f1-circuits (MIT)": "Track layout: open data f1-circuits (MIT)", "Posiciones": "Positions", "Líder": "Leader", "Intervalo": "Interval", "Ver resultado →": "See result →",
     "Terminaste": "You finished", "📤 Compartir": "📤 Share", "Copiar": "Copy", "Otra tirada": "Another roll", "Ver campeonato de pilotos": "See drivers' championship",
     "Campeonato de pilotos · todas tus carreras": "Drivers' championship · all your races", "Esta carrera": "This race",
     "Es tu campeonato: arranca en 0 y en cada carrera que juegas solo suma puntos el piloto que elegiste (25-18-15-12-10-8-6-4-2-1 según donde terminaste), así que la tabla muestra solo a los pilotos que usaste. (En el boceto se guarda en este navegador.)":
