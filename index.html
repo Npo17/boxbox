@@ -26,8 +26,8 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <!-- Arranque rápido: conexiones y descargas en paralelo con el HTML -->
 <link rel="preconnect" href="https://vljuhibzzwtcswirunfr.supabase.co" crossorigin>
-<link rel="preload" href="supabase/functions/_shared/temporadas.json?v=c5eda609" as="fetch" crossorigin fetchpriority="low">
-<link rel="modulepreload" href="supabase/functions/_shared/engine.js?v=c5eda609" fetchpriority="low">
+<link rel="preload" href="supabase/functions/_shared/temporadas.json?v=20b4b0b8" as="fetch" crossorigin fetchpriority="low">
+<link rel="modulepreload" href="supabase/functions/_shared/engine.js?v=20b4b0b8" fetchpriority="low">
 <!-- Boceto de diseño, no es el juego final. Datos de ejemplo inventados. Sin marcas, logos ni fotos: todo dibujado en SVG. -->
 <!-- Fuente propia (Titillium Web) en vez de Google Fonts: sin precarga a propósito (precargarla retrasaba el primer dibujo en conexiones lentas) -->
 <style>
@@ -113,6 +113,11 @@ h1 em{color:var(--red);font-style:italic}
 .lights.on i{background:var(--red);box-shadow:0 0 10px var(--red)}
 .lights.go i{background:var(--green);box-shadow:0 0 10px var(--green)}
 svg.track{width:100%;height:auto;display:block}
+.trackfoot{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.trackfoot .note{margin:0}
+.fsw{display:flex;gap:6px}.fsw button{width:20px;height:13px;border-radius:3px;border:1px solid rgba(255,255,255,.18);padding:0;cursor:pointer;opacity:.75}.fsw button:hover{opacity:1}.fsw button.on{opacity:1;outline:2px solid var(--yellow);outline-offset:1px}
+/* fondos de la pista (el usuario elige) */
+.th-a .pa{stroke:#2b2e38}.th-d .pa{stroke:#272a33}
+.th-c .pk{stroke:#7aa2ff;stroke-opacity:.5;stroke-width:30}.th-c .pa{stroke:#0b1426;stroke-width:27}.th-c .pd{stroke:#9fc0ff;stroke-opacity:.7;stroke-dasharray:6 9}.th-c .ps{fill:#ffd23f}
 .drop{stroke:#bfe0ff;stroke-opacity:.6;stroke-width:1.6;animation:rainfall .5s linear infinite}
 @keyframes rainfall{from{transform:translate(0,-30px)}to{transform:translate(-12px,490px)}}
 @media (prefers-reduced-motion:reduce){.drop{animation:none}}
@@ -474,14 +479,23 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
       <svg class="track" viewBox="0 0 800 460" id="track">
         <defs>
           <pattern id="kerbp" width="16" height="16" patternUnits="userSpaceOnUse"><rect width="8" height="16" fill="#ff3b30"/><rect x="8" width="8" height="16" fill="#fff"/></pattern>
+          <pattern id="carbon" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="#10131a"/><path d="M0,0 L4,4 L0,8 Z M8,0 L4,4 L8,8 Z" fill="#161a23"/></pattern>
+          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40,0 H0 V40" fill="none" stroke="#7aa2ff" stroke-opacity=".10" stroke-width="1"/></pattern>
+          <pattern id="mow" width="56" height="56" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><rect width="28" height="56" fill="#fff" opacity=".035"/></pattern>
+          <radialGradient id="vig" cx="50%" cy="48%" r="70%"><stop offset="55%" stop-color="#000" stop-opacity="0"/><stop offset="100%" stop-color="#000" stop-opacity=".55"/></radialGradient>
+          <radialGradient id="grass" cx="50%" cy="45%" r="75%"><stop offset="0%" stop-color="#235a35"/><stop offset="100%" stop-color="#0e2a19"/></radialGradient>
+          <radialGradient id="glow" cx="50%" cy="50%" r="60%"><stop offset="0%" stop-color="#ff3b30" stop-opacity=".22"/><stop offset="100%" stop-color="#ff3b30" stop-opacity="0"/></radialGradient>
+          <filter id="blurbg"><feGaussianBlur stdDeviation="9"/></filter>
         </defs>
-        <rect width="800" height="460" fill="#173320" rx="14"/>
+        <rect id="bgrect" width="800" height="460" fill="#173320" rx="14"/>
+        <g id="bgl"></g>
         <g id="trackg"></g>
+        <g id="bgfx" style="pointer-events:none"></g>
         <g id="cars"></g>
         <rect id="wetTint" width="800" height="460" rx="14" fill="#0b1b36" opacity="0" style="pointer-events:none"/>
         <g id="rainfx" style="pointer-events:none"></g>
       </svg>
-      <div class="note">Trazado: datos abiertos f1-circuits (MIT)</div>
+      <div class="trackfoot"><div class="fsw" id="fondoSw"><button type="button" data-f="cl" title="Clásico" style="background:#173320"></button><button type="button" data-f="a" title="Telemetría" style="background:repeating-linear-gradient(45deg,#10131a 0 3px,#1a1f2a 3px 6px)"></button><button type="button" data-f="b" title="Césped" style="background:radial-gradient(circle at 50% 40%,#2c6a3f,#0e2a19)"></button><button type="button" data-f="c" title="Plano" style="background:linear-gradient(#0b1426,#0b1426) padding-box,#0b1426;box-shadow:inset 0 0 0 5px #0b1426,inset 0 0 0 6px #7aa2ff"></button><button type="button" data-f="d" title="Noche TV" style="background:radial-gradient(circle at 50% 120%,#ff3b30,#0a0c11 70%)"></button></div><div class="note">Trazado: datos abiertos f1-circuits (MIT)</div></div>
       <div class="radio" id="radio"></div>
     </div>
     <div class="panel">
@@ -621,7 +635,7 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
 
 
 <script src="vendor/supabase.min.js" defer></script>
-<script src="tracks.js?v=c5eda609" defer></script>
-<script src="game.js?v=c5eda609" defer></script>
+<script src="tracks.js?v=20b4b0b8" defer></script>
+<script src="game.js?v=20b4b0b8" defer></script>
 </body>
 </html>

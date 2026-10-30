@@ -101,13 +101,32 @@ function prepareRace(seed){
   HUMANS=[E.humanFromPicks('me','#ff3b30',picks)]; MEKEY='h:me'; DECISIONS={};
   RACE=newRace({}); setTrack();
 }
+// Fondo de la pista: el usuario elige entre 5 (se recuerda). Se dibuja debajo (bgl) y encima (bgfx) del trazado.
+const FONDOS=['cl','a','b','c','d'];
+let FONDO=(()=>{ try{ const v=localStorage.getItem('boxbox_fondo'); return FONDOS.includes(v)?v:'d' }catch(e){ return 'd' } })();
+function paintFondo(){
+  document.querySelectorAll('#fondoSw [data-f]').forEach(b=>b.classList.toggle('on',b.dataset.f===FONDO));
+  if(typeof TRACK==='undefined'||!TRACK) return;
+  const d=TRACK.d, R='<rect width="800" height="460" rx="14"', tit=esc(TRACK.circuit.toUpperCase()+' · '+String(TRACK.km).replace('.',',')+' KM'), gp=esc(TRACK.gp.split('(')[0].trim().toUpperCase());
+  $('track').setAttribute('class','track th-'+FONDO);
+  $('bgrect').setAttribute('fill',{cl:'#173320',a:'url(#carbon)',b:'url(#grass)',c:'#0b1426',d:'#0a0c11'}[FONDO]);
+  let low='', top='';
+  if(FONDO==='a'){ low=`${R} fill="url(#grid)"/><text x="26" y="40" fill="#fff" fill-opacity=".3" font-family="Titillium Web" font-weight="900" font-size="15" letter-spacing="3">${tit}</text>`; top=`${R} fill="url(#vig)"/>` }
+  else if(FONDO==='b'){ low=`${R} fill="url(#mow)"/><path d="${d}" fill="none" stroke="#c9b27a" stroke-opacity=".35" stroke-width="52" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="#11251a" stroke-opacity=".5" stroke-width="40" stroke-linejoin="round" filter="url(#blurbg)"/>`; top=`${R} fill="url(#vig)"/>` }
+  else if(FONDO==='c'){ low=`${R} fill="url(#grid)"/><text x="26" y="40" fill="#9fc0ff" fill-opacity=".8" font-family="Titillium Web" font-weight="900" font-size="15" letter-spacing="3">${tit}</text><text x="745" y="432" fill="#9fc0ff" fill-opacity=".5" font-family="Titillium Web" font-weight="900" font-size="14">N ↑</text>` }
+  else if(FONDO==='d'){ const fs=Math.min(120,Math.round(720/(gp.length*0.56))); low=`<ellipse cx="400" cy="230" rx="330" ry="210" fill="url(#glow)"/><text x="400" y="${230+Math.round(fs*0.33)}" text-anchor="middle" fill="#fff" fill-opacity=".05" font-family="Titillium Web" font-weight="900" font-style="italic" font-size="${fs}" letter-spacing="-3">${gp}</text><path d="${d}" fill="none" stroke="#ff3b30" stroke-opacity=".55" stroke-width="40" stroke-linejoin="round" filter="url(#blurbg)"/>`; top=`${R} fill="url(#vig)"/>` }
+  $('bgl').innerHTML=low; $('bgfx').innerHTML=top;
+}
+$('fondoSw').onclick=e=>{ const b=e.target.closest('[data-f]'); if(!b) return; FONDO=b.dataset.f; try{ localStorage.setItem('boxbox_fondo',FONDO) }catch(err){} paintFondo() };
+paintFondo();
 function setTrack(){
   TRACK=TRACKS[RACE.trackIdx];
-  const s=TRACK.d.match(/M([0-9.]+),([0-9.]+)/), layers=(id)=>`<path ${id} d="${TRACK.d}" fill="none" stroke="url(#kerbp)" stroke-width="34" stroke-linejoin="round"/>
-   <path d="${TRACK.d}" fill="none" stroke="#3a3c44" stroke-width="26" stroke-linejoin="round"/>
-   <path d="${TRACK.d}" fill="none" stroke="#fff" stroke-opacity=".25" stroke-width="1.5" stroke-dasharray="10 12"/>
-   <circle cx="${s[1]}" cy="${s[2]}" r="7" fill="#fff"/>`;
+  const s=TRACK.d.match(/M([0-9.]+),([0-9.]+)/), layers=(id)=>`<path ${id} class="pk" d="${TRACK.d}" fill="none" stroke="url(#kerbp)" stroke-width="34" stroke-linejoin="round"/>
+   <path class="pa" d="${TRACK.d}" fill="none" stroke="#3a3c44" stroke-width="26" stroke-linejoin="round"/>
+   <path class="pd" d="${TRACK.d}" fill="none" stroke="#fff" stroke-opacity=".25" stroke-width="1.5" stroke-dasharray="10 12"/>
+   <circle class="ps" cx="${s[1]}" cy="${s[2]}" r="7" fill="#fff"/>`;
   $('trackg').innerHTML=layers('id="tp"')+`<text x="${+s[1]+12}" y="${+s[2]+24}" fill="#fff" fill-opacity=".5" font-size="13" font-family="Titillium Web" font-weight="700">LARGADA / META</text>`;
+  paintFondo();
   // calle de boxes: paralela a la recta de meta, del lado con más espacio
   const pth=$('tp'), PL=pth.getTotalLength(), a=pth.getPointAtLength(0), b=pth.getPointAtLength(Math.min(PL*0.01,12));
   let tx=b.x-a.x, ty=b.y-a.y; const nn=Math.hypot(tx,ty)||1; tx/=nn; ty/=nn;
