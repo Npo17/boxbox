@@ -371,7 +371,8 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
   <div class="panel">
     <table class="cal"><thead><tr><th>#</th><th>Gran Premio</th><th>Fecha</th><th>Resultado</th><th style="text-align:right">Pts</th></tr></thead><tbody id="carBody"></tbody></table>
     <div class="note">Seguí el calendario de la F1 2026, un fin de semana tras otro. En cada uno armás un auto nuevo con los dados. En las sprints (🏃) corrés primero una carrera corta de 8 vueltas, sin paradas (puntos 8-7-6-5-4-3-2-1), y después el GP con el mismo auto. Tu progreso se guarda en este navegador.</div>
-    <div class="cta-row" style="margin-top:14px"><button class="btn" id="carGo"><span>Empezar</span></button><button class="btn ghost" id="carReset"><span>Reiniciar temporada</span></button></div>
+    <div class="cta-row" style="margin-top:14px"><button class="btn" id="carGo"><span>Empezar</span></button><button class="btn ghost" id="carFriends"><span>👥 Con amigos</span></button><button class="btn ghost" id="carReset"><span>Reiniciar temporada</span></button></div>
+    <div class="note" style="margin-top:8px"><b>Con amigos:</b> creá una sala de carrera (hasta 22 jugadores) o entrá con un código. La sala corre el mismo calendario, con una tabla de puntos compartida.</div>
   </div>
 </section>
 
@@ -958,13 +959,14 @@ function careerRecord(me){
   carSave();
 }
 $('hCareer').onclick=()=>showCareer();
+$('carFriends').onclick=()=>{ $('fCareer').checked=true; $('fErr').textContent=''; openM('mFriends') };   // sala de carrera con amigos (o unirse con un código)
 
 // ---------- Inicio, navegación, ajustes, perfil, modales ----------
 // MODE se declara arriba, junto al estado del juego
 const today=new Date(), DAYKEY=today.getFullYear()*10000+(today.getMonth()+1)*100+today.getDate();
 $('hPlay').onclick=()=>startGame('solo');
 $('hDaily').onclick=$('nDaily').onclick=()=>showDaily();
-$('hFriends').onclick=()=>openM('mFriends');
+$('hFriends').onclick=()=>{ $('fCareer').checked=false; openM('mFriends') };
 $('hChamp').onclick=$('nChamp').onclick=()=>showChampPage();
 $('nProfile').onclick=()=>showProfile();
 $('logo').onclick=()=>{location.href=location.pathname};   // al inicio, sin ?sala ni otros parámetros
