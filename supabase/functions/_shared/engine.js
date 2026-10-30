@@ -83,10 +83,10 @@ export const SLICK_ON_WET = 1.32;     // slicks sobre pista mojada: muchísimo m
 export const STORM_CHANCE = 0.07;     // carreras con aviso de tormenta a mitad de carrera (con decisión)
 export const STORM_ARRIVES = 0.55;    // probabilidad de que la lluvia anunciada llegue de verdad
 export const SC_ON_CRASH = 0.72;       // no todos los choques traen safety car (en seco: ~42% de las carreras)
-export const SC_ON_CRASH_WET = 0.5; // con lluvia: ~60%
+export const SC_ON_CRASH_WET = 0.65; // con lluvia: ~60%
 export const SPRINT_LAPS = 8;
 export const SPRINT_PTS = [8, 7, 6, 5, 4, 3, 2, 1];
-export const crashChanceWet = (d) => (d < 90 ? (90 - d) * 0.0005 + 0.0008 : 0.0006);
+export const crashChanceWet = (d) => (d < 90 ? (90 - d) * 0.00025 + 0.0004 : 0.0003);
 
 export function humanFromPicks(id, color, picks, label) {
   const p = picks.piloto;

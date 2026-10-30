@@ -154,6 +154,8 @@ nav.top{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .ddm button{display:block;width:100%;text-align:left;background:none;border:0;color:var(--text);font:inherit;padding:9px 10px;border-radius:6px;cursor:pointer}
 .ddm button:hover{background:var(--card)}
 .ddm hr{border:0;border-top:1px solid var(--line);margin:4px 0}
+.ddm #langBtns button{width:auto;display:inline-block;border:1px solid var(--line);padding:6px 11px;font-weight:700}
+.ddm #langBtns button.on{border-color:var(--yellow);color:var(--yellow)}
 .ddm small{display:block;color:var(--muted);padding:4px 10px;text-transform:uppercase;letter-spacing:1px;font-size:11px}
 #logo{cursor:pointer}
 /* ---- Inicio ---- */
@@ -239,6 +241,8 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
       <div class="ddm" id="ddm">
         <small>Tema</small>
         <button id="tDark">🌙 Oscuro</button><button id="tLight">☀️ Claro</button>
+        <hr><small>Idioma</small>
+        <div id="langBtns" style="display:flex;gap:6px;flex-wrap:wrap;padding:2px 6px 6px"></div>
         <hr><small>Campeonato de pilotos</small>
         <button id="dNew">Arrancar nuevo campeonato</button><button id="dReset">Resetear campeonato</button>
       </div></div>
@@ -929,7 +933,7 @@ async function showCareer(){
 function renderCareer(){
   const nx=carNext(); carSave();
   const gps=CAR.log.filter(l=>l.kind==='gp'), wins=gps.filter(l=>!l.dnf&&l.pos===1).length, pods=gps.filter(l=>!l.dnf&&l.pos<=3).length;
-  $('carSub').textContent=CAR.log.some(l=>l.kind!=='cancel')?`${carPts()} puntos · ${gps.length} GP corridos · ${wins} victoria${wins===1?'':'s'} · ${pods} podio${pods===1?'':'s'}`:'Una temporada completa, un fin de semana a la vez.';
+  $('carSub').textContent=CAR.log.some(l=>l.kind!=='cancel')?`${carPts()} puntos · GP corridos: ${gps.length} · Victorias: ${wins} · Podios: ${pods}`:'Una temporada completa, un fin de semana a la vez.';
   const res=l=>!l?'':l.dnf?'DNF':`P${l.pos}`;
   $('carBody').innerHTML=CAL.map((c,k)=>{
     const s=CAR.log.find(l=>l.i===k&&l.kind==='sprint'), g=CAR.log.find(l=>l.i===k&&l.kind==='gp'), isNx=nx&&k===CAR.i;
@@ -960,6 +964,74 @@ function careerRecord(me){
 }
 $('hCareer').onclick=()=>showCareer();
 $('carFriends').onclick=()=>{ $('fCareer').checked=true; $('fErr').textContent=''; openM('mFriends') };   // sala de carrera con amigos (o unirse con un código)
+
+// ---------- IDIOMA ----------
+// El juego está escrito en español (idioma por defecto). Cada idioma es un diccionario en lang/xx.js:
+// s = textos exactos, p = textos con partes variables ({0}, {1}…), w = palabras sueltas (países, meses).
+// Los textos de la página se traducen en el navegador, incluidos los que el juego genera después (un observador los ve aparecer).
+const LANGS=[['pt','PT'],['en','EN'],['es','ES']], LOCALES={es:'es',en:'en-US',pt:'pt-BR'};
+let LANG='es', TR=null;
+const T_ORIG=new WeakMap(), T_LAST=new WeakMap(), A_ORIG=new WeakMap(), ATTRS=['placeholder','title','aria-label'];
+function trCompile(d){
+  const pats=Object.entries(d.p||{}).map(([k,v])=>{ const idx={}; let g=0;
+    const src=k.replace(/[.*+?^$|()[\]\\]/g,'\\$&').replace(/\{(\d+)\}/g,(_,i)=>{ g++; if(idx[i]===undefined) idx[i]=g; return '(.+?)' });
+    return [new RegExp('^'+src+'$'),v,idx] });
+  return {s:d.s||{},pats,w:Object.entries(d.w||{}).sort((a,b)=>b[0].length-a[0].length)};
+}
+function trText(t){
+  const q=/^"(.*)"$/.exec(t); if(q) return '"'+trText(q[1])+'"';
+  let out=TR.s[t];
+  if(out===undefined) for(const [re,v,idx] of TR.pats){ const m=re.exec(t); if(m){ out=v.replace(/\{(\d+)\}/g,(_,i)=>m[idx[i]]); break } }
+  if(out===undefined) out=t;
+  for(const [k,v] of TR.w) if(out.includes(k)) out=out.split(k).join(v);
+  return out;
+}
+function xlateText(n){
+  if(n.parentNode&&/^(SCRIPT|STYLE)$/.test(n.parentNode.nodeName)) return;
+  const cur=n.nodeValue;
+  if(!(T_LAST.has(n)&&T_LAST.get(n)===cur)) T_ORIG.set(n,cur);                 // texto nuevo puesto por el juego
+  const o=T_ORIG.get(n); if(o===undefined) return;
+  let nv=o;
+  if(LANG!=='es'&&/[A-Za-zÀ-ÿ]/.test(o)){
+    const lead=o.match(/^\s*/)[0], trail=o.match(/\s*$/)[0], core=o.trim().replace(/\s+/g,' ');
+    nv=lead+trText(core)+trail;
+  }
+  if(nv!==cur){ T_LAST.set(n,nv); n.nodeValue=nv } else if(nv===o) T_LAST.delete(n);
+}
+function xlateAttr(el,a){
+  const m=A_ORIG.get(el)||{}, cur=el.getAttribute(a); if(cur==null) return;
+  if(!(m[a]&&m[a].last===cur)) m[a]={orig:cur,last:cur}; A_ORIG.set(el,m);
+  const nv=LANG==='es'?m[a].orig:trText(m[a].orig.trim());
+  if(nv!==cur){ m[a].last=nv; el.setAttribute(a,nv) }
+}
+function xlateTree(root){
+  if(root.nodeType===3){ xlateText(root); return }
+  if(root.nodeType!==1) return;
+  const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT); let n; while((n=w.nextNode())) xlateText(n);
+  const els=[root,...root.querySelectorAll('[placeholder],[title],[aria-label]')];
+  els.forEach(el=>{ if(el.getAttribute) ATTRS.forEach(a=>{ if(el.hasAttribute(a)) xlateAttr(el,a) }) });
+}
+let xlateBusy=false;
+new MutationObserver(ms=>{
+  if(LANG==='es'||xlateBusy) return; xlateBusy=true;
+  try{ for(const m of ms){
+    if(m.type==='childList') m.addedNodes.forEach(xlateTree);
+    else if(m.type==='characterData') xlateText(m.target);
+    else if(m.type==='attributes') xlateAttr(m.target,m.attributeName);
+  } }finally{ xlateBusy=false }
+}).observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:ATTRS});
+async function setLang(code){
+  if(!LANGS.some(l=>l[0]===code)) code='es';
+  if(code!=='es'){ try{ TR=trCompile((await import('./lang/'+code+'.js')).default) }catch(e){ console.warn(e); toast('No se pudo cargar el idioma.'); return } }
+  LANG=code; document.documentElement.lang=code;
+  try{ localStorage.setItem('boxbox_idioma',code) }catch(e){}
+  xlateBusy=true; try{ xlateTree(document.body) }finally{ xlateBusy=false }
+  document.querySelectorAll('#langBtns button').forEach(b=>b.classList.toggle('on',b.dataset.lang===code));
+}
+$('langBtns').innerHTML=LANGS.map(([c,l])=>`<button data-lang="${c}">${l}</button>`).join('');
+$('langBtns').onclick=e=>{ const b=e.target.closest('button'); if(b) setLang(b.dataset.lang) };
+$('langBtns').querySelector('[data-lang="es"]').classList.add('on');
+try{ const sv=localStorage.getItem('boxbox_idioma'); if(sv&&sv!=='es') setLang(sv) }catch(e){}     // siempre arranca en español salvo que ya hayas elegido otro
 
 // ---------- Inicio, navegación, ajustes, perfil, modales ----------
 // MODE se declara arriba, junto al estado del juego
@@ -1025,12 +1097,12 @@ function champRows(hl){const rows=Object.entries(loadChamp()).sort((a,b)=>b[1].p
   return rows.length?rows.map(([n,r],i)=>`<tr class="${n===hl?'hl':''}"><td class="n">${i+1}</td><td><b>${n}</b></td><td>${r.races}</td><td>${r.wins}</td><td style="color:var(--muted)">${LAST[n]||''}</td><td class="pts">${r.pts}</td></tr>`).join('')
   :'<tr><td colspan="6" class="empty">Todavía sin puntos. ¡Corre tu primera carrera!</td></tr>'}
 function showChampPage(){$('st0').style.display='none';$('cpBody').innerHTML=champRows(picks.piloto&&picks.piloto.n);
-  const n=champRaces();$('cpSub').textContent=`${n} carrera${n===1?'':'s'} en este campeonato`;go('s-champpage',0)}
+  const n=champRaces();$('cpSub').textContent=`Carreras en este campeonato: ${n}`;go('s-champpage',0)}
 function showProfile(){$('st0').style.display='none';const s=loadStats();
   $('pStats').innerHTML=`<div><b>${s.races}</b>Carreras</div><div><b>${s.wins}</b>Victorias</div><div><b>${s.podiums}</b>Podios</div><div><b>${s.best?'P'+s.best:'—'}</b>Mejor</div>`;
   const h=loadHist();$('pHist').innerHTML=h.length?h.map((x,i)=>`<div class="opt"><span><b>Campeonato ${h.length-i}</b><br><small>${x.fecha} · ${x.carreras} carreras</small></span><small style="text-align:right">${x.podio.join('<br>')}</small></div>`).join(''):'Todavía no cerraste ningún campeonato.';
   go('s-profile',0)}
-(function(){const n=champRaces();$('hCount').textContent=n?`${n} carrera${n===1?'':'s'} en tu campeonato actual`:'Tu campeonato arranca en 0'})();
+(function(){const n=champRaces();$('hCount').textContent=n?`Carreras en tu campeonato actual: ${n}`:'Tu campeonato arranca en 0'})();
 // "Otra tirada": vuelve a jugar el mismo modo sin pasar por el inicio
 try{const m=sessionStorage.getItem('boxbox_auto');if(m){sessionStorage.removeItem('boxbox_auto');startGame(m)}}catch(e){}
 
@@ -1321,7 +1393,7 @@ async function showDaily(){
 }
 function renderDaily(){
   const d=new Date(Date.now()+DOFF), st=DST;
-  $('dDate').textContent='Desafío del día · '+d.toLocaleDateString('es',{weekday:'long',day:'numeric',month:'long',timeZone:'America/Argentina/Buenos_Aires'});
+  $('dDate').textContent='Desafío del día · '+d.toLocaleDateString(LOCALES[LANG]||'es',{weekday:'long',day:'numeric',month:'long',timeZone:'America/Argentina/Buenos_Aires'});
   const E0=st&&st.entry, played=E0&&E0.status==='listo';
   $('dStreak').textContent=st?st.streak:0;
   $('dStreakTxt').textContent=(st&&st.streak===1)?'1 día seguido':`${st?st.streak:0} días seguidos`;
