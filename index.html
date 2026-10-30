@@ -28,8 +28,8 @@
 <link rel="preconnect" href="https://vljuhibzzwtcswirunfr.supabase.co" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preload" href="supabase/functions/_shared/temporadas.json?v=1a11645d" as="fetch" crossorigin fetchpriority="low">
-<link rel="modulepreload" href="supabase/functions/_shared/engine.js?v=1a11645d" fetchpriority="low">
+<link rel="preload" href="supabase/functions/_shared/temporadas.json?v=4acb84be" as="fetch" crossorigin fetchpriority="low">
+<link rel="modulepreload" href="supabase/functions/_shared/engine.js?v=4acb84be" fetchpriority="low">
 <!-- Boceto de diseño, no es el juego final. Datos de ejemplo inventados. Sin marcas, logos ni fotos: todo dibujado en SVG. -->
 <link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700;900&display=swap" rel="stylesheet"></noscript>
@@ -304,6 +304,8 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
       <h3>Código</h3>
       <div class="year" id="lCode2" style="font-size:46px;margin:6px 0 10px">—</div>
       <button class="btn ghost cta" id="lCopy"><span>Copiar link de invitación</span></button>
+      <button class="btn ghost cta" id="lInvBtn"><span>👥 Invitar amigos en línea</span></button>
+      <div id="lInv" style="display:none;text-align:left;margin:8px 0"></div>
       <button class="btn cta" id="lStart"><span>Largar: a armar los autos →</span></button>
       <div class="note" id="lWait"></div>
       <button class="link" id="lLeave" style="margin-top:14px">Salir de la sala</button>
@@ -588,7 +590,7 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
 
 
 <script src="vendor/supabase.min.js" defer></script>
-<script src="tracks.js?v=1a11645d" defer></script>
-<script src="game.js?v=1a11645d" defer></script>
+<script src="tracks.js?v=4acb84be" defer></script>
+<script src="game.js?v=4acb84be" defer></script>
 </body>
 </html>

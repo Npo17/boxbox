@@ -666,6 +666,7 @@ function renderLobby(s){
   if(!$('s-lobby').classList.contains('on')) go('s-lobby',0);
   $('lCode').textContent=s.room.code; $('lCode2').textContent=s.room.code; $('lCount').textContent=s.players.length;
   $('lPlayers').innerHTML=s.players.map((p,i)=>`<div class="trow ${p.pid===ROOM.pid?'me':''}"><span class="p">${i+1}</span><span class="c" style="background:${p.color}"></span><span>${esc(p.name)}</span><span class="g">${p.uid&&USER&&p.uid!==USER.id?`<button class="btn ghost" data-uid="${p.uid}" title="Ver perfil" style="padding:2px 8px;font-size:12px"><span>👤</span></button> `:''}${p.pid===s.room.host?'anfitrión':''}</span></div>`).join('');
+  renderLobbyInv();
   const host=s.room.host===ROOM.pid, r=s.room, post=r.status==='racing';     // post: modo carrera, la carrera ya se corrió y se espera la siguiente fecha
   renderRoomCareer(s);
   const last=r.modo==='carrera'&&r.ronda>=r.total-1;
@@ -1096,7 +1097,7 @@ function frPresence(){
   for(const uid of ids) if(!FR_CH[uid]){
     // Un canal que solo mira no recibe la presencia: tiene que anunciarse también (con otra clave: "o-<yo>"). El amigo está en línea si en su canal figura su propia clave.
     const ch=sb.channel('p-'+uid,{config:{presence:{key:'o-'+USER.id}}});
-    ch.on('presence',{event:'sync'},()=>{ const on=!!ch.presenceState()[uid]; if(FR_ON[uid]!==on){ FR_ON[uid]=on; if($('s-friends').classList.contains('on')) renderFriends(); if($('mFriend').classList.contains('open')&&FRP&&FRP.uid===uid) paintFriend() } });
+    ch.on('presence',{event:'sync'},()=>{ const on=!!ch.presenceState()[uid]; if(FR_ON[uid]!==on){ FR_ON[uid]=on; if($('s-friends').classList.contains('on')) renderFriends(); if($('s-lobby').classList.contains('on')) renderLobbyInv(); if($('mFriend').classList.contains('open')&&FRP&&FRP.uid===uid) paintFriend() } });
     ch.subscribe(st=>{ if(st==='SUBSCRIBED') ch.track({o:1}) }); FR_CH[uid]=ch;
   }
 }
@@ -1168,6 +1169,25 @@ $('mfBody').onclick=e=>{ const b=e.target.closest('[data-mf]'); if(!b||!FRP) ret
   if(k==='add') frAccion('solicitar',{uid}); else if(k==='quitar') frAccion('quitar',{uid}); else if(k==='si') frAccion('responder',{uid,aceptar:true});
   else if(k==='no') frAccion('responder',{uid,aceptar:false}); else if(k==='inv') frInvitar(uid) };
 // Invitaciones a una sala: aviso por el canal del amigo; solo se muestran si vienen de un amigo
+// Botón de la sala: lista de amigos en línea (que todavía no están en la sala) con un toque para invitarlos
+let LINV_OPEN=false;
+function renderLobbyInv(){
+  const btn=$('lInvBtn'), box=$('lInv'); if(!btn||!box) return;
+  if(USER&&!FR&&sb) frLoad().then(()=>{ if($('s-lobby').classList.contains('on')) renderLobbyInv() });
+  const inRoom=new Set(((RS&&RS.players)||[]).map(p=>p.uid).filter(Boolean));
+  const on=FR&&FR.nick?FR.amigos.filter(a=>FR_ON[a.uid]&&!inRoom.has(a.uid)):[];
+  btn.querySelector('span').textContent='👥 Invitar amigos en línea'+(on.length?` (${on.length})`:'');
+  if(!LINV_OPEN){ box.style.display='none'; return }
+  box.style.display='';
+  if(!USER) box.innerHTML='<div class="note">Iniciá sesión con Google para invitar a tus amigos.</div>';
+  else if(!FR) box.innerHTML='<div class="note">Cargando…</div>';
+  else if(!FR.nick) box.innerHTML='<div class="note">Elegí tu apodo en la pantalla Amigos para poder invitar.</div>';
+  else if(!FR.amigos.length) box.innerHTML='<div class="note">Todavía no tenés amigos agregados. Agregalos desde la pantalla Amigos.</div>';
+  else if(!on.length) box.innerHTML='<div class="note">No hay amigos en línea ahora (o ya están en la sala).</div>';
+  else box.innerHTML=on.map(a=>`<div class="opt" style="align-items:center"><span>${frDot(a.uid)}<b>${esc(a.nick)}</b></span><button class="btn" data-linv="${a.uid}" style="padding:6px 12px;font-size:13px"><span>Invitar</span></button></div>`).join('');
+}
+$('lInvBtn').onclick=()=>{ LINV_OPEN=!LINV_OPEN; renderLobbyInv() };
+$('lInv').onclick=e=>{ const b=e.target.closest('[data-linv]'); if(!b) return; frInvitar(b.dataset.linv); b.disabled=true; b.querySelector('span').textContent='Invitado ✓' };
 function frInvitar(uid){
   if(!(ROOM&&RS&&RS.room&&RS.room.status==='lobby')){ toast('Armá o entrá a una sala para invitar.'); return }
   const ch=FR_CH[uid]; const a=FR&&FR.amigos.find(x=>x.uid===uid); if(!ch||!a) return;
