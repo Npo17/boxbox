@@ -29,7 +29,6 @@ const BUILD_MS = 3 * 60 * 1000;     // tiempo para armar
 const RACE_DELAY_MS = 25 * 1000;    // de cierre a largada (qualy + decisión del safety car + cuenta regresiva)
 const SC_WINDOW_MS = 9 * 1000;      // plazo para decidir qué hacer con el safety car, desde que sale en la carrera
 const ROOM_TTL_MS = 24 * 60 * 60 * 1000;
-const RACE_VIEW_MS = 75 * 1000;     // en modo carrera: tiempo después de largar (carrera animada + resultado) antes de contar los puntos
 const EVENTOS = eventos2026();      // modo carrera: 6 sprints + 23 GP en orden de calendario
 const COLORS = ["#ff3b30", "#2fd27a", "#4fc3f7", "#ffd23f", "#b26bff", "#ff9800", "#f06292", "#26a69a",
   "#cddc39", "#90a4ae", "#5c6bc0", "#e57373", "#64b5f6", "#81c784", "#ba68c8", "#ffb74d", "#80cbc4",
@@ -148,7 +147,10 @@ async function maybeLock(room: Record<string, any>, known?: Record<string, any>[
 // Modo carrera: cuando pasó la carrera, el servidor la calcula con el mismo motor y suma los puntos de cada jugador. Idempotente.
 async function maybeClose(room: Record<string, any>, known?: Record<string, any>[]) {
   if (room.modo !== "carrera" || room.status !== "racing" || room.cerrada || !room.race_start) return room;
-  if (Date.now() < Date.parse(room.race_start) + RACE_VIEW_MS) return room;
+  // La carrera es determinista: los puntos se pueden contar apenas están fijas todas las decisiones (al cerrarse el plazo del
+  // safety car, o al largar si no hay safety car). Así, cuando los jugadores vuelven a la sala ya están contados.
+  const finalAt = Date.parse(room.deadline ?? room.race_start) + 1500;
+  if (Date.now() < finalAt) return room;
   const ev = EVENTOS[room.ronda];
   if (!ev) return room;
   const players = known && known.length && known[0].rolls !== undefined ? known : await getPlayers(room.code, true);

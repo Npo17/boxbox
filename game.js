@@ -677,6 +677,7 @@ function renderLobby(s){
 }
 // Modo carrera: fecha actual y tabla de puntos de la sala
 function renderRoomCareer(s){
+  clearTimeout(window.__pc); if(s.room.modo==='carrera'&&s.room.status==='racing'&&!s.room.cerrada) window.__pc=setTimeout(()=>{ if(!document.hidden) poll() },1500);   // todavía contando: volver a mirar enseguida
   const r=s.room, box=$('lCareer');
   if(r.modo!=='carrera'){ box.style.display='none'; return }
   const ev=r.evento, rows=s.players.map(p=>({p,pts:+(r.puntos||{})[p.pid]||0,u:(r.ultimo||{})[p.pid]})).sort((a,b)=>b.pts-a.pts);
