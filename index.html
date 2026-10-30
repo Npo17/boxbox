@@ -1129,13 +1129,13 @@ const ROOM_KEY='boxbox_sala';
 let ROOM=null, RS=null, OFF=0, pollT=null, tickT=null, raceShown=false;
 // Aviso en vivo (Supabase Realtime, canal de difusión): cuando alguien hace algo en la sala avisa a los demás y consultan al instante.
 // Si el canal no conecta, vuelve a consultar cada 3 s como antes.
-let RT=null, RT_OK=false, rtT=null, pollN=0, LTAB='j';
+let RT=null, RT_OK=false, rtT=null, pollN=0, LTAB='j', PRE=null;   // PRE: tirada siguiente que el servidor entregó junto con la elección
 function rtClose(){ clearTimeout(rtT); RT_OK=false; try{ if(RT&&sb) sb.removeChannel(RT) }catch(e){} RT=null }
 function rtOpen(){
   rtClose(); if(!sb||!ROOM) return;
   try{
     RT=sb.channel('sala-'+ROOM.code,{config:{broadcast:{self:false}}});
-    RT.on('broadcast',{event:'ch'},()=>{ clearTimeout(rtT); rtT=setTimeout(()=>{ if(!document.hidden) poll() },Math.random()*200) });
+    RT.on('broadcast',{event:'ch'},()=>{ clearTimeout(rtT); rtT=setTimeout(()=>{ if(!document.hidden) poll() },Math.random()*1200) });   // repartido en 1,2 s para no juntar las consultas de todos
     RT.subscribe(s=>{ RT_OK=(s==='SUBSCRIBED'); if(RT_OK) rtPing() });
   }catch(e){ RT=null }
 }
@@ -1150,7 +1150,7 @@ async function api(action,extra={}){
   catch(e){ throw new Error('Sin conexión con el servidor. Revisa tu internet.'); }
   if(!r.ok) throw Object.assign(new Error(j.error||'Error del servidor'),{status:r.status});
   if(j.now) OFF=j.now-Date.now();
-  if(ROOM&&/^(start|roll|pick|leave|next)$/.test(action)) rtPing();
+  if(ROOM&&(/^(start|leave|next)$/.test(action)||(action==='pick'&&j.done))) rtPing();   // avisar a la sala solo cuando algo cambia para todos (no por cada tirada o elección)
   return j;
 }
 const srvToLocal=t=>Date.parse(t)-OFF;
@@ -1246,7 +1246,7 @@ $('lLeave').onclick=async()=>{try{await api('leave')}catch(e){};forgetRoom();loc
 // --- armado con el servidor ---
 function renderRoomBuild(s){
   const first=!$('s-build').classList.contains('on');
-  if(first) resetBuild(2);                                  // arranque limpio en cada fecha del modo carrera
+  if(first){ resetBuild(2); PRE=null }                       // arranque limpio en cada fecha del modo carrera
   picks={...s.me.picks}; rerolls=2-s.me.rerolls;
   if(first){
     $('st0').style.display=''; go('s-build',1);
@@ -1278,18 +1278,27 @@ function showRoll(roll){
 }
 async function roomRoll(){
   const reroll=!!year; if(reroll&&rerolls<=0) return;
+  if(!reroll&&PRE){ const r=PRE; PRE=null; showRoll(r); return }          // ya la tenemos (vino con la elección): sin esperar al servidor
   $('rollBtn').disabled=true;
   try{ const j=await api('roll',{reroll}); rerolls=2-j.rerolls; showRoll(j.roll); }
   catch(e){ toast(e.message); $('rollBtn').disabled=false; }
 }
 async function roomPick(slot,idx,it){
   document.querySelectorAll('.pick').forEach(el=>el.style.pointerEvents='none');
+  // Optimista: la pieza entra al auto al instante; si el servidor la rechaza, se deshace.
+  const prev={picks:{...picks},year,offer,cat}, y=year;
+  picks[slot]={n:it[0],y,r:it[2]}; year=null; cat=null; renderSlots();
+  $('year').innerHTML='?<small>Elegiste. Tira de nuevo</small>'; $('rollBtn').querySelector('span').textContent='Tirar'; $('rollBtn').disabled=false;
+  $('list').innerHTML=`<div class="empty">✅ ${esc(it[0])} (${y}) a tu auto. ${Object.keys(picks).length<5?'Tira otra vez.':'¡Auto completo! Esperando a los demás…'}</div>`;
+  $('tabs').innerHTML=''; $('rbMine').textContent=Object.keys(picks).length>=5?'✅ Tu auto está listo. Esperando a los demás…':`Tu auto: ${Object.keys(picks).length}/5`;
   try{
-    const s=await api('pick',{slot,idx}); const y=year; year=null; cat=null;
-    $('year').innerHTML='?<small>Elegiste. Tira de nuevo</small>'; $('rollBtn').querySelector('span').textContent='Tirar';
-    $('list').innerHTML=`<div class="empty">✅ ${esc(it[0])} (${y}) a tu auto. ${Object.keys(s.me.picks).length<5?'Tira otra vez.':'¡Auto completo! Esperando a los demás…'}</div>`;
-    $('tabs').innerHTML=''; onState(s);
-  }catch(e){ toast(e.message); document.querySelectorAll('.pick').forEach(el=>el.style.pointerEvents=''); }
+    const s=await api('pick',{slot,idx});
+    if(s.players) onState(s);                                              // auto completo: estado completo de la sala
+    else { picks={...s.me.picks}; PRE=s.next||null; renderSlots() }        // respuesta liviana: trae ya la tirada siguiente
+  }catch(e){
+    toast(e.message); PRE=null; picks=prev.picks; year=prev.year; offer=prev.offer; cat=prev.cat;
+    renderSlots(); if(year){ renderTabs(); renderList() } else poll();
+  }
 }
 
 // --- carrera sincronizada ---
@@ -1307,15 +1316,18 @@ function startRoomRace(s){
   go('s-quali',2);
   // El safety car se decide antes de largar (así todos corren la misma carrera): al llegar la hora se piden
   // al servidor las decisiones de todos y se vuelve a calcular la carrera con ellas.
+  let decP=null; const fetchDec=()=>decP||(decP=api('state'));
   const toRace=async()=>{
     $('mSC').classList.remove('open');
     if(RACE.sc&&!RACE.nopit){ try{
-      const s2=await api('state'), d={}; s2.players.forEach(p=>{ if(p.sc) d[p.pid]=p.sc });
+      const s2=await fetchDec(), d={}; s2.players.forEach(p=>{ if(p.sc) d[p.pid]=p.sc });
       DECISIONS=d; RACE=newRace(d);
     }catch(e){} }
     go('s-race',3); startRace(syncAt,false);
   };
   const lockAt=raceAt-3000, sc=RACE.nopit?null:RACE.sc, me0=carByKey(MEKEY);
+  // Las decisiones de todos se cierran 3 s antes de largar: se piden entre 0,4 y 1,9 s después (repartido), así a la hora de largar ya están.
+  if(sc&&!late) setTimeout(()=>{ fetchDec().catch(()=>{ decP=null }) },Math.max(0,lockAt-Date.now())+400+Math.random()*1500);
   if(!late && sc && me0 && (!me0.dnf||me0.dnf>sc.lap) && Date.now()<lockAt-1000){
     const stops=me0.ev.filter(e=>e.k==='pit'&&e.lap<=sc.lap), lastStop=stops.length?stops[stops.length-1].lap:0;
     $('scTxt').textContent=`En la vuelta ${sc.lap} saldrá el safety car: ${sc.by} ${sc.why==='choque'?'chocará':'romperá el motor'}. Con el pelotón lento, entrar a boxes cuesta mucho menos.`;

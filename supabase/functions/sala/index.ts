@@ -286,9 +286,17 @@ async function handle(body: Record<string, any>) {
     picks[slot] = { n: it[0], y: open.year, r: it[2] };
     open.used = true;
     const done = SLOTS.every((s) => picks[s]);
+    // La tirada siguiente es la misma que se pediría con "roll" (sale de la misma semilla): se entrega junto con la elección
+    // y se guarda en la misma escritura, así el jugador no espera otra ida y vuelta.
+    let next: Roll | null = null;
+    if (!done) {
+      next = await rollFor(room.dice_seed, me.pid, Object.keys(picks).length, 0, SLOTS.filter((s) => !picks[s]));
+      rolls.push(next);
+    }
     await db.from("jugadores").update({ picks, rolls, done }).eq("sala", code).eq("pid", me.pid);
-    room = await maybeLock(room);
-    return await stateFor(room, await auth(code, body.pid, body.secret));
+    if (!done) return { ok: true, now: Date.now(), done: false, next, me: { pid: me.pid, picks, rerolls: me.rerolls, current: next } };   // respuesta liviana
+    room = await maybeLock(room);                                      // solo cuando se completa un auto puede cerrarse el armado
+    return { ...(await stateFor(room, await auth(code, body.pid, body.secret))), done: true };
   }
 
   if (action === "decide") {
