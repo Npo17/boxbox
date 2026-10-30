@@ -86,6 +86,9 @@ export const SC_ON_CRASH = 0.72;       // no todos los choques traen safety car 
 export const SC_ON_CRASH_WET = 0.65; // con lluvia: ~60%
 export const SC_ON_CRASH_SPRINT = 0.2;  // sprint de 8 vueltas: el safety car (3 vueltas) se come media carrera, casi nunca sale
 export const SPRINT_LAPS = 8;
+// Vueltas reales de cada Gran Premio (por índice de circuitos.json). Con real:true, runRace las usa en vez de 20.
+export const GP_LAPS = [58, 56, 53, 57, 50, 57, 70, 78, 66, 71, 52, 44, 70, 72, 53, 56, 51, 62, 56, 71, 71, 50, 57, 58];
+export const lapsFor = (trackIdx) => GP_LAPS[trackIdx] ?? LAPS;
 export const SPRINT_PTS = [8, 7, 6, 5, 4, 3, 2, 1];
 export const crashChanceWet = (d) => (d < 90 ? (90 - d) * 0.00025 + 0.0004 : 0.0003);
 
@@ -128,17 +131,21 @@ function buildRivals(DATA, seed, need, taken, usedColors) {
 // decisions: { [humanId]: "pit" | "stay" } (qué hace cada jugador con el safety car; sin dato = automático)
 // trackIdx: fija el circuito (modo carrera, según el calendario). rain: fuerza lluvia o seco; si no, sale del sorteo de la semilla.
 // sprint: carrera corta sin paradas. storm: permite el aviso de tormenta a mitad de carrera (el jugador decide en decisions["r:"+id]).
-export function runRace({ DATA, tracks, seed, humans, laps = LAPS, decisions = {}, trackIdx: forcedTrack, rain: forcedRain, sprint = false, storm: allowStorm = false }) {
+export function runRace({ DATA, tracks, seed, humans, laps = LAPS, decisions = {}, trackIdx: forcedTrack, rain: forcedRain, sprint = false, storm: allowStorm = false, real = false }) {
   seed = String(seed);
   const trackIdx = forcedTrack ?? Math.floor(rngFor(seed, "circuito")() * tracks.length);
   const track = tracks[trackIdx];
+  if (real && !sprint) laps = lapsFor(trackIdx);
+  // Con más o menos vueltas que las 20 de referencia, todo lo que se suma vuelta a vuelta (ritmo, gomas, errores, choques, roturas) se reparte
+  // para que cada carrera tenga la misma dificultad y la misma cantidad de abandonos que una de 20: solo cambia el número de vueltas.
+  const K = sprint ? 1 : laps / LAPS, F = 1 / K, Fn = Math.sqrt(F);
   const rain = forcedRain ?? rngFor(seed, "lluvia")() < RAIN_CHANCE;
   const BASE = track.lap, OPT = Math.round(laps / 2), WET = rain ? WET_FACTOR : 1;
   const noPit = rain || sprint;                       // lluvia total y sprint: nadie entra a boxes
   let storm = null;
   if (allowStorm && !rain && !sprint && rngFor(seed, "lluvia")() < RAIN_CHANCE + STORM_CHANCE) {
-    const S = rngFor(seed, "tormenta"), ann = 4 + Math.floor(S() * 8);
-    storm = { ann, rainLap: ann + 2, arrives: S() < STORM_ARRIVES, p: Math.round(STORM_ARRIVES * 100), T: 0, TR: 0 };
+    const S = rngFor(seed, "tormenta"), ann = Math.round((4 + Math.floor(S() * 8)) * K);
+    storm = { ann, rainLap: ann + Math.max(2, Math.round(2 * K)), arrives: S() < STORM_ARRIVES, p: Math.round(STORM_ARRIVES * 100), T: 0, TR: 0 };
   }
 
   const hs = humans.map((h) => ({ ...h, key: "h:" + h.id, human: true }));
@@ -161,9 +168,9 @@ export function runRace({ DATA, tracks, seed, humans, laps = LAPS, decisions = {
   // plan de carrera de cada auto
   for (const c of cars) {
     const R = rngFor(seed, "plan", c.key), e = (96 - c.s) / 5;
-    c.pit = Math.max(2, Math.min(laps - 1, OPT + Math.round((R() * 2 - 1) * e)));        // estratega malo = se equivoca de vuelta
+    c.pit = Math.max(2, Math.min(laps - 1, OPT + Math.round((R() * 2 - 1) * e * K)));        // estratega malo = se equivoca de vuelta
     const ex = R(), exLap = R();
-    c.extra = c.s < 84 && ex < (84 - c.s) * 0.05 ? Math.min(laps - 1, c.pit + 2 + Math.floor(exLap * 3)) : 0;   // parada de más
+    c.extra = c.s < 84 && ex < (84 - c.s) * 0.05 ? Math.min(laps - 1, c.pit + Math.round((2 + Math.floor(exLap * 3)) * K)) : 0;   // parada de más
     c.stat = round1(2.0 + (95 - c.j) * 0.06 + R() * 0.4);                                  // jefe de equipo = mecánicos
     c.cum = [(c.grid - 1) * 0.35]; c.tp = [0]; c.ev = [];
     c.dnf = 0; c.dnfT = 0; c.stops = 0; c.stopped = false; c.stopLap = 0;
@@ -196,8 +203,8 @@ export function runRace({ DATA, tracks, seed, humans, laps = LAPS, decisions = {
       const T0 = c.cum[lap - 1], age = lap - c.stopLap;
       const onWet = c.tyre === "wet", mis = !scNow && wetNow && !onWet;       // mis: slicks sobre pista mojada
       let t0 = scNow ? BASE * 1.4
-        : BASE * (wetNow ? (onWet ? WET_FACTOR : SLICK_ON_WET) : 1) - paceOf(c) - (wetNow ? (c.d - 85) * 0.04 : 0) + (r[0] - 0.5) * (wetNow ? 1.5 : 0.6)
-          + (onWet ? (wetNow ? 0 : 2.8) : (wetNow ? 0 : age * 0.22));     // gomas gastadas (con lluvia casi no se gastan; mojadas sobre seco: lentas)
+        : BASE * (wetNow ? (onWet ? WET_FACTOR : SLICK_ON_WET) : 1) - paceOf(c) * F - (wetNow ? (c.d - 85) * 0.04 : 0) * F + (r[0] - 0.5) * (wetNow ? 1.5 : 0.6) * Fn
+          + (onWet ? (wetNow ? 0 : 2.8) : (wetNow ? 0 : age * 0.22)) * F;     // gomas gastadas (con lluvia casi no se gastan; mojadas sobre seco: lentas)
       let tp = 0, why = null;
 
       // paradas
@@ -214,13 +221,13 @@ export function runRace({ DATA, tracks, seed, humans, laps = LAPS, decisions = {
         if (dec === "pit") why = "sc";
         else if (dec === "stay") why = null;
         else if (!c.stopped) { if (r[6] < clamp((c.s - 65) / 30, 0.15, 0.95)) why = "sc"; }
-        else if (age >= 8 && laps - lap >= 6 && r[6] < 0.25 * clamp((c.s - 60) / 35, 0, 1)) why = "sc";
+        else if (age >= 8 * K && laps - lap >= 6 * K && r[6] < 0.25 * clamp((c.s - 60) / 35, 0, 1)) why = "sc";
       }
       if (!why && !c.stopped && lap === c.pit) why = scNow ? "sc" : "plan";
       if (!why && c.extra && lap === c.extra && c.stopped && !scNow) why = "extra";
       if (why) {
         tp = (scNow ? PIT_LOSS_SC : PIT_LOSS) + c.stat; c.stops++;
-        const late = why === "plan" && Math.abs(c.pit - OPT) >= 3 ? (c.pit > OPT ? " (tarde: las gomas ya estaban muertas)" : " (demasiado pronto)") : "";
+        const late = why === "plan" && Math.abs(c.pit - OPT) >= 3 * K ? (c.pit > OPT ? " (tarde: las gomas ya estaban muertas)" : " (demasiado pronto)") : "";
         const txt = why === "wet" ? `Box, box: gomas de lluvia por el pronóstico. Parada de ${c.stat}s`
           : why === "wetlate" ? `¡Ya llueve fuerte! Box, box: gomas de lluvia, entramos tarde. Parada de ${c.stat}s`
           : why === "dryback" ? `La lluvia no llegó: volvemos a slicks. Parada de ${c.stat}s`
@@ -230,17 +237,17 @@ export function runRace({ DATA, tracks, seed, humans, laps = LAPS, decisions = {
         ev(c, T0 + t0, lap, "pit", txt, { why });
         c._stop = true; c._tyre = why === "wet" || why === "wetlate" ? "wet" : why === "dryback" ? "slick" : null;
       } else { c._stop = false; c._tyre = null; }
-      if (c.human && lap === OPT + 2 && c.pit > OPT + 2 && !c.stopped && !scNow) ev(c, T0 + t0, lap, "radio", "¡Estas gomas no dan más! ¿Cuándo paro?", { who: "pilot" });
+      if (c.human && lap === OPT + Math.round(2 * K) && c.pit > OPT + Math.round(2 * K) && !c.stopped && !scNow) ev(c, T0 + t0, lap, "radio", "¡Estas gomas no dan más! ¿Cuándo paro?", { who: "pilot" });
 
       // incidentes (no con safety car en pista)
       c._crash = false; c._dead = false;
       if (!scNow) {
-        if (r[1] < Math.max(0, (wetNow ? 96 : 90) - c.d) * (wetNow ? 0.005 : 0.004) * (mis ? 3 : 1) + (mis ? 0.04 : 0)) {
+        if (r[1] < (Math.max(0, (wetNow ? 96 : 90) - c.d) * (wetNow ? 0.005 : 0.004) * (mis ? 3 : 1) + (mis ? 0.04 : 0)) * F) {
           const loss = 3 + r[2] * 4; t0 += loss;
           ev(c, T0 + t0 * 0.4, lap, "off", `${c.name} se sale de pista en ${track.corners[Math.floor(r[7] * track.corners.length)]} (−${loss.toFixed(1)}s)`);
         }
-        if (r[3] < (wetNow ? crashChanceWet(c.d) : crashChance(c.d)) * (mis ? 3 : 1)) { c._crash = true; crashers.push(c); }
-        else if (c.m < 80 && r[4] < (80 - c.m) * 0.0004) {
+        if (r[3] < (wetNow ? crashChanceWet(c.d) : crashChance(c.d)) * (mis ? 3 : 1) * F) { c._crash = true; crashers.push(c); }
+        else if (c.m < 80 && r[4] < (80 - c.m) * 0.0004 * F) {
           c._dead = true; c.dnf = lap; c.dnfT = T0 + t0 * 0.6;
           ev(c, c.dnfT, lap, "engine", `Humo en ${c.name}: motor roto, abandona`);
           if (!sc && r[8] < (sprint ? 0.08 : 0.25) && lap <= laps - SC_LAPS - 1) sc = { lap, T: c.dnfT, by: c.name, why: "motor", laps: SC_LAPS };
@@ -298,7 +305,7 @@ export function runRace({ DATA, tracks, seed, humans, laps = LAPS, decisions = {
   for (const me of hs) {
     if (me.dnf) continue;
     let prev = me.grid;
-    for (const lap of [3, 6, 9, 12, 15, 18].filter((l) => l < laps)) {
+    for (const lap of [3, 6, 9, 12, 15, 18].map((l) => Math.round(l * K)).filter((l) => l < laps)) {
       if (me.cum.length <= lap) break;
       const alive = cars.filter((c) => c.cum.length > lap).sort((a, b) => a.cum[lap] - b.cum[lap]);
       const p = alive.indexOf(me) + 1, ahead = alive[p - 2];
@@ -389,6 +396,25 @@ export const CAL_2026 = [
 // Eventos de una sala de carrera: en cada fin de semana con sprint, primero la sprint y después el GP (k = "sprint" | "gp").
 export const eventos2026 = () => CAL_2026.flatMap((c, i) => c.cancel ? [] :
   [...(c.sprint ? [{ i, k: "sprint", t: c.t, gp: c.gp, date: c.date }] : []), { i, k: "gp", t: c.t, gp: c.gp, date: c.date }]);
+
+// Calendario a medida: lista de [i, s] con i = lugar en CAL_2026 y s = 1 si ese fin de semana se corre también la sprint (solo si tiene).
+// Sin calendario (null) es la temporada completa. validarCalendario devuelve la lista limpia, o null si no sirve.
+export const CAL_MIN = 3;
+export function validarCalendario(cal) {
+  if (!Array.isArray(cal) || cal.length < CAL_MIN || cal.length > CAL_2026.length) return null;
+  const vistos = new Set(), out = [];
+  for (const e of cal) {
+    if (!Array.isArray(e)) return null;
+    const i = e[0];
+    if (!Number.isInteger(i) || !CAL_2026[i] || CAL_2026[i].cancel || vistos.has(i)) return null;
+    vistos.add(i); out.push([i, CAL_2026[i].sprint && e[1] ? 1 : 0]);
+  }
+  return out;
+}
+export const eventosDe = (cal) => !cal ? eventos2026() : cal.flatMap(([i, s]) => { const c = CAL_2026[i];
+  return [...(s ? [{ i, k: "sprint", t: c.t, gp: c.gp, date: c.date }] : []), { i, k: "gp", t: c.t, gp: c.gp, date: c.date }]; });
+// Cantidad de fechas (fines de semana de GP) de un calendario: 23 en la temporada completa.
+export const fechasDe = (cal) => cal ? cal.length : CAL_2026.filter((c) => !c.cancel).length;
 
 // Campeonato de pilotos de una sala de carrera. Es campeón el líder cuando nadie puede alcanzarlo con los puntos que quedan
 // (GP: 25, sprint: 8), o al terminar la temporada. Con puntos iguales gana quien tenga más victorias.

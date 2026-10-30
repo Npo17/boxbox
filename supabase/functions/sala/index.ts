@@ -14,7 +14,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 import DATA from "../_shared/temporadas.json" with { type: "json" };
 // Ofertas y reglas: el mismo motor que usa el juego en el navegador (una sola fuente de verdad).
-import { makeOffer, mulberry32, yearsFor, runRace, humanFromPicks, eventos2026, campeonato, PTS, SPRINT_PTS, SPRINT_LAPS, LAPS } from "../_shared/engine.js";
+import { makeOffer, mulberry32, yearsFor, runRace, humanFromPicks, eventosDe, validarCalendario, fechasDe, campeonato, PTS, SPRINT_PTS, SPRINT_LAPS, LAPS } from "../_shared/engine.js";
 import TRACKS from "../_shared/circuitos.json" with { type: "json" };
 
 type Item = [string, string, number];
@@ -29,7 +29,8 @@ const BUILD_MS = 3 * 60 * 1000;     // tiempo para armar
 const RACE_DELAY_MS = 25 * 1000;    // de cierre a largada (qualy + decisión del safety car + cuenta regresiva)
 const SC_WINDOW_MS = 9 * 1000;      // plazo para decidir qué hacer con el safety car, desde que sale en la carrera
 const ROOM_TTL_MS = 24 * 60 * 60 * 1000;
-const EVENTOS = eventos2026();      // modo carrera: 6 sprints + 23 GP en orden de calendario
+// Modo carrera: eventos de la sala en orden (temporada completa: 6 sprints + 23 GP; o el calendario a medida que eligió el anfitrión al crearla).
+const eventosOf = (room: Record<string, any>) => eventosDe(room.calendario ?? null);
 const COLORS = ["#ff3b30", "#2fd27a", "#4fc3f7", "#ffd23f", "#b26bff", "#ff9800", "#f06292", "#26a69a",
   "#cddc39", "#90a4ae", "#5c6bc0", "#e57373", "#64b5f6", "#81c784", "#ba68c8", "#ffb74d", "#80cbc4",
   "#8d6e63", "#3949ab", "#f44336", "#29b6f6", "#d32f2f"];
@@ -132,12 +133,12 @@ async function newPlayer(code: string, name: string, color: string, userId: stri
 // (se guarda en "deadline", que durante la carrera no se usa para otra cosa). Hasta ese momento las decisiones quedan ocultas.
 async function scDeadline(room: Record<string, any>, race_seed: string, race_start: string, ronda = room.ronda): Promise<string | null> {
   try {
-    const ev = room.modo === "carrera" ? EVENTOS[ronda] : null;
+    const ev = room.modo === "carrera" ? eventosOf(room)[ronda] : null;
     if (ev?.k === "sprint") return null;
     const players = await getPlayers(room.code);
     if (!players.length || players.some((p: any) => !p.picks?.estratega)) return null;
     const humans = players.map((p: any) => humanFromPicks(p.pid, p.color, p.picks, p.name));
-    const race = runRace({ DATA, tracks: TRACKS, seed: String(race_seed), humans, ...(ev ? { trackIdx: ev.t } : {}) });
+    const race = runRace({ DATA, tracks: TRACKS, seed: String(race_seed), humans, real: true, ...(ev ? { trackIdx: ev.t } : {}) });
     if (!race.sc || race.nopit) return null;
     const endT = Math.min(...race.cars.filter((c: any) => !c.dnf).map((c: any) => c.cum[race.laps])) + 6, scale = endT / 32;   // igual que la animación del navegador
     return new Date(Date.parse(race_start) + 2000 + (race.sc.T / scale) * 1000 + SC_WINDOW_MS).toISOString();
@@ -178,14 +179,14 @@ async function maybeClose(room: Record<string, any>, known?: Record<string, any>
   // safety car, o al largar si no hay safety car). Así, cuando los jugadores vuelven a la sala ya están contados.
   const finalAt = Date.parse(room.deadline ?? room.race_start) + 1500;
   if (Date.now() < finalAt) return room;
-  const ev = EVENTOS[room.ronda];
+  const ev = eventosOf(room)[room.ronda];
   if (!ev) return room;
   const players = known && known.length && known[0].rolls !== undefined ? known : await getPlayers(room.code, true);
   const humans = players.map((p: any) => humanFromPicks(p.pid, p.color, p.picks, p.name));
   const decisions: Record<string, string> = {};
   for (const p of players as any[]) { const d = (p.rolls ?? []).find((r: any) => r.k === "sc")?.v; if (d) decisions[p.pid] = d; }
   const sprint = ev.k === "sprint";
-  const race = runRace({ DATA, tracks: TRACKS, seed: String(room.race_seed), humans, laps: sprint ? SPRINT_LAPS : LAPS, decisions, trackIdx: ev.t, sprint });
+  const race = runRace({ DATA, tracks: TRACKS, seed: String(room.race_seed), humans, laps: sprint ? SPRINT_LAPS : LAPS, real: true, decisions, trackIdx: ev.t, sprint });
   const table: number[] = sprint ? SPRINT_PTS : PTS;
   const puntos: Record<string, any> = { ...(room.puntos ?? {}) }, ultimo: Record<string, any> = {};
   // Campeonatos de pilotos y de constructores: solo cuentan los pilotos y los coches que usaron los jugadores (clave reservada "_t" dentro de puntos).
@@ -222,13 +223,14 @@ async function stateFor(room: Record<string, any>, me: Record<string, any> | nul
       dice_hash: room.dice_hash, race_hash: room.race_hash,
       race_seed: racing ? room.race_seed : null,
       dice_seed: racing ? room.dice_seed : null,
-      modo: room.modo ?? "normal", ronda: room.ronda ?? 0, total: EVENTOS.length,
-      evento: room.modo === "carrera" ? (EVENTOS[room.ronda] ?? null) : null,
+      modo: room.modo ?? "normal", ronda: room.ronda ?? 0, total: eventosOf(room).length, fechas: room.modo === "carrera" ? fechasDe(room.calendario ?? null) : undefined,
+      calendario: room.modo === "carrera" ? (room.calendario ?? null) : undefined,
+      evento: room.modo === "carrera" ? (eventosOf(room)[room.ronda] ?? null) : null,
       puntos: room.modo === "carrera" ? (room.puntos ?? {}) : undefined,
       ultimo: room.modo === "carrera" && room.cerrada ? (room.ultimo ?? {}) : undefined,
       cerrada: !!room.cerrada,
       campeon: room.modo === "carrera" ? (() => {
-        const c = campeonato(EVENTOS, room.ronda ?? 0, !!room.cerrada, room.puntos ?? {}, (room.puntos ?? {})._w ?? {}, players.length);
+        const c = campeonato(eventosOf(room), room.ronda ?? 0, !!room.cerrada, room.puntos ?? {}, (room.puntos ?? {})._w ?? {}, players.length);
         return c ? { ...c, name: players.find((p: any) => p.pid === c.pid)?.name ?? "?" } : null;
       })() : undefined,
     },
@@ -252,12 +254,16 @@ async function handle(body: Record<string, any>) {
     await db.from("salas").delete().lt("created_at", new Date(Date.now() - ROOM_TTL_MS).toISOString());
     const dice_seed = String(randU32()), race_seed = String(randU32());
     let newCode = "";
+    // Calendario a medida (solo salas de carrera): se elige al crear y no se cambia después.
+    const cal = body.modo === "carrera" && body.calendario != null ? validarCalendario(body.calendario) : null;
+    if (body.modo === "carrera" && body.calendario != null && !cal) throw new Fail("El calendario elegido no es válido (de 3 a 23 fechas, sin repetir pistas).", 400);
     for (let t = 0; t < 5 && !newCode; t++) {
       const c = `${WORDS[randU32() % WORDS.length]}-${randStr(3)}`;
       const { error } = await db.from("salas").insert({
         code: c, host: "pendiente", dice_seed, race_seed,
         dice_hash: await sha256Hex(dice_seed), race_hash: await sha256Hex(race_seed),
         modo: body.modo === "carrera" ? "carrera" : "normal",
+        ...(cal ? { calendario: cal } : {}),
       });
       if (!error) newCode = c;
     }
@@ -388,7 +394,7 @@ async function handle(body: Record<string, any>) {
     if (room.modo !== "carrera") throw new Fail("Esta sala no es de modo carrera.", 409);
     room = await maybeClose(room);
     if (room.status !== "racing" || !room.cerrada) throw new Fail("La carrera todavía no terminó.", 409);
-    const cur = EVENTOS[room.ronda], nxt = EVENTOS[room.ronda + 1];
+    const cur = eventosOf(room)[room.ronda], nxt = eventosOf(room)[room.ronda + 1];
     if (!nxt) throw new Fail("¡La temporada terminó! Mirá la tabla final.", 409);
     const sameWeekend = cur.k === "sprint" && nxt.k === "gp" && cur.i === nxt.i;
     const race_seed = String(randU32());

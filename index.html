@@ -28,8 +28,8 @@
 <link rel="preconnect" href="https://vljuhibzzwtcswirunfr.supabase.co" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preload" href="supabase/functions/_shared/temporadas.json?v=0aaa1778" as="fetch" crossorigin fetchpriority="low">
-<link rel="modulepreload" href="supabase/functions/_shared/engine.js?v=0aaa1778" fetchpriority="low">
+<link rel="preload" href="supabase/functions/_shared/temporadas.json?v=89fbe419" as="fetch" crossorigin fetchpriority="low">
+<link rel="modulepreload" href="supabase/functions/_shared/engine.js?v=89fbe419" fetchpriority="low">
 <!-- Boceto de diseño, no es el juego final. Datos de ejemplo inventados. Sin marcas, logos ni fotos: todo dibujado en SVG. -->
 <link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700;900&display=swap" rel="stylesheet"></noscript>
@@ -389,7 +389,7 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
     <table class="cal"><thead><tr><th>#</th><th>Gran Premio</th><th>Fecha</th><th>Resultado</th><th style="text-align:right">Pts</th></tr></thead><tbody id="carBody"></tbody></table>
     <div class="note">Seguí el calendario de la F1 2026, un fin de semana tras otro. En cada uno armás un auto nuevo con los dados. En las sprints (🏃) corrés primero una carrera corta de 8 vueltas, sin paradas (puntos 8-7-6-5-4-3-2-1), y después el GP con el mismo auto. Tu progreso se guarda en este navegador.</div>
     <div id="carTables"></div>
-    <div class="cta-row" style="margin-top:14px"><button class="btn" id="carGo"><span>Empezar</span></button><button class="btn ghost" id="carFriends"><span>👥 Con amigos</span></button><button class="btn ghost" id="carReset"><span>Reiniciar temporada</span></button></div>
+    <div class="cta-row" style="margin-top:14px"><button class="btn" id="carGo"><span>Empezar</span></button><button class="btn ghost" id="carFriends"><span>👥 Con amigos</span></button><button class="btn ghost" id="carCal"><span>📅 Calendario a medida</span></button><button class="btn ghost" id="carReset"><span>Reiniciar temporada</span></button></div>
     <div class="note" style="margin-top:8px"><b>Con amigos:</b> creá una sala de carrera (hasta 22 jugadores) o entrá con un código. La sala corre el mismo calendario, con una tabla de puntos compartida.</div>
   </div>
 </section>
@@ -581,12 +581,24 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
   <h2>Con amigos</h2>
   <p class="note" style="margin-top:0">Hasta 22 jugadores, uno por auto. Cada uno tira sus propios dados y nadie puede repetir un piloto o una pieza que otro ya eligió. Arman en 3 minutos y ven la misma carrera a la misma hora.</p>
   <input id="fName" maxlength="16" placeholder="Tu nombre (lo ven tus amigos)">
-  <label class="note" style="display:flex;gap:8px;align-items:center;margin:2px 0 8px"><input type="checkbox" id="fCareer" style="width:auto;margin:0"> 🏁 Modo carrera 2026: el calendario completo, con sprints y tabla de puntos</label>
+  <label class="note" style="display:flex;gap:8px;align-items:center;margin:2px 0 8px"><input type="checkbox" id="fCareer" style="width:auto;margin:0"> 🏁 Modo carrera 2026: con sprints y tabla de puntos (calendario completo o a medida)</label>
+  <div id="fCalRow" style="display:none;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 10px"><button class="btn ghost" id="fCalBtn" style="padding:6px 12px;font-size:13px"><span>📅 Calendario a medida…</span></button><span class="note" id="fCalTxt" style="margin:0">Temporada completa (23 fechas)</span></div>
   <button class="btn cta" id="fCreate"><span>Crear sala</span></button>
   <div class="note" style="text-align:center;margin:14px 0 2px">o únete con un código</div>
   <input id="fCode" maxlength="20" placeholder="Código (ej. MONZA-7Q4)" style="text-transform:uppercase">
   <button class="btn ghost cta" id="fJoin"><span>Unirme</span></button>
   <div class="note" id="fErr" style="color:var(--red);min-height:18px"></div>
+</div></div>
+<div class="modal" id="mCal"><div class="box" style="max-height:90vh;overflow:auto"><button class="x" data-close>×</button>
+  <h2>Calendario a medida</h2>
+  <p class="note" style="margin-top:0">Elegí las pistas y el orden de tu temporada (de 3 a 23 fechas). Se define al empezar y no se cambia después. Cada GP se corre con sus vueltas reales.</p>
+  <div id="calPresets" style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0"></div>
+  <h3 style="margin:10px 0 6px">Tu calendario (<span id="calN">0</span> fechas)</h3>
+  <div id="calSel"></div>
+  <h3 style="margin:12px 0 6px">Agregar pista</h3>
+  <div id="calAvail"></div>
+  <div class="note" id="calErr" style="color:var(--red);min-height:18px"></div>
+  <div class="cta-row"><button class="btn" id="calOk"><span>Usar este calendario</span></button></div>
 </div></div>
 <div id="toast" style="position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--asphalt-2);border:1px solid var(--red);border-radius:8px;padding:10px 16px;z-index:60;display:none;max-width:90vw"></div>
 
@@ -598,7 +610,7 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
 
 
 <script src="vendor/supabase.min.js" defer></script>
-<script src="tracks.js?v=0aaa1778" defer></script>
-<script src="game.js?v=0aaa1778" defer></script>
+<script src="tracks.js?v=89fbe419" defer></script>
+<script src="game.js?v=89fbe419" defer></script>
 </body>
 </html>

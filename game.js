@@ -88,7 +88,9 @@ let RACE=null, MEKEY='h:me', SEED='', HUMANS=[], DECISIONS={}, PIT=null;
 const carByKey=k=>RACE.cars.find(c=>c.key===k);
 // Opciones según el modo: en el modo carrera el circuito y la sprint vienen del calendario. El aviso de tormenta con decisión
 // solo existe en solo, amistoso y carrera (en salas y desafío del día la lluvia, si sale, es la de toda la carrera).
-const raceOpts=()=>MODE==='room'&&RS&&RS.room.evento?{trackIdx:RS.room.evento.t,sprint:RS.room.evento.k==='sprint',storm:false}:MODE==='career'&&CAR_EVT?{trackIdx:CAR_EVT.trackIdx,sprint:CAR_EVT.kind==='sprint',storm:CAR_EVT.kind!=='sprint'}:{storm:MODE==='solo'||MODE==='friendly'};
+const REAL_LAPS=!new URLSearchParams(location.search).get('laps');   // vueltas reales de cada GP (el desafío del día y el amistoso siguen con 20)
+const raceOpts=()=>({...(REAL_LAPS&&/^(solo|career|room)$/.test(MODE)?{real:true}:{}),...raceOpts0()});
+const raceOpts0=()=>MODE==='room'&&RS&&RS.room.evento?{trackIdx:RS.room.evento.t,sprint:RS.room.evento.k==='sprint',storm:false}:MODE==='career'&&CAR_EVT?{trackIdx:CAR_EVT.trackIdx,sprint:CAR_EVT.kind==='sprint',storm:CAR_EVT.kind!=='sprint'}:{storm:MODE==='solo'||MODE==='friendly'};
 const newRace=(decisions)=>E.runRace({DATA,tracks:TRACKS,seed:SEED,humans:HUMANS,laps:LAPS,decisions,...raceOpts()});
 const GPN=()=>MODE==='career'&&CAR_EVT?CAR_EVT.gp:MODE==='room'&&RS&&RS.room.evento?RS.room.evento.gp:TRACK.gp;
 const ptsTable=()=>RACE&&RACE.sprint?E.SPRINT_PTS:PTS;
@@ -301,7 +303,7 @@ function finish(){
 // ---------- Por qué terminaste así ----------
 // Explica el resultado con las piezas del jugador: ritmo, errores, paradas y safety car.
 function raceStory(c){
-  const L=[], laps=RACE.laps, OPT=Math.round(laps/2), add=(t,k)=>L.push({t,k});
+  const L=[], laps=RACE.laps, OPT=Math.round(laps/2), K=RACE.sprint?1:laps/20, add=(t,k)=>L.push({t,k});
   const pace=[...RACE.cars].sort((a,b)=>E.paceOf(b)-E.paceOf(a)), rank=pace.indexOf(c)+1;
   add(`🏎️ Ritmo: tu auto fue el <b>${rank}.º más rápido</b> de la parrilla (coche ${c.c}, piloto ${c.d}, motor ${c.m}).`, rank<=5?'good':rank>=15?'bad':'');
   add(`⏱️ Largaste en el puesto <b>${c.grid}</b>${c.qErr?`, con un error en ${c.qErr}`:''}.`, c.grid<=5?'good':c.grid>=15?'bad':'');
@@ -314,7 +316,7 @@ function raceStory(c){
   for(const e of c.ev.filter(e=>e.k==='pit')){
     if(e.why==='sc') add(`🚨 Aprovechaste el <b>safety car</b> para parar en la vuelta ${e.lap}.`,'good');
     else if(e.why==='extra') add(`🧠 Tu estratega (${c.s}) mandó una <b>parada de más</b> en la vuelta ${e.lap}.`,'bad');
-    else { const d=Math.abs(e.lap-OPT);
+    else { const d=Math.abs(e.lap-OPT)/K;
       add(d>=3?`🧠 Tu estratega (${c.s}) te hizo parar en la vuelta ${e.lap}, lejos de lo ideal (hacia la ${OPT}): <b>${e.lap>OPT?'gomas gastadas':'demasiado pronto'}</b>.`:`🧠 Tu estratega (${c.s}) te hizo parar en la vuelta ${e.lap}, a buen tiempo.`, d>=3?'bad':'good'); }
   }
   if(c.stops) add(c.stat>=3.4?`🔧 Tus mecánicos (jefe ${c.j}) <b>tardaron ${c.stat} s</b> en cada parada: son lentos.`:`🔧 Tus mecánicos (jefe ${c.j}) pararon el auto en <b>${c.stat} s</b>.`, c.stat>=3.4?'bad':c.stat<=2.6?'good':'');
@@ -376,10 +378,13 @@ let CAR=null, CAR_EVT=null;
 function carLoad(){try{return JSON.parse(localStorage.getItem(CKEY))}catch(e){return null}}
 function carSave(){try{localStorage.setItem(CKEY,JSON.stringify(CAR))}catch(e){}}
 const carPts=()=>CAR.log.reduce((t,l)=>t+(l.pts||0),0);
+// Fechas de la temporada: la completa (con el GP cancelado) o el calendario a medida [[lugar en CAL, 1 si lleva sprint], …]. CAR.i es el lugar en esta lista.
+const carList=()=>CAR.cal?CAR.cal.map(([i,s])=>({idx:i,sprint:!!s})):CAL.map((c,i)=>({idx:i,sprint:!!c.sprint,cancel:!!c.cancel}));
 function carNext(){
-  while(CAL[CAR.i]&&CAL[CAR.i].cancel){ CAR.log.push({i:CAR.i,kind:'cancel'}); CAR.i++ }   // el GP cancelado se saltea solo
-  const ev=CAL[CAR.i]; if(!ev) return null;
-  return {ev,kind:ev.sprint&&!CAR.log.some(l=>l.i===CAR.i&&l.kind==='sprint')?'sprint':'gp'};
+  const L=carList();
+  while(L[CAR.i]&&L[CAR.i].cancel){ CAR.log.push({i:CAR.i,kind:'cancel'}); CAR.i++ }   // el GP cancelado se saltea solo
+  const it=L[CAR.i]; if(!it) return null;
+  return {ev:CAL[it.idx],it,kind:it.sprint&&!CAR.log.some(l=>l.i===CAR.i&&l.kind==='sprint')?'sprint':'gp'};
 }
 async function showCareer(){
   await READY; CAL=E.CAL_2026;
@@ -389,13 +394,14 @@ async function showCareer(){
 function renderCareer(){
   const nx=carNext(); carSave();
   const gps=CAR.log.filter(l=>l.kind==='gp'), wins=gps.filter(l=>!l.dnf&&l.pos===1).length, pods=gps.filter(l=>!l.dnf&&l.pos<=3).length;
-  $('carSub').textContent=CAR.log.some(l=>l.kind!=='cancel')?`${carPts()} puntos · GP corridos: ${gps.length} · Victorias: ${wins} · Podios: ${pods}`:'Una temporada completa, un fin de semana a la vez.';
+  $('carSub').textContent=CAR.log.some(l=>l.kind!=='cancel')?`${carPts()} puntos · GP corridos: ${gps.length}${CAR.cal?' de '+CAR.cal.length:''} · Victorias: ${wins} · Podios: ${pods}`:CAR.cal?`Temporada a medida: ${CAR.cal.length} fechas, un fin de semana a la vez.`:'Una temporada completa, un fin de semana a la vez.';
+  $('carCal').style.display=CAR.log.some(l=>l.kind!=='cancel')?'none':'';
   const res=l=>!l?'':l.dnf?'DNF':`P${l.pos}`;
-  $('carBody').innerHTML=CAL.map((c,k)=>{
-    const s=CAR.log.find(l=>l.i===k&&l.kind==='sprint'), g=CAR.log.find(l=>l.i===k&&l.kind==='gp'), isNx=nx&&k===CAR.i;
+  $('carBody').innerHTML=carList().map((it,k)=>{
+    const c=CAL[it.idx], s=CAR.log.find(l=>l.i===k&&l.kind==='sprint'), g=CAR.log.find(l=>l.i===k&&l.kind==='gp'), isNx=nx&&k===CAR.i;
     if(c.cancel) return `<tr class="cx"><td class="n">${k+1}</td><td>${c.gp}</td><td>${c.date}</td><td colspan="2">❌ Cancelado (situación en Medio Oriente)</td></tr>`;
     const r=[s?`🏃 ${res(s)}`:'',g?`${res(g)}${g.rain?' 🌧️':''}`:isNx?'▶ Siguiente':''].filter(Boolean).join(' · ');
-    return `<tr class="${isNx?'nx':''}"><td class="n">${k+1}</td><td><b>${c.gp}</b>${c.sprint?'<span class="sprb">SPRINT</span>':''}</td><td>${c.date}</td><td>${r}</td><td class="pts">${(s?s.pts:0)+(g?g.pts:0)||(s||g?0:'')}</td></tr>`;
+    return `<tr class="${isNx?'nx':''}"><td class="n">${k+1}</td><td><b>${c.gp}</b>${it.sprint?'<span class="sprb">SPRINT</span>':''}</td><td>${c.date}</td><td>${r}</td><td class="pts">${(s?s.pts:0)+(g?g.pts:0)||(s||g?0:'')}</td></tr>`;
   }).join('');
   const tp={}, tc={};
   CAR.log.filter(l=>l.kind!=='cancel'&&l.pilot).forEach(l=>{ const w=!l.dnf&&l.pos===1&&l.kind==='gp';
@@ -412,7 +418,7 @@ function champBlock(title,col,map){
 }
 $('carGo').onclick=async()=>{
   await READY; const nx=carNext();
-  if(!nx){ CAR={i:0,log:[],picks:null}; renderCareer(); return }
+  if(!nx){ CAR={i:0,log:[],picks:null,cal:null}; renderCareer(); return }
   MODE='career'; BLIND=false;
   CAR_EVT={i:CAR.i,kind:nx.kind,trackIdx:nx.ev.t,gp:nx.ev.gp};
   LAPS=nx.kind==='sprint'?E.SPRINT_LAPS:20;
@@ -420,9 +426,9 @@ $('carGo').onclick=async()=>{
   if(nx.kind==='gp'&&CAR.picks){ picks=CAR.picks; prepareRace(null); go('s-quali',2); return }    // GP de un fin de semana de sprint: mismo auto
   resetBuild(2); go('s-build',1);
   $('buildTitle').innerHTML=`${nx.kind==='sprint'?'Sprint':'GP'} <em>de ${nx.ev.gp}</em>`;
-  $('buildSub').textContent=`Fecha ${CAR.i+1} del calendario 2026. Tira el dado y arma tu auto${nx.ev.sprint?': lo usás en la sprint y en el GP':''}.`;
+  $('buildSub').textContent=`Fecha ${CAR.i+1} del calendario${CAR.cal?' a medida':' 2026'}. Tira el dado y arma tu auto${nx.it.sprint?': lo usás en la sprint y en el GP':''}.`;
 };
-$('carReset').onclick=()=>{ if(!confirm('¿Reiniciar la temporada? Se borra tu progreso del modo carrera.')) return; CAR={i:0,log:[],picks:null}; renderCareer() };
+$('carReset').onclick=()=>{ if(!confirm('¿Reiniciar la temporada? Se borra tu progreso del modo carrera.')) return; CAR={i:0,log:[],picks:null,cal:CAR&&CAR.cal||null}; renderCareer() };
 function careerRecord(me){
   const kind=CAR_EVT.kind, pts=me.dnf?0:((kind==='sprint'?E.SPRINT_PTS:PTS)[me.pos-1]||0);
   CAR.log.push({i:CAR_EVT.i,kind,pos:me.pos,dnf:me.dnf?1:0,pts,rain:RACE.rain?1:0,pilot:picks.piloto.n,car:picks.coche.n});
@@ -430,7 +436,44 @@ function careerRecord(me){
   carSave();
 }
 $('hCareer').onclick=()=>showCareer();
-$('carFriends').onclick=()=>{ $('fCareer').checked=true; $('fErr').textContent=''; openM('mFriends') };   // sala de carrera con amigos (o unirse con un código)
+// ---------- CALENDARIO A MEDIDA ----------
+// Lista de [lugar en CAL_2026, 1 si lleva sprint]. null = temporada completa. Se elige al empezar y no se cambia (solo, o el anfitrión al crear la sala).
+const CAL_PRESETS=[['Temporada completa',null],['Corta · 8',[[0,1],[6,1],[9,1],[10,1],[13,1],[17,1],[19,1],[23,1]]],['Clásicas · 5',[[2,1],[6,1],[9,1],[10,1],[13,1]]],
+  ['Europa · 9',[[6,1],[7,1],[8,1],[9,1],[10,1],[11,1],[12,1],[13,1],[14,1]]],['Solo sprints · 6',[[1,1],[4,1],[5,1],[9,1],[12,1],[17,1]]],['Mini · 3',[[6,1],[10,1],[13,1]]]];
+let CALB=null, CUSTOM_CAL=null, LCALOPEN=false;
+const calFull=()=>CAL.map((c,i)=>c.cancel?null:[i,c.sprint?1:0]).filter(Boolean);
+async function openCalBuilder(initial,done){
+  await READY; CAL=E.CAL_2026; CALB={list:(initial||calFull()).map(x=>[...x]),done};
+  $('calPresets').innerHTML=CAL_PRESETS.map(([n],k)=>`<button class="btn ghost" data-cp="${k}" style="padding:4px 10px;font-size:13px"><span>${n}</span></button>`).join('');
+  calRender(); openM('mCal');
+}
+function calRender(){
+  const L=CALB.list, used=new Set(L.map(x=>x[0])), btn=(a,v,l,dis)=>`<button class="btn ghost" data-${a}="${v}" style="padding:2px 9px;font-size:14px" ${dis?'disabled':''}><span>${l}</span></button>`;
+  $('calN').textContent=L.length;
+  $('calSel').innerHTML=L.map(([i,s],k)=>{ const c=CAL[i];
+    return `<div class="opt" style="align-items:center;gap:6px"><span><b>${k+1}.</b> ${esc(c.gp)} <small class="note">${E.lapsFor(c.t)} vueltas</small>${c.sprint?` <label class="note" style="display:inline-flex;gap:4px;align-items:center;margin-left:6px"><input type="checkbox" data-cs="${k}" ${s?'checked':''} style="width:auto;margin:0">🏃 sprint</label>`:''}</span><span style="display:flex;gap:4px">${btn('cu',k,'↑',k===0)}${btn('cd',k,'↓',k===L.length-1)}${btn('cx',k,'✕')}</span></div>`; }).join('')||'<div class="note">Todavía no elegiste ninguna pista.</div>';
+  $('calAvail').innerHTML=CAL.map((c,i)=>c.cancel||used.has(i)?'':`<button class="btn ghost" data-ca="${i}" style="padding:4px 10px;font-size:13px;margin:0 6px 6px 0"><span>+ ${esc(c.gp)}${c.sprint?' 🏃':''}</span></button>`).join('')||'<div class="note">Ya agregaste todas las pistas.</div>';
+  $('calErr').textContent=L.length<E.CAL_MIN?`Elegí al menos ${E.CAL_MIN} fechas.`:'';
+  $('calOk').disabled=L.length<E.CAL_MIN;
+}
+$('mCal').addEventListener('click',e=>{ if(!CALB) return; const L=CALB.list, t=e.target.closest('button,input'); if(!t) return;
+  const d=t.dataset, num=v=>+v;
+  if(d.cp!==undefined){ const p=CAL_PRESETS[num(d.cp)][1]; CALB.list=(p||calFull()).map(x=>[...x]) }
+  else if(d.cu!==undefined){ const k=num(d.cu); if(k>0) [L[k-1],L[k]]=[L[k],L[k-1]] }
+  else if(d.cd!==undefined){ const k=num(d.cd); if(k<L.length-1) [L[k+1],L[k]]=[L[k],L[k+1]] }
+  else if(d.cx!==undefined) L.splice(num(d.cx),1);
+  else if(d.ca!==undefined) L.push([num(d.ca),CAL[num(d.ca)].sprint?1:0]);
+  else if(d.cs!==undefined) L[num(d.cs)][1]=t.checked?1:0;
+  else return;
+  calRender() });
+$('calOk').onclick=()=>{ const L=CALB.list; if(L.length<E.CAL_MIN) return;
+  const full=calFull(), same=L.length===full.length&&L.every((x,k)=>x[0]===full[k][0]&&x[1]===full[k][1]);   // igual a la temporada completa: se guarda como "completa"
+  const done=CALB.done; $('mCal').classList.remove('open'); CALB=null; done(same?null:L.map(x=>[...x])) };
+$('carCal').onclick=()=>openCalBuilder(CAR&&CAR.cal,cal=>{ CAR.cal=cal; CAR.i=0; CAR.log=[]; CAR.picks=null; renderCareer() });
+$('fCareer').onchange=()=>{ $('fCalRow').style.display=$('fCareer').checked?'flex':'none' };
+const calTxt=cal=>cal?`Calendario a medida (${cal.length} fechas)`:'Temporada completa (23 fechas)';
+$('fCalBtn').onclick=()=>openCalBuilder(CUSTOM_CAL,cal=>{ CUSTOM_CAL=cal; $('fCalTxt').textContent=calTxt(cal) });
+$('carFriends').onclick=()=>{ $('fCareer').checked=true; $('fCalRow').style.display='flex'; $('fErr').textContent=''; openM('mFriends') };   // sala de carrera con amigos (o unirse con un código)
 
 // ---------- IDIOMA ----------
 // El juego está escrito en español (idioma por defecto). Cada idioma es un diccionario en lang/xx.js:
@@ -569,7 +612,7 @@ function showProfile(){$('st0').style.display='none';const s=loadStats();
   $('pStats').innerHTML=`<div><b>${s.races}</b>Carreras</div><div><b>${s.wins}</b>Victorias</div><div><b>${s.podiums}</b>Podios</div><div><b>${s.best?'P'+s.best:'—'}</b>Mejor</div>`;
   const h=loadHist();$('pHist').innerHTML=h.length?h.map((x,i)=>`<div class="opt"><span><b>Campeonato ${h.length-i}</b><br><small>${x.fecha} · ${x.carreras} carreras</small></span><small style="text-align:right">${x.podio.join('<br>')}</small></div>`).join(''):'Todavía no cerraste ningún campeonato.';
   const tr=loadTrofeos();
-  $('pTrof').innerHTML=tr.length?tr.map(x=>`<div class="opt"><span><b>🏆 Campeón de pilotos ${x.anio}</b><br><small>${x.fecha} · sala ${esc(x.sala)}</small></span><small style="text-align:right">${x.pts} pts${x.final?'':' (campeón matemático)'}</small></div>`).join(''):'Todavía no ganaste ningún trofeo. Ganá el campeonato de pilotos en una sala de carrera con amigos.';
+  $('pTrof').innerHTML=tr.length?tr.map(x=>`<div class="opt"><span><b>🏆 Campeón de pilotos ${x.anio}</b><br><small>${x.fecha} · sala ${esc(x.sala)}</small></span><small style="text-align:right">${x.pts} pts · ${x.fechas||23} fechas${x.final?'':' (campeón matemático)'}</small></div>`).join(''):'Todavía no ganaste ningún trofeo. Ganá el campeonato de pilotos en una sala de carrera con amigos.';
   go('s-profile',0)}
 (function(){const n=champRaces();$('hCount').textContent=n?`Carreras en tu campeonato actual: ${n}`:'Tu campeonato arranca en 0'})();
 // "Otra tirada": vuelve a jugar el mismo modo sin pasar por el inicio
@@ -620,7 +663,7 @@ async function frToken(){ try{ const {data}=await sb.auth.getSession(); return d
 async function createRoom(){
   const name=myName(); if(!name){$('fErr').textContent='Escribe tu nombre.';return}
   $('fCreate').disabled=true; $('fErr').textContent='';
-  try{ const j=await api('create',{name,modo:$('fCareer').checked?'carrera':'normal',token:await frToken()}); ROOM={code:j.room.code,pid:j.pid,secret:j.secret}; enterRoom(j); }
+  try{ const j=await api('create',{name,modo:$('fCareer').checked?'carrera':'normal',...($('fCareer').checked&&CUSTOM_CAL?{calendario:CUSTOM_CAL}:{}),token:await frToken()}); CUSTOM_CAL=null; $('fCalTxt').textContent=calTxt(null); ROOM={code:j.room.code,pid:j.pid,secret:j.secret}; enterRoom(j); }
   catch(e){ $('fErr').textContent=e.message } finally{ $('fCreate').disabled=false }
 }
 async function joinRoom(){
@@ -736,7 +779,7 @@ function renderLobby(s){
   const last=r.modo==='carrera'&&r.ronda>=r.total-1;
   $('lStart').style.display=host&&(!post||(r.cerrada&&!last))?'':'none';
   if(post){
-    const nx=(typeof E!=='undefined'&&E)?E.eventos2026()[r.ronda+1]:null;
+    const nx=(typeof E!=='undefined'&&E)?E.eventosDe(r.calendario)[r.ronda+1]:null;
     $('lStart').querySelector('span').textContent=nx?`Siguiente: ${nx.k==='sprint'?'sprint':'GP'} de ${nx.gp} →`:'Siguiente';
     $('lWait').textContent=!r.cerrada?'Contando los puntos de la carrera…':last?'🏆 ¡Temporada terminada! Esta es la tabla final.':host?'':'Esperando a que el anfitrión pase a la siguiente fecha…';
   } else {
@@ -754,11 +797,11 @@ function celebrarCampeon(s){
   if(seen===key) return;
   try{ localStorage.setItem('boxbox_trofeo_visto',key) }catch(e){}
   chatPush({sys:1,t:`🏆 ${c.name} es campeón de pilotos 2026`});
-  if(mine){ const t=loadTrofeos().filter(x=>x.sala!==ROOM.code); t.unshift({anio:2026,sala:ROOM.code,pts:c.pts,fecha:new Date().toLocaleDateString(LOCALES[LANG]||'es'),final:c.final});
+  if(mine){ const t=loadTrofeos().filter(x=>x.sala!==ROOM.code); t.unshift({anio:2026,sala:ROOM.code,pts:c.pts,fecha:new Date().toLocaleDateString(LOCALES[LANG]||'es'),final:c.final,fechas:s.room.fechas||23});
     try{ localStorage.setItem('boxbox_trofeos',JSON.stringify(t.slice(0,50))) }catch(e){} if(USER) syncUp() }
   $('trEmoji').textContent=mine?'🏆':'🥇';
   $('trTitle').textContent=mine?'¡Sos el campeón de pilotos 2026!':`🏆 ¡${c.name} es campeón de pilotos 2026!`;
-  $('trTxt').textContent=(c.final?'Terminó la temporada con ':'Campeón matemático: nadie lo puede alcanzar con ')+(c.final?`${c.pts} puntos.`:`los puntos que quedan. Tiene ${c.pts} puntos.`);
+  $('trTxt').textContent=(c.final?'Terminó la temporada con ':'Campeón matemático: nadie lo puede alcanzar con ')+(c.final?`${c.pts} puntos.`:`los puntos que quedan. Tiene ${c.pts} puntos.`)+` Temporada de ${s.room.fechas||23} fechas.`;
   openM('mTrophy');
 }
 function renderRoomCareer(s){
@@ -772,14 +815,15 @@ function renderRoomCareer(s){
   const banner=camp?`<div style="background:rgba(255,210,63,.14);border:1px solid var(--yellow);border-radius:10px;padding:10px 14px;margin:0 0 10px;font-weight:900">🏆 ${camp.pid===ROOM.pid?'Sos el campeón de pilotos 2026':'Campeón de pilotos 2026: '+esc(camp.name)} · ${camp.pts} puntos${camp.final?'':' (campeón matemático)'}</div>`:'';
   const tab=LTAB, T=(r.puntos&&r.puntos._t)||{p:{},c:{}};
   const tabs=`<div style="display:flex;gap:6px;margin:0 0 8px">${[['j','Jugadores'],['p','Pilotos'],['c','Constructores']].map(([k,l])=>`<button class="btn ghost" data-tab="${k}" style="padding:6px 12px;font-size:13px;${k===tab?'border-color:var(--yellow);color:var(--yellow)':''}"><span>${l}</span></button>`).join('')}</div>`;
-  box.onclick=e=>{ const b=e.target.closest('[data-tab]'); if(b){ LTAB=b.dataset.tab; renderRoomCareer(RS) } };
+  box.onclick=e=>{ const b=e.target.closest('[data-tab]'); if(b){ LTAB=b.dataset.tab; renderRoomCareer(RS) } else if(e.target.closest('[data-calt]')){ LCALOPEN=!LCALOPEN; renderRoomCareer(RS) } };
+  const evs=E.eventosDe(r.calendario), calBox=`<div style="margin:0 0 10px"><button class="link" data-calt="1">📅 ${r.calendario?'Calendario a medida':'Calendario'}: ${r.fechas||23} fechas ${LCALOPEN?'▲':'▼'}</button>${LCALOPEN?`<div class="note" style="margin:6px 0 0">${evs.map((e,k)=>`${k+1}. ${e.k==='sprint'?'🏃 Sprint':'GP'} de ${esc(e.gp)}${e.k==='sprint'?' · '+E.SPRINT_LAPS+' vueltas':' · '+E.lapsFor(e.t)+' vueltas'}`).join('<br>')}</div>`:''}</div>`;
   if(tab!=='j'){
-    box.innerHTML=`<h3>🏁 Modo carrera 2026 · evento ${Math.min(r.ronda+1,r.total)} de ${r.total}</h3><div style="font-size:22px;font-weight:900;font-style:italic;margin:2px 0 10px">${ev?(ev.k==='sprint'?'Sprint':'GP')+' de '+esc(ev.gp):'Temporada terminada'}<small class="note"> ${ev?'· '+esc(ev.date):''}</small></div>${banner}${tabs}`
+    box.innerHTML=`<h3>🏁 Modo carrera 2026 · evento ${Math.min(r.ronda+1,r.total)} de ${r.total}</h3><div style="font-size:22px;font-weight:900;font-style:italic;margin:2px 0 10px">${ev?(ev.k==='sprint'?'Sprint':'GP')+' de '+esc(ev.gp):'Temporada terminada'}<small class="note"> ${ev?'· '+esc(ev.date):''}</small></div>${calBox}${banner}${tabs}`
       +champBlock(tab==='p'?'Campeonato de pilotos':'Campeonato de constructores',tab==='p'?'Piloto':'Constructor',tab==='p'?T.p:T.c);
     return;
   }
   box.innerHTML=`<h3>🏁 Modo carrera 2026 · evento ${Math.min(r.ronda+1,r.total)} de ${r.total}</h3>
-    <div style="font-size:22px;font-weight:900;font-style:italic;margin:2px 0 10px">${ev?(ev.k==='sprint'?'Sprint':'GP')+' de '+esc(ev.gp):'Temporada terminada'}<small class="note"> ${ev?'· '+esc(ev.date):''}</small></div>${banner}${tabs}
+    <div style="font-size:22px;font-weight:900;font-style:italic;margin:2px 0 10px">${ev?(ev.k==='sprint'?'Sprint':'GP')+' de '+esc(ev.gp):'Temporada terminada'}<small class="note"> ${ev?'· '+esc(ev.date):''}</small></div>${calBox}${banner}${tabs}
     <table class="cal"><thead><tr><th>#</th><th>Piloto</th><th>Última carrera</th><th style="text-align:right">Pts</th></tr></thead><tbody>${rows.map((x,i)=>`<tr class="${x.p.pid===ROOM.pid?'nx':''}"><td class="n">${i+1}</td><td><span class="c" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${x.p.color};margin-right:6px"></span>${camp&&camp.pid===x.p.pid?'🏆 ':''}${esc(x.p.name)}</td><td>${x.u?(x.u.dnf?'DNF':`P${x.u.pos} (+${x.u.pts})`):''}</td><td class="pts">${x.pts}</td></tr>`).join('')}</tbody></table>`;
 }
 $('lCopy').onclick=async()=>{const url=`${location.origin}${location.pathname}?sala=${ROOM.code}`;
@@ -1223,7 +1267,7 @@ function paintFriend(){
   let h=`<h2 style="margin:0 0 4px">${esc(p.nick)}</h2><div class="note" style="margin:0 0 10px">${FR_ON[p.uid]?'<span style="color:var(--green)">● En línea</span>':'Desconectado'}</div>`;
   if(p.relacion==='amigo'){
     h+=`<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center">${[['Carreras',st.races],['Victorias',st.wins],['Podios',st.podiums],['Mejor',st.best?'P'+st.best:'—']].map(([l,v])=>`<div><b style="display:block;font-size:24px">${v}</b><small>${l}</small></div>`).join('')}</div>`
-      +`<h3 style="margin:14px 0 6px">Trofeos</h3>`+(p.trofeos.length?p.trofeos.map(x=>`<div class="opt"><span><b>🏆 Campeón de pilotos ${x.anio}</b><br><small>${esc(x.fecha)} · sala ${esc(x.sala)}</small></span><small style="text-align:right">${x.pts} pts${x.final?'':' (campeón matemático)'}</small></div>`).join(''):'<div class="note">Este jugador no tiene trofeos todavía.</div>')
+      +`<h3 style="margin:14px 0 6px">Trofeos</h3>`+(p.trofeos.length?p.trofeos.map(x=>`<div class="opt"><span><b>🏆 Campeón de pilotos ${x.anio}</b><br><small>${esc(x.fecha)} · sala ${esc(x.sala)}</small></span><small style="text-align:right">${x.pts} pts · ${x.fechas||23} fechas${x.final?'':' (campeón matemático)'}</small></div>`).join(''):'<div class="note">Este jugador no tiene trofeos todavía.</div>')
       +`<div class="cta-row" style="margin-top:14px">${FR_ON[p.uid]&&inRoomNow?`<button class="btn" data-mf="inv"><span>Invitar a mi sala</span></button>`:''}<button class="btn ghost" data-mf="quitar"><span>Quitar amigo</span></button></div>`;
   } else if(p.relacion==='ninguna') h+=`<div class="note">Hacete amigo de ${esc(p.nick)} para ver su perfil y poder invitarlo a tu sala.</div><div class="cta-row" style="margin-top:12px"><button class="btn" data-mf="add"><span>Agregar como amigo</span></button></div>`;
   else if(p.relacion==='enviada') h+=`<div class="note">Pedido enviado. Cuando lo acepte vas a ver su perfil.</div><div class="cta-row" style="margin-top:12px"><button class="btn ghost" data-mf="quitar"><span>Cancelar</span></button></div>`;
