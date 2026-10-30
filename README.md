@@ -38,7 +38,7 @@ También hay perfil, tema claro u oscuro y campeonatos anteriores.
 
 ## Con amigos (salas online)
 
-Hasta 22 jugadores, uno por auto, con código de sala o link de invitación. Todos reciben los mismos dados, tienen 3 minutos para armar y ven la misma carrera a la misma hora.
+Hasta 22 jugadores, uno por auto, con código de sala o link de invitación. Cada uno tira sus propios dados y nadie puede repetir un piloto o una pieza que otro ya eligió; tienen 3 minutos para armar y ven la misma carrera a la misma hora.
 
 - **Servidor:** Edge Function `sala` en Supabase ([supabase/functions/sala](supabase/functions/sala/index.ts)). Las tablas ([migración](supabase/migrations/20261029000000_salas.sql)) tienen RLS sin políticas: solo la función puede leerlas.
 - **Contra trampas:** las semillas de dados y de carrera son secretas (se publica su hash). Las tiradas se revelan de a una y cada elección se valida en el servidor. Al cerrar el armado se revela la semilla de carrera y cada navegador simula la misma carrera con los autos ya validados.

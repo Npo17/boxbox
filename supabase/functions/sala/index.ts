@@ -63,16 +63,34 @@ function cleanName(s: unknown) {
 }
 class Fail extends Error { constructor(msg: string, public status = 400) { super(msg); } }
 
-// Tirada i (0..4). n = número de re-sorteo. La base es igual para toda la sala;
-// los re-sorteos son propios de cada jugador. Solo sortea años que tengan alguna pieza
-// para las casillas libres (motor, jefe y estratega existen solo en temporadas curadas).
-async function rollFor(diceSeed: string, pid: string, i: number, n: number, free: string[]) {
-  const rng = mulberry32(n === 0 ? await seedOf(diceSeed, "tirada", i) : await seedOf(diceSeed, pid, i, n));
+// Tirada i (0..4). n = número de re-sorteo. Cada jugador tiene sus propias tiradas (años y piezas distintos). Solo sortea años
+// que tengan alguna pieza para las casillas libres (motor, jefe y estratega existen solo en temporadas curadas).
+// Lo que ya eligió otro jugador no sale (taken): un piloto, jefe o estratega no puede estar en dos autos, aunque sea de otro año.
+type Taken = Record<string, Set<string>>;
+const keyOf = (slot: string, n: string, y: string) => (slot === "coche" || slot === "motor" ? `${n}|${y}` : n).toLowerCase();
+function takenBy(players: any[], exceptPid: string): Taken {
+  const t: Taken = {}; for (const s of SLOTS) t[s] = new Set();
+  for (const p of players) if (p.pid !== exceptPid) for (const s of SLOTS) { const pk = p.picks?.[s]; if (pk) t[s].add(keyOf(s, pk.n, pk.y)); }
+  return t;
+}
+function dropTaken(roll: Roll, taken: Taken): boolean {
+  let changed = false;
+  for (const s of SLOTS) {
+    const o = roll.offer[s]; if (!o) continue;
+    const f = o.shown.filter((it) => !taken[s].has(keyOf(s, it[0], roll.year)));
+    if (f.length !== o.shown.length) { o.shown = f; changed = true; }
+  }
+  return changed;
+}
+async function rollFor(diceSeed: string, pid: string, i: number, n: number, free: string[], taken?: Taken) {
+  const rng = mulberry32(await seedOf(diceSeed, pid, i, n));
   const seasons = DATA as Record<string, Record<string, Item[]>>;
   const all = Object.keys(seasons).sort();
   const years = yearsFor(seasons, free);
   const year = (years.length ? years : all)[Math.floor(rng() * (years.length || all.length))];
-  return { i, n, year, offer: makeOffer(seasons, rng, year), used: false } as Roll;
+  const roll = { i, n, year, offer: makeOffer(seasons, rng, year), used: false } as Roll;
+  if (taken) dropTaken(roll, taken);
+  return roll;
 }
 
 // ---------- acceso a datos ----------
@@ -131,10 +149,13 @@ async function maybeLock(room: Record<string, any>, known?: Record<string, any>[
     let i = Object.keys(picks).length;
     for (const slot of SLOTS) {
       if (picks[slot]) continue;
-      const roll = await rollFor(room.dice_seed, p.pid, i++, 0, [slot]);
+      const taken = takenBy(players, p.pid);
+      let roll = await rollFor(room.dice_seed, p.pid, i++, 0, [slot], taken);
+      if (!roll.offer[slot].shown.length) roll = await rollFor(room.dice_seed, p.pid, i++, 0, [slot]);     // sin opciones libres: sorteo común
       const worst = roll.offer[slot].shown.reduce((a, b) => (b[2] < a[2] ? b : a));
       picks[slot] = { n: worst[0], y: roll.year, r: worst[2], auto: true };
     }
+    p.picks = picks; p.done = true;                                              // así los siguientes autos completados ven lo que ya se llevó este
     await db.from("jugadores").update({ picks, done: true }).eq("sala", room.code).eq("pid", p.pid);
   }
   const race_start = new Date(Date.now() + RACE_DELAY_MS).toISOString();
@@ -247,8 +268,10 @@ async function handle(body: Record<string, any>) {
     return { ...p, ...(await stateFor(room, await auth(code, p.pid, p.secret))) };
   }
 
-  const [me, room0] = await Promise.all([auth(code, body.pid, body.secret), getRoom(code)]);
+  const needTaken = action === "roll" || action === "pick";
+  const [me, room0, others] = await Promise.all([auth(code, body.pid, body.secret), getRoom(code), needTaken ? getPlayers(code) : Promise.resolve([] as any[])]);
   let room = room0;
+  const taken = takenBy(others, me.pid);
 
   if (action === "state") {
     // Camino más pedido (cada jugador cada 3 s): consultas en paralelo y sin repetir lecturas.
@@ -276,15 +299,16 @@ async function handle(body: Record<string, any>) {
     let rerolls = me.rerolls;
     let roll: Roll;
     if (open && !body.reroll) {
-      roll = open;                                   // ya tiene una tirada sin usar: se la devuelve
+      roll = open;                                   // ya tiene una tirada sin usar: se la devuelve (sin lo que otro jugador eligió mientras tanto)
+      if (dropTaken(roll, taken)) await db.from("jugadores").update({ rolls }).eq("sala", code).eq("pid", me.pid);
     } else if (open && body.reroll) {
       if (rerolls >= MAX_REROLLS) throw new Fail("No te quedan re-sorteos.", 409);
       rerolls++;
-      roll = await rollFor(room.dice_seed, me.pid, i, open.n + 1, free);
+      roll = await rollFor(room.dice_seed, me.pid, i, open.n + 1, free, taken);
       open.used = true;                              // la tirada anterior se descarta
       rolls.push(roll);
     } else {
-      roll = await rollFor(room.dice_seed, me.pid, i, 0, free);
+      roll = await rollFor(room.dice_seed, me.pid, i, 0, free, taken);
       rolls.push(roll);
     }
     await db.from("jugadores").update({ rolls, rerolls }).eq("sala", code).eq("pid", me.pid);
@@ -302,6 +326,11 @@ async function handle(body: Record<string, any>) {
     if (!open) throw new Fail("Primero tira el dado.", 409);
     const it = open.offer[slot]?.shown?.[idx];
     if (!it) throw new Fail("Esa pieza no salió en tu tirada.");
+    if (taken[slot].has(keyOf(slot, it[0], open.year))) {            // otro jugador la eligió en este momento
+      dropTaken(open, taken);
+      await db.from("jugadores").update({ rolls }).eq("sala", code).eq("pid", me.pid);
+      throw new Fail(`${it[0]} ya lo eligió otro jugador. Elegí otra opción.`, 409);
+    }
     picks[slot] = { n: it[0], y: open.year, r: it[2] };
     open.used = true;
     const done = SLOTS.every((s) => picks[s]);
@@ -309,7 +338,7 @@ async function handle(body: Record<string, any>) {
     // y se guarda en la misma escritura, así el jugador no espera otra ida y vuelta.
     let next: Roll | null = null;
     if (!done) {
-      next = await rollFor(room.dice_seed, me.pid, Object.keys(picks).length, 0, SLOTS.filter((s) => !picks[s]));
+      next = await rollFor(room.dice_seed, me.pid, Object.keys(picks).length, 0, SLOTS.filter((s) => !picks[s]), taken);
       rolls.push(next);
     }
     await db.from("jugadores").update({ picks, rolls, done }).eq("sala", code).eq("pid", me.pid);

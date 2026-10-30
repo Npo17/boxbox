@@ -753,7 +753,8 @@ async function roomPick(slot,idx,it){
     else { picks={...s.me.picks}; PRE=s.next||null; renderSlots() }        // respuesta liviana: trae ya la tirada siguiente
   }catch(e){
     toast(e.message); PRE=null; picks=prev.picks; year=prev.year; offer=prev.offer; cat=prev.cat;
-    renderSlots(); if(year){ renderTabs(); renderList() } else poll();
+    renderSlots(); if(year){ renderTabs(); renderList() }
+    if(e.status===409){ try{ const j=await api('roll',{reroll:false}); showRoll(j.roll) }catch(e2){ poll() } }    // otro jugador se llevó esa pieza: se muestra tu tirada actualizada
   }
 }
 

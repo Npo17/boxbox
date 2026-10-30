@@ -177,6 +177,12 @@ for (let y = FIRST; y <= LAST; y++) {
   console.log(`${y}: ${season.piloto.length} pilotos, ${season.coche.length} coches${cur ? ' (curada)' : ''}`);
 }
 
+// Medias fijadas a mano (scripts/ajustes-medias.json): se aplican al final, sobre lo que salga de las fuentes.
+for (const [k, v] of Object.entries(JSON.parse(fs.readFileSync(new URL('./ajustes-medias.json', import.meta.url), 'utf8')))) {
+  if (k[0] === '_') continue;
+  const [nom, y] = k.split('|');
+  for (const it of out[y]?.piloto ?? []) if (it[0] === nom) it[2] = v;
+}
 fs.writeFileSync(OUT, JSON.stringify(out).replace(/\],"/g, '],\n"'));
 const total = Object.values(out).reduce((a, s) => a + s.piloto.length, 0);
 console.log(`Listo: ${Object.keys(out).length} temporadas, ${total} pilotos-temporada → ${OUT}`);
