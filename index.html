@@ -969,7 +969,7 @@ $('carFriends').onclick=()=>{ $('fCareer').checked=true; $('fErr').textContent='
 // El juego está escrito en español (idioma por defecto). Cada idioma es un diccionario en lang/xx.js:
 // s = textos exactos, p = textos con partes variables ({0}, {1}…), w = palabras sueltas (países, meses).
 // Los textos de la página se traducen en el navegador, incluidos los que el juego genera después (un observador los ve aparecer).
-const LANGS=[['pt','PT'],['en','EN'],['es','ES']], LOCALES={es:'es',en:'en-US',pt:'pt-BR'};
+const LANGS=[['pt','PT'],['en','EN'],['es','ES'],['fr','FR'],['pl','PL'],['it','IT'],['de','DE'],['tr','TR']], LOCALES={es:'es',en:'en-US',pt:'pt-BR',fr:'fr-FR',pl:'pl-PL',it:'it-IT',de:'de-DE',tr:'tr-TR'};
 let LANG='es', TR=null;
 const T_ORIG=new WeakMap(), T_LAST=new WeakMap(), A_ORIG=new WeakMap(), ATTRS=['placeholder','title','aria-label'];
 function trCompile(d){
