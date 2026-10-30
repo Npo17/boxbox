@@ -31,6 +31,8 @@ try {
   ok((await call(a, 'nick', { nickname: na })).nick === na, 'apodo guardado');
   ok((await call(b, 'nick', { nickname: nb })).nick === nb, 'el otro también elige apodo');
   ok((await call(c, 'nick', { nickname: na })).status === 409, 'no se puede repetir un apodo');
+  const nc = 'Caro' + Date.now().toString(36).slice(-4);
+  ok((await call(c, 'nick', { nickname: nc })).nick === nc, 'un tercero elige su apodo');
   ok((await call(a, 'solicitar', { nick: 'noExisteNadie' })).status === 404, 'apodo que no existe: aviso');
   ok((await call(a, 'solicitar', { uid: a.id })).status === 400, 'no podés agregarte a vos mismo');
   let r = await call(a, 'solicitar', { nick: nb });
@@ -49,7 +51,6 @@ try {
   ok(p.relacion === 'amigo' && p.stats && Array.isArray(p.trofeos), 'un amigo ve el perfil completo (estadísticas y trofeos)');
   ok((await call(a, 'solicitar', { uid: b.id })).amigos.length === 1, 'pedir de nuevo a un amigo no duplica nada');
   // pedidos cruzados: c y a se piden a la vez -> quedan amigos
-  await call(c, 'nick', { nickname: 'Caro' + Date.now().toString(36).slice(-4) });
   await call(c, 'solicitar', { uid: a.id }); r = await call(a, 'solicitar', { uid: c.id });
   ok(r.amigos.length === 2, 'si los dos se piden, quedan amigos sin aceptar');
   // la sala guarda quién es cada jugador con sesión

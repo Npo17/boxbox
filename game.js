@@ -1088,9 +1088,10 @@ function frPresence(){
   }
   for(const [uid,ch] of Object.entries(FR_CH)) if(!ids.has(uid)){ try{ sb.removeChannel(ch) }catch(e){} delete FR_CH[uid]; delete FR_ON[uid] }
   for(const uid of ids) if(!FR_CH[uid]){
-    const ch=sb.channel('p-'+uid);
-    ch.on('presence',{event:'sync'},()=>{ const on=Object.keys(ch.presenceState()).length>0; if(FR_ON[uid]!==on){ FR_ON[uid]=on; if($('s-friends').classList.contains('on')) renderFriends(); if($('mFriend').classList.contains('open')&&FRP&&FRP.uid===uid) paintFriend() } });
-    ch.subscribe(); FR_CH[uid]=ch;
+    // Un canal que solo mira no recibe la presencia: tiene que anunciarse también (con otra clave: "o-<yo>"). El amigo está en línea si en su canal figura su propia clave.
+    const ch=sb.channel('p-'+uid,{config:{presence:{key:'o-'+USER.id}}});
+    ch.on('presence',{event:'sync'},()=>{ const on=!!ch.presenceState()[uid]; if(FR_ON[uid]!==on){ FR_ON[uid]=on; if($('s-friends').classList.contains('on')) renderFriends(); if($('mFriend').classList.contains('open')&&FRP&&FRP.uid===uid) paintFriend() } });
+    ch.subscribe(st=>{ if(st==='SUBSCRIBED') ch.track({o:1}) }); FR_CH[uid]=ch;
   }
 }
 async function frLoad(){
