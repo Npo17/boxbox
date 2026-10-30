@@ -346,7 +346,11 @@ async function handle(body: Record<string, any>) {
       next = await rollFor(room.dice_seed, me.pid, Object.keys(picks).length, 0, SLOTS.filter((s) => !picks[s]), taken);
       rolls.push(next);
     }
-    await db.from("jugadores").update({ picks, rolls, done }).eq("sala", code).eq("pid", me.pid);
+    // Solo se guarda si el auto sigue como estaba al leerlo: si dos elecciones llegan a la vez, la segunda no pisa a la primera.
+    const upd = await db.from("jugadores").update({ picks, rolls, done }).eq("sala", code).eq("pid", me.pid)
+      .filter("picks", "eq", JSON.stringify(me.picks)).select("pid");
+    if (upd.error) throw new Fail("No se pudo guardar tu elección. Probá de nuevo.", 500);
+    if (!upd.data?.length) throw new Fail("Tu elección anterior todavía se estaba guardando. Probá de nuevo.", 409);
     if (!done) return { ok: true, now: Date.now(), done: false, next, me: { pid: me.pid, picks, rerolls: me.rerolls, current: next } };   // respuesta liviana
     room = await maybeLock(room);                                      // solo cuando se completa un auto puede cerrarse el armado
     return { ...(await stateFor(room, await auth(code, body.pid, body.secret))), done: true };

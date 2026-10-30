@@ -642,8 +642,9 @@ function enterRoom(state){
   clearInterval(tickT); tickT=setInterval(paintTimer,500);
   onState(state);
 }
+let PICKING=false, MUT=0;        // PICKING: hay una elección en camino; MUT cambia con cada elección (para descartar respuestas viejas)
 async function poll(){
-  try{ onState(await api('state')) }
+  try{ const m0=MUT, s=await api('state'); if(PICKING||MUT!==m0) return; onState(s) }      // una consulta que salió antes de tu elección no puede borrarla
   catch(e){ if(e.status===403||e.status===404||e.status===410){forgetRoom();toast(e.message);location.href=location.pathname} }
 }
 function onState(s){
@@ -723,7 +724,7 @@ $('lLeave').onclick=async()=>{try{await api('leave')}catch(e){};forgetRoom();loc
 function renderRoomBuild(s){
   const first=!$('s-build').classList.contains('on');
   if(first){ resetBuild(2); PRE=null }                       // arranque limpio en cada fecha del modo carrera
-  picks={...s.me.picks}; rerolls=2-s.me.rerolls;
+  if(!PICKING){ picks={...s.me.picks}; rerolls=2-s.me.rerolls }
   if(first){
     $('st0').style.display=''; go('s-build',1);
     $('buildTitle').innerHTML=s.room.evento?`${s.room.evento.k==='sprint'?'Sprint':'GP'} <em>de ${esc(s.room.evento.gp)}</em>`:`Sala <em>${esc(s.room.code)}</em>`;
@@ -760,6 +761,8 @@ async function roomRoll(){
   catch(e){ toast(e.message); $('rollBtn').disabled=false; }
 }
 async function roomPick(slot,idx,it){
+  if(PICKING||picks[slot]) return;                               // ya hay una elección en camino (o esa casilla ya está ocupada): un segundo toque no hace nada
+  PICKING=true; MUT++;
   document.querySelectorAll('.pick').forEach(el=>el.style.pointerEvents='none');
   // Optimista: la pieza entra al auto al instante; si el servidor la rechaza, se deshace.
   const prev={picks:{...picks},year,offer,cat}, y=year;
@@ -769,13 +772,14 @@ async function roomPick(slot,idx,it){
   $('tabs').innerHTML=''; $('rbMine').textContent=Object.keys(picks).length>=5?'✅ Tu auto está listo. Esperando a los demás…':`Tu auto: ${Object.keys(picks).length}/5`;
   try{
     const s=await api('pick',{slot,idx});
-    if(s.players) onState(s);                                              // auto completo: estado completo de la sala
+    if(s.players){ picks={...s.me.picks}; PICKING=false; onState(s) }      // auto completo: estado completo de la sala
     else { picks={...s.me.picks}; PRE=s.next||null; renderSlots() }        // respuesta liviana: trae ya la tirada siguiente
   }catch(e){
     toast(e.message); PRE=null; picks=prev.picks; year=prev.year; offer=prev.offer; cat=prev.cat;
     renderSlots(); if(year){ renderTabs(); renderList() }
-    if(e.status===409){ try{ const j=await api('roll',{reroll:false}); showRoll(j.roll) }catch(e2){ poll() } }    // otro jugador se llevó esa pieza: se muestra tu tirada actualizada
-  }
+    PICKING=false; MUT++;
+    if(e.status===409){ try{ const st=await api('state'); picks={...st.me.picks}; renderSlots(); if(Object.keys(picks).length<5){ const j=await api('roll',{reroll:false}); showRoll(j.roll) } }catch(e2){ poll() } }    // otro jugador se llevó esa pieza o tu elección anterior se estaba guardando: se muestra tu auto y tu tirada al día
+  }finally{ PICKING=false; MUT++ }
 }
 
 // --- carrera sincronizada ---
