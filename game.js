@@ -1036,7 +1036,9 @@ async function syncDown(){
   else {
     // La cuenta manda: es lo que se ve en todos tus dispositivos.
     try{ localStorage.setItem(KEY,JSON.stringify(data.campeonato||{})); localStorage.setItem('boxbox_stats',JSON.stringify(data.stats||{races:0,wins:0,podiums:0,best:null})); localStorage.setItem('boxbox_historial',JSON.stringify(data.historial||[])); }catch(e){}
-    try{ const t=[...(data.trofeos||[])]; for(const x of loadTrofeos()) if(!t.some(y=>y.sala===x.sala)) t.push(x); localStorage.setItem('boxbox_trofeos',JSON.stringify(t.slice(0,50))) }catch(e){}
+    let faltan=false;
+    try{ const t=[...(data.trofeos||[])]; for(const x of loadTrofeos()) if(!t.some(y=>y.sala===x.sala)){ t.push(x); faltan=true } localStorage.setItem('boxbox_trofeos',JSON.stringify(t.slice(0,50))) }catch(e){}
+    if(faltan) await syncUp();   // trofeos que este navegador tenía y la cuenta no: subirlos para que los vean tus amigos
     toast('Campeonato cargado desde tu cuenta.');
   }
   if($('s-profile').classList.contains('on')) showProfile();
@@ -1066,7 +1068,7 @@ fetch(SB_URL+'/auth/v1/settings',{headers:{apikey:SB_KEY}}).then(r=>r.json()).th
 // Hace falta iniciar sesión con Google y tener apodo. Los pedidos y la lista viven en el servidor (función "amigos");
 // quién está conectado y las invitaciones viajan por Supabase Realtime (un canal por persona: "p-<id>").
 const FR_URL='https://vljuhibzzwtcswirunfr.supabase.co/functions/v1/amigos';
-let FR=null, FR_ON={}, FR_CH={}, FR_ME=null;
+let FR=null, FR_ON={}, FR_CH={}, FR_ME=null, FR_EDIT=false;
 async function frApi(action,extra={}){
   const headers={'Content-Type':'application/json'};
   try{ const {data}=await sb.auth.getSession(); if(data&&data.session) headers.Authorization='Bearer '+data.session.access_token }catch(e){}
@@ -1111,15 +1113,16 @@ function renderFriends(){
   if(!USER){ box.innerHTML=`<div class="note">Iniciá sesión con Google para usar amigos.</div><div class="cta-row" style="margin-top:12px"><button class="btn" id="frLogin"><span>Continuar con Google</span></button></div>`;
     $('frLogin').onclick=()=>signIn('?ver=amigos'); return }
   if(!FR){ box.innerHTML='<div class="note">Cargando…</div>'; return }
-  if(!FR.nick){ box.innerHTML=`<div class="note">Elegí tu apodo (es como te ven tus amigos y el ranking del desafío del día):</div>
-    <input id="frNick" maxlength="16" placeholder="Tu apodo" style="margin:10px 0"><div class="note" id="frErr" style="color:var(--red);min-height:18px"></div>
-    <button class="btn" id="frNickGo"><span>Guardar</span></button>`;
-    $('frNickGo').onclick=async()=>{ try{ FR=await frApi('nick',{nickname:$('frNick').value}); frPresence(); renderFriends() }catch(e){ $('frErr').textContent=e.message } }; return }
+  if(!FR.nick||FR_EDIT){ box.innerHTML=`<div class="note">${FR.nick?'Cambiá tu apodo (es como te ven tus amigos y el ranking del desafío del día):':'Elegí tu apodo (es como te ven tus amigos y el ranking del desafío del día):'}</div>
+    <input id="frNick" maxlength="16" placeholder="Tu apodo" value="${esc(FR.nick||'')}" style="margin:10px 0" autocomplete="off"><div class="note" id="frErr" style="color:var(--red);min-height:18px"></div>
+    <div class="cta-row"><button class="btn" id="frNickGo"><span>Guardar</span></button>${FR.nick?'<button class="btn ghost" id="frNickNo"><span>Cancelar</span></button>':''}</div>`;
+    $('frNickGo').onclick=async()=>{ try{ FR=await frApi('nick',{nickname:$('frNick').value}); FR_EDIT=false; frPresence(); renderFriends(); toast('Apodo guardado') }catch(e){ $('frErr').textContent=e.message } };
+    if($('frNickNo')) $('frNickNo').onclick=()=>{ FR_EDIT=false; renderFriends() }; return }
   const inRoomNow=!!(ROOM&&RS&&RS.room&&RS.room.status==='lobby');
   const sec=(t,h)=>h?`<h3 style="margin:16px 0 6px">${t}</h3>${h}`:'';
   const row=(a,btns)=>`<div class="opt" style="align-items:center"><span>${frDot(a.uid)}<b>${esc(a.nick)}</b>${FR_ON[a.uid]?' <small style="color:var(--green)">En línea</small>':''}</span><span style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">${btns}</span></div>`;
   const btn=(k,uid,l,ex='')=>`<button class="btn ghost" data-fr="${k}" data-uid="${uid}" style="padding:6px 12px;font-size:13px" ${ex}><span>${l}</span></button>`;
-  box.innerHTML=`<div class="note">Tu apodo: <b>${esc(FR.nick)}</b></div>`
+  box.innerHTML=`<div class="note" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">Tu apodo: <b>${esc(FR.nick)}</b>${btn('apodo','','Cambiar apodo')}</div>`
     +sec('Pedidos recibidos',FR.recibidas.map(a=>row(a,btn('si',a.uid,'Aceptar')+btn('no',a.uid,'Rechazar'))).join(''))
     +`<h3 style="margin:16px 0 6px">Mis amigos</h3>`+(FR.amigos.length?FR.amigos.map(a=>row(a,btn('perfil',a.uid,'Ver perfil')+btn('inv',a.uid,'Invitar a la sala',FR_ON[a.uid]&&inRoomNow?'':'disabled'))).join(''):'<div class="note">Todavía no tenés amigos. Agregalos desde una sala o por apodo.</div>')
     +sec('Pedidos enviados',FR.enviadas.map(a=>row(a,btn('quitar',a.uid,'Cancelar'))).join(''))
@@ -1132,6 +1135,7 @@ async function frAccion(action,extra,errId){
   catch(e){ if(errId&&$(errId)) $(errId).textContent=e.message; else toast(e.message); if(e.code==='nick'&&!FR) showFriends() }
 }
 $('frBody').onclick=e=>{ const b=e.target.closest('[data-fr]'); if(!b||b.disabled) return; const uid=b.dataset.uid, k=b.dataset.fr;
+  if(k==='apodo'){ FR_EDIT=true; renderFriends(); return }
   if(k==='si') frAccion('responder',{uid,aceptar:true}); else if(k==='no') frAccion('responder',{uid,aceptar:false});
   else if(k==='quitar') frAccion('quitar',{uid}); else if(k==='perfil') showFriendProfile(uid); else if(k==='inv') frInvitar(uid) };
 // Perfil de otra persona (amigo: completo; si no, solo el apodo y el botón de agregar)
