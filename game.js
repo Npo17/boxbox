@@ -80,7 +80,7 @@ $('rollBtn').onclick=async()=>{
 };
 renderSlots();
 
-function go(screen,step){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$(screen).classList.add('on');
+function go(screen,step){if(screen!=='s-home')document.documentElement.classList.add('ready');document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$(screen).classList.add('on');
   ['st1','st2','st3','st4'].forEach((s,i)=>$(s).classList.toggle('on',i+1===step));window.scrollTo(0,0)}
 
 // ---------- Carrera: el motor (supabase/functions/_shared/engine.js) la calcula y acá se anima ----------
