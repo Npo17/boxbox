@@ -612,7 +612,7 @@ async function api(action,extra={}){
 }
 const srvToLocal=t=>Date.parse(t)-OFF;
 function rememberRoom(){try{localStorage.setItem(ROOM_KEY,JSON.stringify(ROOM))}catch(e){}}
-function forgetRoom(){rtClose();ROOM=null;clearInterval(pollT);clearInterval(tickT);try{localStorage.removeItem(ROOM_KEY)}catch(e){}}
+function forgetRoom(){rtClose();chatClose();ROOM=null;clearInterval(pollT);clearInterval(tickT);try{localStorage.removeItem(ROOM_KEY)}catch(e){}}
 function myName(){const n=$('fName').value.trim();try{localStorage.setItem('boxbox_nombre',n)}catch(e){};return n}
 try{$('fName').value=localStorage.getItem('boxbox_nombre')||''}catch(e){}
 
@@ -638,7 +638,7 @@ function enterRoom(state){
   MODE='room'; BLIND=false; rememberRoom();
   document.querySelectorAll('.modal').forEach(m=>m.classList.remove('open'));
   history.replaceState(null,'',location.pathname+'?sala='+encodeURIComponent(ROOM.code));
-  rtOpen(); pollN=0;
+  rtOpen(); chatOpen(); pollN=0;
   clearInterval(pollT); pollT=setInterval(()=>{ if(document.hidden) return; if(!RT_OK||++pollN%3===0) poll() },3000);   // sin canal en vivo: cada 3 s; con canal solo cada 9 s de respaldo (y solo con la pestaña a la vista)
   clearInterval(tickT); tickT=setInterval(paintTimer,500);
   onState(state);
@@ -649,7 +649,7 @@ async function poll(){
   catch(e){ if(e.status===403||e.status===404||e.status===410){forgetRoom();toast(e.message);location.href=location.pathname} }
 }
 function onState(s){
-  RS=s; const st=s.room.status;
+  RS=s; const st=s.room.status; chatDiff(s);
   if(st==='lobby') return renderLobby(s);
   if(st==='building') return renderRoomBuild(s);
   if(st==='racing' && s.room.modo==='carrera' && !raceShown){
@@ -659,6 +659,70 @@ function onState(s){
   }
   if(st==='racing' && !raceShown){ raceShown=true; clearInterval(pollT); rtClose(); READY.then(()=>startRoomRace(s)); }
 }
+
+// --- chat de la sala ---
+// Va por su propio canal en vivo (Supabase Realtime, solo difusión): no se guarda nada; al salir de la sala desaparece.
+let CH=null, CH_OK=false, CH_MSGS=[], CH_UNREAD=0, CH_OPEN=false, CH_MUTE=new Map(), CH_LAST=0, CH_RATE={}, CH_KNOWN=null;
+const CH_REACT=['🔥','😂','👏','😭','🏆'];
+function chatOpen(){
+  chatClose(); if(!sb||!ROOM) return;
+  try{
+    CH=sb.channel('chat-'+ROOM.code,{config:{broadcast:{self:false}}});
+    CH.on('broadcast',{event:'msg'},({payload})=>chatRecv(payload));
+    CH.subscribe(s=>{ CH_OK=(s==='SUBSCRIBED') });
+  }catch(e){ CH=null }
+  chatPaint();
+}
+function chatClose(){
+  try{ if(CH&&sb) sb.removeChannel(CH) }catch(e){}
+  CH=null; CH_OK=false; CH_MSGS=[]; CH_UNREAD=0; CH_OPEN=false; CH_KNOWN=null; CH_RATE={};
+  if($('chBtn')){ $('chBtn').style.display='none'; $('chBox').style.display='none' }
+}
+function chatPush(m){ CH_MSGS.push(m); if(CH_MSGS.length>100) CH_MSGS.shift(); if(!CH_OPEN&&!m.sys&&!m.mine) CH_UNREAD++; chatPaint() }
+function chatRecv(p){
+  if(!p||typeof p.t!=='string'||!p.pid||!ROOM||p.pid===ROOM.pid||CH_MUTE.has(p.pid)) return;
+  const pl=RS&&RS.players.find(x=>x.pid===p.pid); if(!pl) return;      // solo gente que está en la sala; el nombre sale de la sala, no del mensaje
+  const now=Date.now(), r=(CH_RATE[p.pid]||[]).filter(x=>now-x<5000); r.push(now); CH_RATE[p.pid]=r; if(r.length>5) return;
+  const t=p.t.slice(0,200).trim(); if(!t) return;
+  chatPush({pid:p.pid,name:pl.name,color:pl.color,t,react:!!p.r});
+}
+function chatSend(t,react){
+  t=String(t||'').trim().slice(0,200); if(!t||!CH) return false;
+  if(!CH_OK){ toast('Conectando el chat…'); return false }
+  const now=Date.now(); if(now-CH_LAST<1200){ toast('Más despacio…'); return false } CH_LAST=now;
+  CH.send({type:'broadcast',event:'msg',payload:{pid:ROOM.pid,t,r:react?1:0}}).catch(()=>{});
+  const me=RS&&RS.players.find(x=>x.pid===ROOM.pid);
+  chatPush({pid:ROOM.pid,name:me?me.name:'Yo',color:me&&me.color,t,mine:true,react:!!react}); return true;
+}
+function chatDiff(s){      // avisos de quién entra o sale
+  if(!CH) return; const ids=new Map(s.players.map(p=>[p.pid,p.name]));
+  if(CH_KNOWN){ for(const [id,n] of ids) if(!CH_KNOWN.has(id)) chatPush({sys:1,t:n+' entró a la sala'}); for(const [id,n] of CH_KNOWN) if(!ids.has(id)) chatPush({sys:1,t:n+' salió de la sala'}) }
+  CH_KNOWN=ids;
+}
+function chatPaint(){
+  const show=!!(ROOM&&CH); $('chBtn').style.display=show?'flex':'none';
+  $('chBadge').style.display=CH_UNREAD?'':'none'; $('chBadge').textContent=CH_UNREAD>9?'9+':CH_UNREAD;
+  if(!show){ $('chBox').style.display='none'; return }
+  $('chBox').style.display=CH_OPEN?'flex':'none'; if(!CH_OPEN) return;
+  const box=$('chMsgs'), atEnd=box.scrollTop+box.clientHeight>=box.scrollHeight-40;
+  box.innerHTML=CH_MSGS.length?CH_MSGS.map(m=>m.sys?`<div class="note" style="text-align:center;margin:0">${esc(m.t)}</div>`
+    :m.react?`<div><b style="color:${esc(m.color||'#fff')}">${esc(m.name)}</b> <span style="font-size:26px">${esc(m.t)}</span></div>`
+    :`<div><b style="color:${esc(m.color||'#fff')};${m.mine?'':'cursor:pointer'}" ${m.mine?'':`data-chmute="${esc(m.pid)}" title="Tocá para silenciar"`}>${esc(m.name)}</b> ${esc(m.t)}</div>`).join(''):'<div class="note" style="margin:0">Todavía no hay mensajes. Tocá un nombre para silenciar a alguien.</div>';
+  if(atEnd) box.scrollTop=box.scrollHeight;
+  const mu=$('chMuted'); mu.style.display=CH_MUTE.size?'':'none';
+  mu.innerHTML=[...CH_MUTE].map(([id,n])=>`Silenciado: <b>${esc(n)}</b> <button class="link" data-chun="${esc(id)}">dejar de silenciar</button>`).join('<br>');
+}
+function chatToggle(open){
+  CH_OPEN=open; if(open){ CH_UNREAD=0; $('chReact').innerHTML=CH_REACT.map(e=>`<button class="btn ghost" data-chr="${e}" style="padding:2px 10px;font-size:18px"><span>${e}</span></button>`).join('') }
+  chatPaint(); if(open){ $('chMsgs').scrollTop=$('chMsgs').scrollHeight; if(!matchMedia('(pointer:coarse)').matches) $('chIn').focus() }
+}
+$('chBtn').onclick=()=>chatToggle(!CH_OPEN);
+$('chClose').onclick=()=>chatToggle(false);
+$('chSend').onclick=()=>{ if(chatSend($('chIn').value)) $('chIn').value='' };
+$('chIn').onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); $('chSend').click() } };
+$('chReact').onclick=e=>{ const b=e.target.closest('[data-chr]'); if(b) chatSend(b.dataset.chr,true) };
+$('chMsgs').onclick=e=>{ const b=e.target.closest('[data-chmute]'); if(!b) return; CH_MUTE.set(b.dataset.chmute,b.textContent); CH_MSGS=CH_MSGS.filter(m=>m.pid!==b.dataset.chmute); chatPaint(); toast('Silenciaste a '+b.textContent) };
+$('chMuted').onclick=e=>{ const b=e.target.closest('[data-chun]'); if(b){ CH_MUTE.delete(b.dataset.chun); chatPaint() } };
 
 // --- sala de espera ---
 function renderLobby(s){
@@ -689,6 +753,7 @@ function celebrarCampeon(s){
   let seen=''; try{ seen=localStorage.getItem('boxbox_trofeo_visto')||'' }catch(e){}
   if(seen===key) return;
   try{ localStorage.setItem('boxbox_trofeo_visto',key) }catch(e){}
+  chatPush({sys:1,t:`🏆 ${c.name} es campeón de pilotos 2026`});
   if(mine){ const t=loadTrofeos().filter(x=>x.sala!==ROOM.code); t.unshift({anio:2026,sala:ROOM.code,pts:c.pts,fecha:new Date().toLocaleDateString(LOCALES[LANG]||'es'),final:c.final});
     try{ localStorage.setItem('boxbox_trofeos',JSON.stringify(t.slice(0,50))) }catch(e){} if(USER) syncUp() }
   $('trEmoji').textContent=mine?'🏆':'🥇';
