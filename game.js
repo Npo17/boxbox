@@ -373,7 +373,7 @@ $('toResult').onclick=()=>{
   const {pos,dnf,grid,stops}=RESULT, pts=dnf?0:(ptsTable()[pos-1]||0), p=picks.piloto, career=MODE==='career', special=MODE==='daily'||MODE==='friendly'||career;
   ev('carrera_fin',{modo:MODE,pos:dnf?0:pos,dnf:!!dnf}); $('pos').textContent=dnf?'DNF':'P'+pos; $('pos').className='pos'+(!dnf&&pos===1?' p1':'');
   $('resmsg').textContent=career?`${dnf?'Abandono: sin puntos':'+'+pts+' punto'+(pts===1?'':'s')} · tu temporada 2026 va por ${carPts()} puntos`:special?(MODE==='daily'?'Desafío del día: no suma a tu campeonato de pilotos':'Amistoso: no cuenta para el ranking ni para la racha'):pts?`+${pts} puntos para ${p.n} en tu campeonato`:dnf?'Abandono: sin puntos':'Sin puntos esta vez';
-  SHARE=buildShare(RESULT); $('share').innerHTML=esc(SHARE.text).replace(/\n/g,'<br>');
+  SHARE=buildShare(RESULT); $('share').innerHTML=esc(SHARE.text).replace(/\n/g,'<br>'); paintShare();
   if(MODE==='room'){
     const rows=RESULT.cls.map((c,i)=>({c,i})).filter(x=>x.c.human);
     $('roomRes').innerHTML=`<h3 style="margin:0 0 8px;font-size:13px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase">Resultado de la sala ${esc(ROOM.code)}</h3>`+
@@ -989,75 +989,83 @@ function buildShare(R,D){
   const head=MODE==='career'?`🏁 BoxBox · Modo carrera 2026${RACE&&RACE.sprint?' · Sprint':''}`:MODE==='daily'?`🏁 BoxBox · Desafío del día ${today.toLocaleDateString('es')}`:MODE==='friendly'?'🏁 BoxBox · Desafío amistoso':MODE==='room'?'🏁 BoxBox · Carrera con amigos':'🏁 BoxBox';
   const line=R.dnf?`💥 Abandoné en la vuelta ${R.dnf} (largué P${R.grid})`:`${medal} P${R.pos}/22 (largué P${R.grid})`;
   const text=`${head}\n${RACE&&RACE.sprint?'Sprint':'GP'} de ${GPN()}${RACE&&RACE.rain?' 🌧️ (con lluvia)':''}\n${line}\n${team}\n📊 Media total ${avg}\n${D&&!D.error?`#${D.rank} de ${D.total} hoy${D.streak>1?` · 🔥 ${D.streak} días`:''}\n`:''}¿Me ganás? 👉 ${url}`;
-  $('shWa').href='https://wa.me/?text='+encodeURIComponent(text);
-  $('shX').href='https://x.com/intent/tweet?text='+encodeURIComponent(text);
   const heads={career:'Modo carrera 2026'+(RACE&&RACE.sprint?' · Sprint':''),daily:'Desafío del día',friendly:'Desafío amistoso',room:'Carrera con amigos'};
   const data={head:heads[MODE]||'Carrera',gp:GPN(),sprint:!!(RACE&&RACE.sprint),rain:!!(RACE&&RACE.rain),pos:R.pos,dnf:R.dnf,grid:R.grid,avg,
     team:SLOTS.map(([k,l])=>({l,n:picks[k].n,y:picks[k].y,r:picks[k].r})),daily:D&&!D.error?{rank:D.rank,total:D.total,streak:D.streak}:null,url};
   return {text,url,data};
 }
-async function copyShare(){
+// Compartir: la imagen es lo que se comparte, se copia y se ve en pantalla. Si por algo no se pudo armar, se usa el texto de siempre.
+let SHIMG=null, SHSEQ=0;
+const MOVIL=()=>matchMedia('(pointer:coarse)').matches;
+async function copyText(){
   try{await navigator.clipboard.writeText(SHARE.text);toast('¡Resultado copiado! Pégalo donde quieras.')}
   catch(e){prompt('Copia tu resultado:',SHARE.text)}
 }
-$('shCopy').onclick=()=>{ ev('compartir',{via:'copiar'}); copyShare() };
-['shWa','shX'].forEach(k=>$(k).addEventListener('click',()=>ev('compartir',{via:k==='shWa'?'whatsapp':'x'})));
-// Tarjeta en imagen (1080x1350) para compartir el resultado: se dibuja en el navegador, no se sube a ningún lado.
-let SHIMG=null;
-async function shareImageBuild(){
-  const D=SHARE&&SHARE.data; if(!D) return null;
-  try{ await Promise.all([document.fonts.load('900 80px "Titillium Web"'),document.fonts.load('700 30px "Titillium Web"')]) }catch(e){}
-  const T=s=>(typeof LANG!=='undefined'&&LANG!=='es'&&TR)?trText(s):s, F='"Titillium Web",Arial,sans-serif';
-  const W=1080,H=1350,c=document.createElement('canvas'); c.width=W; c.height=H; const x=c.getContext('2d');
-  const bg=x.createLinearGradient(0,0,0,H); bg.addColorStop(0,'#1d1f28'); bg.addColorStop(1,'#0c0d12'); x.fillStyle=bg; x.fillRect(0,0,W,H);
-  const rg=x.createRadialGradient(W*.88,40,0,W*.88,40,760); rg.addColorStop(0,'rgba(255,59,48,.30)'); rg.addColorStop(1,'rgba(255,59,48,0)'); x.fillStyle=rg; x.fillRect(0,0,W,H);
-  for(let i=0;i<W/60+1;i++){ x.fillStyle=i%2?'#fff':'#ff3b30'; x.fillRect(i*60,0,60,20); x.fillRect(i*60,H-20,60,20) }
-  const txt=(s,px,py,o={})=>{ x.font=`${o.it?'italic ':''}${o.w||700} ${o.s||36}px ${F}`; x.fillStyle=o.c||'#f2f2f5'; x.textAlign=o.a||'left'; x.textBaseline=o.b||'alphabetic'; if(o.sp) x.letterSpacing=o.sp+'px'; else x.letterSpacing='0px'; x.fillText(s,px,py) };
-  // logo
-  txt('BOX',70,130,{w:900,s:92,it:1,c:'#ffd23f',sp:-3}); const bw=x.measureText('BOX').width; txt('BOX',70+bw+4,130,{w:900,s:92,it:1,c:'#ff3b30',sp:-3});
-  txt(T(D.head).toUpperCase(),W-70,112,{w:700,s:30,c:'#9a9db0',a:'right',sp:3});
-  // circuito
-  txt((D.sprint?T('Sprint'):T('Gran Premio')).toUpperCase(),70,230,{w:700,s:30,c:'#9a9db0',sp:4});
-  let gs=82; x.font=`italic 900 ${gs}px ${F}`; while(x.measureText(D.gp).width>W-140&&gs>40){ gs-=4; x.font=`italic 900 ${gs}px ${F}` }
-  txt(D.gp,70,230+gs+4,{w:900,s:gs,it:1,c:'#fff'});
-  if(D.rain) txt('🌧️ '+T('con lluvia'),70,230+gs+60,{w:700,s:32,c:'#4fc3f7'});
-  // posición
-  const py=620, big=D.dnf?'DNF':'P'+D.pos, col=D.dnf?'#ff3b30':D.pos===1?'#ffd23f':D.pos<=3?'#fff':'#f2f2f5';
-  txt(big,70,py,{w:900,s:300,it:1,c:col,sp:-8}); const pw=x.measureText(big).width;
-  if(!D.dnf) txt('/ 22',70+pw+24,py-6,{w:700,s:64,c:'#9a9db0'});
-  txt(D.dnf?T('Abandoné'):T('Largué')+' P'+D.grid,70,py+64,{w:700,s:38,c:'#9a9db0'});
-  if(!D.dnf&&D.pos===1) txt('🏆',W-170,py-70,{s:150,a:'left'});
-  // auto
-  let y=py+150; txt(T('MI AUTO').toUpperCase(),70,y,{w:700,s:26,c:'#9a9db0',sp:4}); y+=26;
-  for(const p of D.team){ y+=58; const cc=p.r>=95?'#b26bff':p.r>=90?'#2fd27a':p.r>=80?'#ffd23f':'#6b6f80';
-    x.fillStyle=cc; x.beginPath(); x.roundRect(70,y-30,30,30,6); x.fill();
-    txt(T(p.l),116,y-2,{w:700,s:32,c:'#9a9db0'}); txt(p.n+" '"+String(p.y).slice(2),380,y-2,{w:700,s:32}); txt(String(p.r),W-70,y-2,{w:900,s:36,c:cc,a:'right'}) }
-  y+=78; txt(T('Media total')+' '+D.avg,70,y,{w:900,s:40,c:'#ffd23f'});
-  if(D.daily){ txt('#'+D.daily.rank+' '+T('de')+' '+D.daily.total+' '+T('hoy')+(D.daily.streak>1?'  ·  🔥 '+D.daily.streak+' '+T('días'):''),W-70,y,{w:700,s:34,a:'right'}) }
-  // pie
-  x.fillStyle='#ffd23f'; x.beginPath(); x.roundRect(70,H-176,520,78,39); x.fill(); txt('boxf1box.com',330,H-122,{w:900,s:44,c:'#1a1300',a:'center'});
-  txt(T('¿Me ganás?'),620,H-122,{w:900,s:44,it:1});
-  txt(T('Proyecto de fans · sin afiliación con la F1, equipos ni pilotos'),W/2,H-52,{w:700,s:22,c:'#6b6f80',a:'center'});
-  return new Promise(res=>c.toBlob(b=>res(b),'image/png'));
+function imgDownload(){ if(!SHIMG) return; const a=document.createElement('a'); a.href=URL.createObjectURL(SHIMG); a.download='boxbox-resultado.png'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),4000) }
+async function imgCopy(){ try{ await navigator.clipboard.write([new ClipboardItem({'image/png':SHIMG})]); return true }catch(e){ return false } }
+// Tarjeta en imagen (1080x1350) para compartir el resultado: se dibuja en el navegador, no se sube a ningún lado.
+async function shareImageBuild(){
+  const D=SHARE&&SHARE.data; if(!D) return null;
+  try{ await Promise.all([document.fonts.load('900 80px "Titillium Web"'),document.fonts.load('700 30px "Titillium Web"')]) }catch(e){}
+  const T=s=>(typeof LANG!=='undefined'&&LANG!=='es'&&TR)?trText(s):s, F='"Titillium Web",Arial,sans-serif';
+  const W=1080,H=1350,c=document.createElement('canvas'); c.width=W; c.height=H; const x=c.getContext('2d');
+  const bg=x.createLinearGradient(0,0,0,H); bg.addColorStop(0,'#1d1f28'); bg.addColorStop(1,'#0c0d12'); x.fillStyle=bg; x.fillRect(0,0,W,H);
+  const rg=x.createRadialGradient(W*.88,40,0,W*.88,40,760); rg.addColorStop(0,'rgba(255,59,48,.30)'); rg.addColorStop(1,'rgba(255,59,48,0)'); x.fillStyle=rg; x.fillRect(0,0,W,H);
+  for(let i=0;i<W/60+1;i++){ x.fillStyle=i%2?'#fff':'#ff3b30'; x.fillRect(i*60,0,60,20); x.fillRect(i*60,H-20,60,20) }
+  const txt=(s,px,py,o={})=>{ x.font=`${o.it?'italic ':''}${o.w||700} ${o.s||36}px ${F}`; x.fillStyle=o.c||'#f2f2f5'; x.textAlign=o.a||'left'; x.textBaseline=o.b||'alphabetic'; if(o.sp) x.letterSpacing=o.sp+'px'; else x.letterSpacing='0px'; x.fillText(s,px,py) };
+  // logo
+  txt('BOX',70,130,{w:900,s:92,it:1,c:'#ffd23f',sp:-3}); const bw=x.measureText('BOX').width; txt('BOX',70+bw+4,130,{w:900,s:92,it:1,c:'#ff3b30',sp:-3});
+  txt(T(D.head).toUpperCase(),W-70,112,{w:700,s:30,c:'#9a9db0',a:'right',sp:3});
+  // circuito
+  txt((D.sprint?T('Sprint'):T('Gran Premio')).toUpperCase(),70,230,{w:700,s:30,c:'#9a9db0',sp:4});
+  let gs=82; x.font=`italic 900 ${gs}px ${F}`; while(x.measureText(D.gp).width>W-140&&gs>40){ gs-=4; x.font=`italic 900 ${gs}px ${F}` }
+  txt(D.gp,70,230+gs+4,{w:900,s:gs,it:1,c:'#fff'});
+  if(D.rain) txt('🌧️ '+T('con lluvia'),70,230+gs+60,{w:700,s:32,c:'#4fc3f7'});
+  // posición
+  const py=620, big=D.dnf?'DNF':'P'+D.pos, col=D.dnf?'#ff3b30':D.pos===1?'#ffd23f':D.pos<=3?'#fff':'#f2f2f5';
+  txt(big,70,py,{w:900,s:300,it:1,c:col,sp:-8}); const pw=x.measureText(big).width;
+  if(!D.dnf) txt('/ 22',70+pw+24,py-6,{w:700,s:64,c:'#9a9db0'});
+  txt(D.dnf?T('Abandoné'):T('Largué')+' P'+D.grid,70,py+64,{w:700,s:38,c:'#9a9db0'});
+  if(!D.dnf&&D.pos===1) txt('🏆',W-170,py-70,{s:150,a:'left'});
+  // auto
+  let y=py+150; txt(T('MI AUTO').toUpperCase(),70,y,{w:700,s:26,c:'#9a9db0',sp:4}); y+=26;
+  for(const p of D.team){ y+=58; const cc=p.r>=95?'#b26bff':p.r>=90?'#2fd27a':p.r>=80?'#ffd23f':'#6b6f80';
+    x.fillStyle=cc; x.beginPath(); x.roundRect(70,y-30,30,30,6); x.fill();
+    txt(T(p.l),116,y-2,{w:700,s:32,c:'#9a9db0'}); txt(p.n+" '"+String(p.y).slice(2),380,y-2,{w:700,s:32}); txt(String(p.r),W-70,y-2,{w:900,s:36,c:cc,a:'right'}) }
+  y+=78; txt(T('Media total')+' '+D.avg,70,y,{w:900,s:40,c:'#ffd23f'});
+  if(D.daily){ txt('#'+D.daily.rank+' '+T('de')+' '+D.daily.total+' '+T('hoy')+(D.daily.streak>1?'  ·  🔥 '+D.daily.streak+' '+T('días'):''),W-70,y,{w:700,s:34,a:'right'}) }
+  // pie
+  x.fillStyle='#ffd23f'; x.beginPath(); x.roundRect(70,H-176,520,78,39); x.fill(); txt('boxf1box.com',330,H-122,{w:900,s:44,c:'#1a1300',a:'center'});
+  txt(T('¿Me ganás?'),620,H-122,{w:900,s:44,it:1});
+  txt(T('Proyecto de fans · sin afiliación con la F1, equipos ni pilotos'),W/2,H-52,{w:700,s:22,c:'#6b6f80',a:'center'});
+  return new Promise(res=>c.toBlob(b=>res(b),'image/png'));
+}
+// Arma la imagen del resultado y la muestra en lugar del texto
+async function paintShare(){
+  const seq=++SHSEQ; SHIMG=null;
+  try{ const b=await shareImageBuild(); if(seq!==SHSEQ||!b) return;
+    SHIMG=new File([b],'boxbox-resultado.png',{type:'image/png'});
+    const old=$('shareImg').src; $('shareImg').src=URL.createObjectURL(b); if(old&&old.startsWith('blob:')) URL.revokeObjectURL(old);
+    $('shareImg').style.display=''; $('share').style.display='none' }
+  catch(e){ console.warn(e); $('shareImg').style.display='none'; $('share').style.display='' }
 }
-async function shareImageOpen(){
-  ev('compartir',{via:'imagen'});
-  $('shImg').disabled=true;
-  try{ const b=await shareImageBuild(); if(!b) return; SHIMG=new File([b],'boxbox-resultado.png',{type:'image/png'});
-    if($('shImgPrev').src) URL.revokeObjectURL($('shImgPrev').src); $('shImgPrev').src=URL.createObjectURL(b); openM('mShareImg') }
-  catch(e){ console.warn(e); toast('No se pudo armar la imagen.') } finally{ $('shImg').disabled=false }
+// via: 'nativo' | 'whatsapp' | 'x'. En el celular se abre el menú de compartir con la imagen; en la compu se copia la imagen y se abre el chat para pegarla.
+async function shareVia(via){
+  ev('compartir',{via}); const sitio=via==='whatsapp'?'https://wa.me/?text=':via==='x'?'https://x.com/intent/tweet?text=':null;
+  const corto=SHARE.data?('¿Me ganás? 👉 '+SHARE.url):SHARE.text;
+  if(!SHIMG){   // sin imagen: como antes
+    if(sitio){ window.open(sitio+encodeURIComponent(SHARE.text),'_blank','noopener'); return }
+    if(navigator.share){ try{ await navigator.share({title:'BoxBox',text:SHARE.text}); return }catch(e){ if(e.name==='AbortError') return } }
+    return copyText() }
+  const puede=navigator.canShare&&navigator.canShare({files:[SHIMG]});
+  if(puede&&(MOVIL()||via==='nativo')){ try{ await navigator.share({files:[SHIMG],title:'BoxBox',text:corto}); return }catch(e){ if(e.name==='AbortError') return } }
+  if(sitio) window.open(sitio+encodeURIComponent(corto),'_blank','noopener');     // se abre ya, para que el navegador no lo bloquee
+  if(await imgCopy()) toast('Imagen copiada: pégala en el chat (Ctrl+V)'); else { imgDownload(); toast('Imagen descargada: adjúntala en el chat') }
 }
-$('shImg').onclick=shareImageOpen;
-$('shImgDl').onclick=()=>{ if(!SHIMG) return; const a=document.createElement('a'); a.href=URL.createObjectURL(SHIMG); a.download='boxbox-resultado.png'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),4000); ev('compartir',{via:'descarga'}) };
-$('shImgShare').onclick=async()=>{ if(!SHIMG) return;
-  if(navigator.canShare&&navigator.canShare({files:[SHIMG]})){ try{ await navigator.share({files:[SHIMG],title:'BoxBox',text:SHARE.text}); ev('compartir',{via:'imagen-nativo'}); return }catch(e){ if(e.name==='AbortError') return } }
-  $('shImgDl').click() };
-
-$('shNative').onclick=async()=>{
-  ev('compartir',{via:'nativo'});
-  if(navigator.share){ try{await navigator.share({title:'BoxBox',text:SHARE.text});return}catch(e){ if(e.name==='AbortError') return } }
-  copyShare();
-};
+$('shNative').onclick=()=>shareVia('nativo');
+$('shWa').onclick=e=>{ e.preventDefault(); shareVia('whatsapp') };
+$('shX').onclick=e=>{ e.preventDefault(); shareVia('x') };
+$('shCopy').onclick=async()=>{ ev('compartir',{via:'copiar'}); if(!SHIMG) return copyText(); if(await imgCopy()) toast('¡Imagen copiada! Pégala donde quieras.'); else { imgDownload(); toast('Imagen descargada') } };
 
 // ---------- DESAFÍO DEL DÍA ----------
 // Una partida por día (se registra con tu cuenta de Google), la misma mano para todos y sin ver las medias.
@@ -1186,7 +1194,7 @@ function paintDailyResult(){
   else {
     box.innerHTML=`<div class="dres">Puesto <b>#${r.rank}</b> de ${r.total} hoy${r.streak?` · 🔥 <b>${r.streak}</b> ${r.streak===1?'día seguido':'días seguidos'}`:''}</div>
       <div class="row-actions" style="margin-top:8px"><button class="btn ghost" id="dSeeRank"><span>Ver el ranking</span></button></div>`;
-    SHARE=buildShare(RESULT,r); $('share').innerHTML=esc(SHARE.text).replace(/\n/g,'<br>');
+    SHARE=buildShare(RESULT,r); $('share').innerHTML=esc(SHARE.text).replace(/\n/g,'<br>'); paintShare();
   }
   const a=$('dRetryFin'); if(a) a.onclick=()=>{DRES=null;paintDailyResult();dailyFinish()};
   const b=$('dSeeRank'); if(b) b.onclick=()=>{BLIND=false;showDaily()};
