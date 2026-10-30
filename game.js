@@ -1024,6 +1024,10 @@ function paintUser(){
 function cloudRow(){ return {user_id:USER.id,campeonato:loadRaw(),stats:loadStats(),historial:loadHist(),trofeos:loadTrofeos(),updated_at:new Date().toISOString()} }
 async function syncUp(){
   if(!sb||!USER) return;
+  // Los trofeos nunca se pisan: antes de guardar se suman los que ya tiene la cuenta.
+  try{ const {data}=await sb.from('campeonatos').select('trofeos').eq('user_id',USER.id).maybeSingle();
+    const t=[...loadTrofeos()]; for(const x of (data&&data.trofeos)||[]) if(!t.some(y=>y.sala===x.sala)) t.push(x);
+    if(t.length) localStorage.setItem('boxbox_trofeos',JSON.stringify(t.slice(0,50))) }catch(e){}
   const {error}=await sb.from('campeonatos').upsert(cloudRow());
   if(error){ console.warn(error); toast('No se pudo guardar en tu cuenta. Se guardó en este navegador.'); }
 }
