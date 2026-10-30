@@ -14,7 +14,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 import DATA from "../_shared/temporadas.json" with { type: "json" };
 // Ofertas y reglas: el mismo motor que usa el juego en el navegador (una sola fuente de verdad).
-import { makeOffer, mulberry32, yearsFor, runRace, humanFromPicks, eventos2026, PTS, SPRINT_PTS, SPRINT_LAPS, LAPS } from "../_shared/engine.js";
+import { makeOffer, mulberry32, yearsFor, runRace, humanFromPicks, eventos2026, campeonato, PTS, SPRINT_PTS, SPRINT_LAPS, LAPS } from "../_shared/engine.js";
 import TRACKS from "../_shared/circuitos.json" with { type: "json" };
 
 type Item = [string, string, number];
@@ -193,6 +193,7 @@ async function maybeClose(room: Record<string, any>, known?: Record<string, any>
     puntos[p.pid] = (puntos[p.pid] ?? 0) + pts;
     const win = !!c && !c.dnf && c.pos === 1;
     bump(tabs.p, p.picks?.piloto?.n ?? "?", pts, win); bump(tabs.c, p.picks?.coche?.n ?? "?", pts, win);
+    if (win) { puntos._w = { ...(puntos._w ?? {}) }; puntos._w[p.pid] = (puntos._w[p.pid] ?? 0) + 1; }      // victorias por jugador (desempate del campeonato)
     ultimo[p.pid] = { pos: c?.pos ?? 22, dnf: c?.dnf ? 1 : 0, pts };
   }
   puntos._t = tabs;
@@ -220,6 +221,10 @@ async function stateFor(room: Record<string, any>, me: Record<string, any> | nul
       puntos: room.modo === "carrera" ? (room.puntos ?? {}) : undefined,
       ultimo: room.modo === "carrera" && room.cerrada ? (room.ultimo ?? {}) : undefined,
       cerrada: !!room.cerrada,
+      campeon: room.modo === "carrera" ? (() => {
+        const c = campeonato(EVENTOS, room.ronda ?? 0, !!room.cerrada, room.puntos ?? {}, (room.puntos ?? {})._w ?? {}, players.length);
+        return c ? { ...c, name: players.find((p: any) => p.pid === c.pid)?.name ?? "?" } : null;
+      })() : undefined,
     },
     players: players.map((p) => ({
       pid: p.pid, name: p.name, color: p.color, done: p.done,

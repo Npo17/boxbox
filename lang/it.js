@@ -1,6 +1,9 @@
 // Italiano. s = testi esatti; p = testi con parti variabili ({0}, {1}…); w = parole singole (paesi).
 export default {
   s: {
+    "Trofeos": "Trofei",
+    "¡Sos el campeón de pilotos 2026!": "Sei il campione piloti 2026!",
+    "Todavía no ganaste ningún trofeo. Ganá el campeonato de pilotos en una sala de carrera con amigos.": "Non hai ancora vinto nessun trofeo. Vinci il campionato piloti in una sala carriera con gli amici.",
     "Campeonato de constructores": "Campionato costruttori",
     "Constructor": "Costruttore",
     "Jugadores": "Giocatori",
@@ -97,6 +100,17 @@ export default {
     "¡POLE POSITION!": "POLE POSITION!", "¡lluvia!": "pioggia!", "Pronóstico": "Previsione", "Bahrein en Malasia": "Bahrein in Malesia", "LARGADA / META": "PARTENZA / ARRIVO"
   },
   p: {
+    "Terminó la temporada con {0} puntos.": "Ha chiuso la stagione con {0} punti.",
+    "Campeón matemático: nadie lo puede alcanzar con los puntos que quedan. Tiene {0} puntos.": "Campione matematico: nessuno può raggiungerlo con i punti rimasti. Ha {0} punti.",
+    "🏆 ¡{0} es campeón de pilotos 2026!": "🏆 {0} è il campione piloti 2026!",
+    "🏆 Sos el campeón de pilotos 2026 · {0} puntos": "🏆 Sei il campione piloti 2026 · {0} punti",
+    "🏆 Sos el campeón de pilotos 2026 · {0} puntos (campeón matemático)": "🏆 Sei il campione piloti 2026 · {0} punti (campione matematico)",
+    "🏆 Campeón de pilotos 2026: {0} · {1} puntos": "🏆 Campione piloti 2026: {0} · {1} punti",
+    "🏆 Campeón de pilotos 2026: {0} · {1} puntos (campeón matemático)": "🏆 Campione piloti 2026: {0} · {1} punti (campione matematico)",
+    "🏆 Campeón de pilotos {0}": "🏆 Campione piloti {0}",
+    "{0} · sala {1}": "{0} · sala {1}",
+    "{0} pts": "{0} pt",
+    "{0} pts (campeón matemático)": "{0} pt (campione matematico)",
     "{0} mar": "{0} mar", "{0} may": "{0} mag", "{0} jun": "{0} giu", "{0} jul": "{0} lug", "{0} ago": "{0} ago", "{0} sep": "{0} set", "{0} oct": "{0} ott", "{0} nov": "{0} nov", "{0} dic": "{0} dic",
     "Re-sortear: {0} restantes": "Rilanci: {0} rimasti",
     "{0} de {1} disponibles en esta tirada": "{0} su {1} disponibili in questo lancio",

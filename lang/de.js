@@ -1,6 +1,9 @@
 // Deutsch. s = exakte Texte; p = Texte mit variablen Teilen ({0}, {1}…); w = einzelne Wörter (Länder).
 export default {
   s: {
+    "Trofeos": "Trophäen",
+    "¡Sos el campeón de pilotos 2026!": "Du bist der Fahrermeister 2026!",
+    "Todavía no ganaste ningún trofeo. Ganá el campeonato de pilotos en una sala de carrera con amigos.": "Du hast noch keine Trophäe gewonnen. Gewinne die Fahrermeisterschaft in einem Karriereraum mit Freunden.",
     "Campeonato de constructores": "Konstrukteursmeisterschaft",
     "Constructor": "Konstrukteur",
     "Jugadores": "Spieler",
@@ -97,6 +100,17 @@ export default {
     "¡POLE POSITION!": "POLE POSITION!", "¡lluvia!": "Regen!", "Pronóstico": "Vorhersage", "Bahrein en Malasia": "Bahrain in Malaysia", "LARGADA / META": "START / ZIEL"
   },
   p: {
+    "Terminó la temporada con {0} puntos.": "Er hat die Saison mit {0} Punkten beendet.",
+    "Campeón matemático: nadie lo puede alcanzar con los puntos que quedan. Tiene {0} puntos.": "Rechnerischer Meister: Mit den verbleibenden Punkten kann ihn niemand mehr einholen. Er hat {0} Punkte.",
+    "🏆 ¡{0} es campeón de pilotos 2026!": "🏆 {0} ist Fahrermeister 2026!",
+    "🏆 Sos el campeón de pilotos 2026 · {0} puntos": "🏆 Du bist der Fahrermeister 2026 · {0} Punkte",
+    "🏆 Sos el campeón de pilotos 2026 · {0} puntos (campeón matemático)": "🏆 Du bist der Fahrermeister 2026 · {0} Punkte (rechnerischer Meister)",
+    "🏆 Campeón de pilotos 2026: {0} · {1} puntos": "🏆 Fahrermeister 2026: {0} · {1} Punkte",
+    "🏆 Campeón de pilotos 2026: {0} · {1} puntos (campeón matemático)": "🏆 Fahrermeister 2026: {0} · {1} Punkte (rechnerischer Meister)",
+    "🏆 Campeón de pilotos {0}": "🏆 Fahrermeister {0}",
+    "{0} · sala {1}": "{0} · Raum {1}",
+    "{0} pts": "{0} Pkt",
+    "{0} pts (campeón matemático)": "{0} Pkt (rechnerischer Meister)",
     "{0} mar": "{0}. Mär.", "{0} may": "{0}. Mai", "{0} jun": "{0}. Juni", "{0} jul": "{0}. Juli", "{0} ago": "{0}. Aug.", "{0} sep": "{0}. Sept.", "{0} oct": "{0}. Okt.", "{0} nov": "{0}. Nov.", "{0} dic": "{0}. Dez.",
     "Re-sortear: {0} restantes": "Neu würfeln: {0} übrig",
     "{0} de {1} disponibles en esta tirada": "{0} von {1} in diesem Wurf verfügbar",

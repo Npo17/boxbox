@@ -568,6 +568,8 @@ function showChampPage(){$('st0').style.display='none';$('cpBody').innerHTML=cha
 function showProfile(){$('st0').style.display='none';const s=loadStats();
   $('pStats').innerHTML=`<div><b>${s.races}</b>Carreras</div><div><b>${s.wins}</b>Victorias</div><div><b>${s.podiums}</b>Podios</div><div><b>${s.best?'P'+s.best:'—'}</b>Mejor</div>`;
   const h=loadHist();$('pHist').innerHTML=h.length?h.map((x,i)=>`<div class="opt"><span><b>Campeonato ${h.length-i}</b><br><small>${x.fecha} · ${x.carreras} carreras</small></span><small style="text-align:right">${x.podio.join('<br>')}</small></div>`).join(''):'Todavía no cerraste ningún campeonato.';
+  const tr=loadTrofeos();
+  $('pTrof').innerHTML=tr.length?tr.map(x=>`<div class="opt"><span><b>🏆 Campeón de pilotos ${x.anio}</b><br><small>${x.fecha} · sala ${esc(x.sala)}</small></span><small style="text-align:right">${x.pts} pts${x.final?'':' (campeón matemático)'}</small></div>`).join(''):'Todavía no ganaste ningún trofeo. Ganá el campeonato de pilotos en una sala de carrera con amigos.';
   go('s-profile',0)}
 (function(){const n=champRaces();$('hCount').textContent=n?`Carreras en tu campeonato actual: ${n}`:'Tu campeonato arranca en 0'})();
 // "Otra tirada": vuelve a jugar el mismo modo sin pasar por el inicio
@@ -676,23 +678,41 @@ function renderLobby(s){
   }
 }
 // Modo carrera: fecha actual y tabla de puntos de la sala
+// Trofeos: se guardan en este navegador (los del campeonato de pilotos de las salas de carrera)
+function loadTrofeos(){ try{ return JSON.parse(localStorage.getItem('boxbox_trofeos'))||[] }catch(e){ return [] } }
+function celebrarCampeon(s){
+  const c=s.room.campeon; if(!c) return;
+  const mine=c.pid===ROOM.pid, key=ROOM.code+':'+c.pid+':'+(c.final?'f':'m');
+  let seen=''; try{ seen=localStorage.getItem('boxbox_trofeo_visto')||'' }catch(e){}
+  if(seen===key) return;
+  try{ localStorage.setItem('boxbox_trofeo_visto',key) }catch(e){}
+  if(mine){ const t=loadTrofeos().filter(x=>x.sala!==ROOM.code); t.unshift({anio:2026,sala:ROOM.code,pts:c.pts,fecha:new Date().toLocaleDateString(LOCALES[LANG]||'es'),final:c.final});
+    try{ localStorage.setItem('boxbox_trofeos',JSON.stringify(t.slice(0,50))) }catch(e){} }
+  $('trEmoji').textContent=mine?'🏆':'🥇';
+  $('trTitle').textContent=mine?'¡Sos el campeón de pilotos 2026!':`🏆 ¡${c.name} es campeón de pilotos 2026!`;
+  $('trTxt').textContent=(c.final?'Terminó la temporada con ':'Campeón matemático: nadie lo puede alcanzar con ')+(c.final?`${c.pts} puntos.`:`los puntos que quedan. Tiene ${c.pts} puntos.`);
+  openM('mTrophy');
+}
 function renderRoomCareer(s){
   clearTimeout(window.__pc); if(s.room.modo==='carrera'&&s.room.status==='racing'&&!s.room.cerrada) window.__pc=setTimeout(()=>{ if(!document.hidden) poll() },1500);   // todavía contando: volver a mirar enseguida
   const r=s.room, box=$('lCareer');
   if(r.modo!=='carrera'){ box.style.display='none'; return }
   const ev=r.evento, rows=s.players.map(p=>({p,pts:+(r.puntos||{})[p.pid]||0,u:(r.ultimo||{})[p.pid]})).sort((a,b)=>b.pts-a.pts);
   box.style.display='';
+  celebrarCampeon(s);
+  const camp=r.campeon;
+  const banner=camp?`<div style="background:rgba(255,210,63,.14);border:1px solid var(--yellow);border-radius:10px;padding:10px 14px;margin:0 0 10px;font-weight:900">🏆 ${camp.pid===ROOM.pid?'Sos el campeón de pilotos 2026':'Campeón de pilotos 2026: '+esc(camp.name)} · ${camp.pts} puntos${camp.final?'':' (campeón matemático)'}</div>`:'';
   const tab=LTAB, T=(r.puntos&&r.puntos._t)||{p:{},c:{}};
   const tabs=`<div style="display:flex;gap:6px;margin:0 0 8px">${[['j','Jugadores'],['p','Pilotos'],['c','Constructores']].map(([k,l])=>`<button class="btn ghost" data-tab="${k}" style="padding:6px 12px;font-size:13px;${k===tab?'border-color:var(--yellow);color:var(--yellow)':''}"><span>${l}</span></button>`).join('')}</div>`;
   box.onclick=e=>{ const b=e.target.closest('[data-tab]'); if(b){ LTAB=b.dataset.tab; renderRoomCareer(RS) } };
   if(tab!=='j'){
-    box.innerHTML=`<h3>🏁 Modo carrera 2026 · evento ${Math.min(r.ronda+1,r.total)} de ${r.total}</h3><div style="font-size:22px;font-weight:900;font-style:italic;margin:2px 0 10px">${ev?(ev.k==='sprint'?'Sprint':'GP')+' de '+esc(ev.gp):'Temporada terminada'}<small class="note"> ${ev?'· '+esc(ev.date):''}</small></div>${tabs}`
+    box.innerHTML=`<h3>🏁 Modo carrera 2026 · evento ${Math.min(r.ronda+1,r.total)} de ${r.total}</h3><div style="font-size:22px;font-weight:900;font-style:italic;margin:2px 0 10px">${ev?(ev.k==='sprint'?'Sprint':'GP')+' de '+esc(ev.gp):'Temporada terminada'}<small class="note"> ${ev?'· '+esc(ev.date):''}</small></div>${banner}${tabs}`
       +champBlock(tab==='p'?'Campeonato de pilotos':'Campeonato de constructores',tab==='p'?'Piloto':'Constructor',tab==='p'?T.p:T.c);
     return;
   }
   box.innerHTML=`<h3>🏁 Modo carrera 2026 · evento ${Math.min(r.ronda+1,r.total)} de ${r.total}</h3>
-    <div style="font-size:22px;font-weight:900;font-style:italic;margin:2px 0 10px">${ev?(ev.k==='sprint'?'Sprint':'GP')+' de '+esc(ev.gp):'Temporada terminada'}<small class="note"> ${ev?'· '+esc(ev.date):''}</small></div>${tabs}
-    <table class="cal"><thead><tr><th>#</th><th>Piloto</th><th>Última carrera</th><th style="text-align:right">Pts</th></tr></thead><tbody>${rows.map((x,i)=>`<tr class="${x.p.pid===ROOM.pid?'nx':''}"><td class="n">${i+1}</td><td><span class="c" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${x.p.color};margin-right:6px"></span>${esc(x.p.name)}</td><td>${x.u?(x.u.dnf?'DNF':`P${x.u.pos} (+${x.u.pts})`):''}</td><td class="pts">${x.pts}</td></tr>`).join('')}</tbody></table>`;
+    <div style="font-size:22px;font-weight:900;font-style:italic;margin:2px 0 10px">${ev?(ev.k==='sprint'?'Sprint':'GP')+' de '+esc(ev.gp):'Temporada terminada'}<small class="note"> ${ev?'· '+esc(ev.date):''}</small></div>${banner}${tabs}
+    <table class="cal"><thead><tr><th>#</th><th>Piloto</th><th>Última carrera</th><th style="text-align:right">Pts</th></tr></thead><tbody>${rows.map((x,i)=>`<tr class="${x.p.pid===ROOM.pid?'nx':''}"><td class="n">${i+1}</td><td><span class="c" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${x.p.color};margin-right:6px"></span>${camp&&camp.pid===x.p.pid?'🏆 ':''}${esc(x.p.name)}</td><td>${x.u?(x.u.dnf?'DNF':`P${x.u.pos} (+${x.u.pts})`):''}</td><td class="pts">${x.pts}</td></tr>`).join('')}</tbody></table>`;
 }
 $('lCopy').onclick=async()=>{const url=`${location.origin}${location.pathname}?sala=${ROOM.code}`;
   try{await navigator.clipboard.writeText(url);toast('Link copiado: '+url)}catch(e){prompt('Copia este link:',url)}};

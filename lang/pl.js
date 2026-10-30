@@ -1,6 +1,9 @@
 // Polski. s = dokładne teksty; p = teksty ze zmiennymi częściami ({0}, {1}…); w = pojedyncze słowa (kraje).
 export default {
   s: {
+    "Trofeos": "Trofea",
+    "¡Sos el campeón de pilotos 2026!": "Jesteś mistrzem kierowców 2026!",
+    "Todavía no ganaste ningún trofeo. Ganá el campeonato de pilotos en una sala de carrera con amigos.": "Nie zdobyłeś jeszcze żadnego trofeum. Wygraj mistrzostwa kierowców w pokoju kariery ze znajomymi.",
     "Campeonato de constructores": "Mistrzostwa konstruktorów",
     "Constructor": "Konstruktor",
     "Jugadores": "Gracze",
@@ -97,6 +100,17 @@ export default {
     "¡POLE POSITION!": "POLE POSITION!", "¡lluvia!": "deszcz!", "Pronóstico": "Prognoza", "Bahrein en Malasia": "Bahrajn w Malezji", "LARGADA / META": "START / META"
   },
   p: {
+    "Terminó la temporada con {0} puntos.": "Zakończył sezon z {0} punktami.",
+    "Campeón matemático: nadie lo puede alcanzar con los puntos que quedan. Tiene {0} puntos.": "Matematyczny mistrz: nikt go nie dogoni przy pozostałych punktach. Ma {0} punktów.",
+    "🏆 ¡{0} es campeón de pilotos 2026!": "🏆 {0} jest mistrzem kierowców 2026!",
+    "🏆 Sos el campeón de pilotos 2026 · {0} puntos": "🏆 Jesteś mistrzem kierowców 2026 · {0} pkt",
+    "🏆 Sos el campeón de pilotos 2026 · {0} puntos (campeón matemático)": "🏆 Jesteś mistrzem kierowców 2026 · {0} pkt (mistrz matematyczny)",
+    "🏆 Campeón de pilotos 2026: {0} · {1} puntos": "🏆 Mistrz kierowców 2026: {0} · {1} pkt",
+    "🏆 Campeón de pilotos 2026: {0} · {1} puntos (campeón matemático)": "🏆 Mistrz kierowców 2026: {0} · {1} pkt (mistrz matematyczny)",
+    "🏆 Campeón de pilotos {0}": "🏆 Mistrz kierowców {0}",
+    "{0} · sala {1}": "{0} · pokój {1}",
+    "{0} pts": "{0} pkt",
+    "{0} pts (campeón matemático)": "{0} pkt (mistrz matematyczny)",
     "{0} mar": "{0} mar", "{0} may": "{0} maj", "{0} jun": "{0} cze", "{0} jul": "{0} lip", "{0} ago": "{0} sie", "{0} sep": "{0} wrz", "{0} oct": "{0} paź", "{0} nov": "{0} lis", "{0} dic": "{0} gru",
     "Re-sortear: {0} restantes": "Ponowne losowanie: zostało {0}",
     "{0} de {1} disponibles en esta tirada": "{0} z {1} dostępnych w tym rzucie",

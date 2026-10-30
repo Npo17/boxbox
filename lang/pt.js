@@ -1,6 +1,9 @@
 // Português (Brasil). s = textos exatos; p = textos com partes variáveis ({0}, {1}…); w = palavras soltas (países).
 export default {
   s: {
+    "Trofeos": "Troféus",
+    "¡Sos el campeón de pilotos 2026!": "Você é o campeão de pilotos 2026!",
+    "Todavía no ganaste ningún trofeo. Ganá el campeonato de pilotos en una sala de carrera con amigos.": "Você ainda não ganhou nenhum troféu. Ganhe o campeonato de pilotos em uma sala de carreira com amigos.",
     "Campeonato de constructores": "Campeonato de construtores",
     "Constructor": "Construtor",
     "Jugadores": "Jogadores",
@@ -97,6 +100,17 @@ export default {
     "¡POLE POSITION!": "POLE POSITION!", "¡lluvia!": "chuva!", "Pronóstico": "Previsão", "Bahrein en Malasia": "Bahrein na Malásia", "LARGADA / META": "LARGADA / CHEGADA"
   },
   p: {
+    "Terminó la temporada con {0} puntos.": "Terminou a temporada com {0} pontos.",
+    "Campeón matemático: nadie lo puede alcanzar con los puntos que quedan. Tiene {0} puntos.": "Campeão matemático: ninguém pode alcançá-lo com os pontos que restam. Ele tem {0} pontos.",
+    "🏆 ¡{0} es campeón de pilotos 2026!": "🏆 {0} é o campeão de pilotos 2026!",
+    "🏆 Sos el campeón de pilotos 2026 · {0} puntos": "🏆 Você é o campeão de pilotos 2026 · {0} pontos",
+    "🏆 Sos el campeón de pilotos 2026 · {0} puntos (campeón matemático)": "🏆 Você é o campeão de pilotos 2026 · {0} pontos (campeão matemático)",
+    "🏆 Campeón de pilotos 2026: {0} · {1} puntos": "🏆 Campeão de pilotos 2026: {0} · {1} pontos",
+    "🏆 Campeón de pilotos 2026: {0} · {1} puntos (campeón matemático)": "🏆 Campeão de pilotos 2026: {0} · {1} pontos (campeão matemático)",
+    "🏆 Campeón de pilotos {0}": "🏆 Campeão de pilotos {0}",
+    "{0} · sala {1}": "{0} · sala {1}",
+    "{0} pts": "{0} pts",
+    "{0} pts (campeón matemático)": "{0} pts (campeão matemático)",
     "{0} mar": "{0} mar", "{0} may": "{0} mai", "{0} jun": "{0} jun", "{0} jul": "{0} jul", "{0} ago": "{0} ago", "{0} sep": "{0} set", "{0} oct": "{0} out", "{0} nov": "{0} nov", "{0} dic": "{0} dez",
     "Re-sortear: {0} restantes": "Sortear de novo: {0} restantes",
     "{0} de {1} disponibles en esta tirada": "{0} de {1} disponíveis nesta jogada",

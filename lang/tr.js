@@ -1,6 +1,9 @@
 // Türkçe. s = tam metinler; p = değişken parçalı metinler ({0}, {1}…); w = tek tek kelimeler (ülkeler).
 export default {
   s: {
+    "Trofeos": "Kupalar",
+    "¡Sos el campeón de pilotos 2026!": "2026 pilotlar şampiyonu sensin!",
+    "Todavía no ganaste ningún trofeo. Ganá el campeonato de pilotos en una sala de carrera con amigos.": "Henüz hiç kupa kazanmadın. Arkadaşlarınla bir kariyer odasında pilotlar şampiyonasını kazan.",
     "Campeonato de constructores": "Konstrüktörler şampiyonası",
     "Constructor": "Konstrüktör",
     "Jugadores": "Oyuncular",
@@ -97,6 +100,17 @@ export default {
     "¡POLE POSITION!": "POLE POZİSYONU!", "¡lluvia!": "yağmur!", "Pronóstico": "Tahmin", "Bahrein en Malasia": "Malezya'da Bahreyn", "LARGADA / META": "START / FİNİŞ"
   },
   p: {
+    "Terminó la temporada con {0} puntos.": "Sezonu {0} puanla bitirdi.",
+    "Campeón matemático: nadie lo puede alcanzar con los puntos que quedan. Tiene {0} puntos.": "Matematiksel şampiyon: kalan puanlarla kimse ona yetişemez. {0} puanı var.",
+    "🏆 ¡{0} es campeón de pilotos 2026!": "🏆 {0}, 2026 pilotlar şampiyonu!",
+    "🏆 Sos el campeón de pilotos 2026 · {0} puntos": "🏆 2026 pilotlar şampiyonu sensin · {0} puan",
+    "🏆 Sos el campeón de pilotos 2026 · {0} puntos (campeón matemático)": "🏆 2026 pilotlar şampiyonu sensin · {0} puan (matematiksel şampiyon)",
+    "🏆 Campeón de pilotos 2026: {0} · {1} puntos": "🏆 2026 pilotlar şampiyonu: {0} · {1} puan",
+    "🏆 Campeón de pilotos 2026: {0} · {1} puntos (campeón matemático)": "🏆 2026 pilotlar şampiyonu: {0} · {1} puan (matematiksel şampiyon)",
+    "🏆 Campeón de pilotos {0}": "🏆 Pilotlar şampiyonu {0}",
+    "{0} · sala {1}": "{0} · oda {1}",
+    "{0} pts": "{0} puan",
+    "{0} pts (campeón matemático)": "{0} puan (matematiksel şampiyon)",
     "{0} mar": "{0} Mar", "{0} may": "{0} May", "{0} jun": "{0} Haz", "{0} jul": "{0} Tem", "{0} ago": "{0} Ağu", "{0} sep": "{0} Eyl", "{0} oct": "{0} Eki", "{0} nov": "{0} Kas", "{0} dic": "{0} Ara",
     "Re-sortear: {0} restantes": "Yeniden çekme: {0} kaldı",
     "{0} de {1} disponibles en esta tirada": "Bu atışta {1} içinden {0} uygun",

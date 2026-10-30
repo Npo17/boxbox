@@ -1,6 +1,9 @@
 // English. s = exact texts; p = patterns with {0}, {1}… (the captured parts are kept as they are); w = words replaced inside any translated text.
 export default {
   s: {
+    "Trofeos": "Trophies",
+    "¡Sos el campeón de pilotos 2026!": "You are the 2026 drivers' champion!",
+    "Todavía no ganaste ningún trofeo. Ganá el campeonato de pilotos en una sala de carrera con amigos.": "You haven't won any trophy yet. Win the drivers' championship in a career room with friends.",
     "Campeonato de constructores": "Constructors' championship",
     "Constructor": "Constructor",
     "Jugadores": "Players",
@@ -99,6 +102,17 @@ export default {
     "Pronóstico": "Forecast", "Bahrein en Malasia": "Bahrain in Malaysia"
   },
   p: {
+    "Terminó la temporada con {0} puntos.": "He finished the season with {0} points.",
+    "Campeón matemático: nadie lo puede alcanzar con los puntos que quedan. Tiene {0} puntos.": "Mathematical champion: nobody can catch him with the points left. He has {0} points.",
+    "🏆 ¡{0} es campeón de pilotos 2026!": "🏆 {0} is the 2026 drivers' champion!",
+    "🏆 Sos el campeón de pilotos 2026 · {0} puntos": "🏆 You are the 2026 drivers' champion · {0} points",
+    "🏆 Sos el campeón de pilotos 2026 · {0} puntos (campeón matemático)": "🏆 You are the 2026 drivers' champion · {0} points (mathematical champion)",
+    "🏆 Campeón de pilotos 2026: {0} · {1} puntos": "🏆 2026 drivers' champion: {0} · {1} points",
+    "🏆 Campeón de pilotos 2026: {0} · {1} puntos (campeón matemático)": "🏆 2026 drivers' champion: {0} · {1} points (mathematical champion)",
+    "🏆 Campeón de pilotos {0}": "🏆 Drivers' champion {0}",
+    "{0} · sala {1}": "{0} · room {1}",
+    "{0} pts": "{0} pts",
+    "{0} pts (campeón matemático)": "{0} pts (mathematical champion)",
     "{0} mar": "{0} Mar", "{0} may": "{0} May", "{0} jun": "{0} Jun", "{0} jul": "{0} Jul", "{0} ago": "{0} Aug", "{0} sep": "{0} Sep", "{0} oct": "{0} Oct", "{0} nov": "{0} Nov", "{0} dic": "{0} Dec",
     "Re-sortear: {0} restantes": "Re-roll: {0} left",
     "{0} de {1} disponibles en esta tirada": "{0} of {1} available in this roll",

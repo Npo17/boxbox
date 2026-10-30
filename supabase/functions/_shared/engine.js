@@ -389,3 +389,17 @@ export const CAL_2026 = [
 // Eventos de una sala de carrera: en cada fin de semana con sprint, primero la sprint y después el GP (k = "sprint" | "gp").
 export const eventos2026 = () => CAL_2026.flatMap((c, i) => c.cancel ? [] :
   [...(c.sprint ? [{ i, k: "sprint", t: c.t, gp: c.gp, date: c.date }] : []), { i, k: "gp", t: c.t, gp: c.gp, date: c.date }]);
+
+// Campeonato de pilotos de una sala de carrera. Es campeón el líder cuando nadie puede alcanzarlo con los puntos que quedan
+// (GP: 25, sprint: 8), o al terminar la temporada. Con puntos iguales gana quien tenga más victorias.
+// eventos = eventos2026(); ronda = evento actual; cerrada = ya se contaron los puntos de ese evento; puntos = {pid: pts}; wins = {pid: victorias}.
+export function campeonato(eventos, ronda, cerrada, puntos, wins = {}, jugadores = 2) {
+  if (jugadores < 2) return null;                                   // con un solo jugador no hay a quién ganarle
+  const faltan = eventos.slice(cerrada ? ronda + 1 : ronda).reduce((t, e) => t + (e.k === "gp" ? 25 : 8), 0);
+  const rows = Object.entries(puntos || {}).filter(([k, v]) => k[0] !== "_" && typeof v === "number")
+    .sort((a, b) => b[1] - a[1] || (wins[b[0]] || 0) - (wins[a[0]] || 0));
+  if (!rows.length || rows[0][1] <= 0) return null;
+  const [pid, pts] = rows[0], second = rows[1] ? rows[1][1] : 0;
+  const decidido = faltan === 0 || pts > second + faltan;           // si todavía alguien podría igualarlo, no es matemático
+  return decidido ? { pid, pts, final: faltan === 0, faltan } : null;
+}

@@ -1,6 +1,9 @@
 // Français. s = textes exacts; p = textes avec parties variables ({0}, {1}…); w = mots isolés (pays).
 export default {
   s: {
+    "Trofeos": "Trophées",
+    "¡Sos el campeón de pilotos 2026!": "Tu es le champion des pilotes 2026 !",
+    "Todavía no ganaste ningún trofeo. Ganá el campeonato de pilotos en una sala de carrera con amigos.": "Tu n'as encore gagné aucun trophée. Gagne le championnat des pilotes dans une salle carrière entre amis.",
     "Campeonato de constructores": "Championnat des constructeurs",
     "Constructor": "Constructeur",
     "Jugadores": "Joueurs",
@@ -97,6 +100,17 @@ export default {
     "¡POLE POSITION!": "POLE POSITION !", "¡lluvia!": "pluie !", "Pronóstico": "Prévision", "Bahrein en Malasia": "Bahreïn en Malaisie", "LARGADA / META": "DÉPART / ARRIVÉE"
   },
   p: {
+    "Terminó la temporada con {0} puntos.": "Il a terminé la saison avec {0} points.",
+    "Campeón matemático: nadie lo puede alcanzar con los puntos que quedan. Tiene {0} puntos.": "Champion mathématique : personne ne peut le rattraper avec les points restants. Il a {0} points.",
+    "🏆 ¡{0} es campeón de pilotos 2026!": "🏆 {0} est le champion des pilotes 2026 !",
+    "🏆 Sos el campeón de pilotos 2026 · {0} puntos": "🏆 Tu es le champion des pilotes 2026 · {0} points",
+    "🏆 Sos el campeón de pilotos 2026 · {0} puntos (campeón matemático)": "🏆 Tu es le champion des pilotes 2026 · {0} points (champion mathématique)",
+    "🏆 Campeón de pilotos 2026: {0} · {1} puntos": "🏆 Champion des pilotes 2026 : {0} · {1} points",
+    "🏆 Campeón de pilotos 2026: {0} · {1} puntos (campeón matemático)": "🏆 Champion des pilotes 2026 : {0} · {1} points (champion mathématique)",
+    "🏆 Campeón de pilotos {0}": "🏆 Champion des pilotes {0}",
+    "{0} · sala {1}": "{0} · salle {1}",
+    "{0} pts": "{0} pts",
+    "{0} pts (campeón matemático)": "{0} pts (champion mathématique)",
     "{0} mar": "{0} mars", "{0} may": "{0} mai", "{0} jun": "{0} juin", "{0} jul": "{0} juil.", "{0} ago": "{0} août", "{0} sep": "{0} sept.", "{0} oct": "{0} oct.", "{0} nov": "{0} nov.", "{0} dic": "{0} déc.",
     "Re-sortear: {0} restantes": "Nouveau tirage : {0} restants",
     "{0} de {1} disponibles en esta tirada": "{0} sur {1} disponibles dans ce tirage",

@@ -28,8 +28,8 @@
 <link rel="preconnect" href="https://vljuhibzzwtcswirunfr.supabase.co" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preload" href="supabase/functions/_shared/temporadas.json?v=cda01362" as="fetch" crossorigin fetchpriority="low">
-<link rel="modulepreload" href="supabase/functions/_shared/engine.js?v=cda01362" fetchpriority="low">
+<link rel="preload" href="supabase/functions/_shared/temporadas.json?v=d54ddf7c" as="fetch" crossorigin fetchpriority="low">
+<link rel="modulepreload" href="supabase/functions/_shared/engine.js?v=d54ddf7c" fetchpriority="low">
 <!-- Boceto de diseño, no es el juego final. Datos de ejemplo inventados. Sin marcas, logos ni fotos: todo dibujado en SVG. -->
 <link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700;900&display=swap" rel="stylesheet"></noscript>
@@ -343,6 +343,8 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
       <div class="stats" id="pStats"></div>
       <h3 style="margin-top:16px">Campeonatos anteriores</h3>
       <div id="pHist" class="note"></div>
+      <h3 style="margin-top:18px">Trofeos</h3>
+      <div id="pTrof" class="note"></div>
     </div>
     <div class="panel">
       <h3>Cuenta</h3>
@@ -527,6 +529,14 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
   <button class="btn ghost cta" onclick="__resolveRain('stay')"><span>Seguir con slicks</span></button>
 </div></div>
 
+<div class="modal" id="mTrophy"><div class="box" style="text-align:center">
+  <button class="x" data-close>×</button>
+  <div id="trEmoji" style="font-size:84px;line-height:1">🏆</div>
+  <h2 id="trTitle" style="margin:8px 0"></h2>
+  <p class="note" id="trTxt" style="margin-top:0"></p>
+  <button class="btn cta" data-close><span>Entendido</span></button>
+</div></div>
+
 <div class="modal" id="mDonate"><div class="box"><button class="x" data-close>×</button>
   <h2>Apoya a BoxBox ☕</h2>
   <p class="note" style="margin-top:0">Si te gustó y quieres ayudar a pagar el servidor y a sumar temporadas, puedes invitarme un café. Es opcional: el juego es y seguirá siendo gratis.</p>
@@ -567,7 +577,7 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
 
 
 <script src="vendor/supabase.min.js" defer></script>
-<script src="tracks.js?v=cda01362" defer></script>
-<script src="game.js?v=cda01362" defer></script>
+<script src="tracks.js?v=d54ddf7c" defer></script>
+<script src="game.js?v=d54ddf7c" defer></script>
 </body>
 </html>
