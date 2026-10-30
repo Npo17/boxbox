@@ -2,5 +2,6 @@
   "_nota": "Medias de pilotos fijadas a mano ('nombre|año': media). Senna es el mejor de la historia en el juego (99) y por encima de Schumacher. generar-temporadas.mjs las aplica al final.",
   "A. Senna|1988": 99, "A. Senna|1990": 98, "A. Senna|1991": 99, "A. Senna|1993": 95,
   "M. Schumacher|2004": 97, "M. Schumacher|1994": 95, "M. Schumacher|1995": 94,
-  "M. Schumacher|2000": 94, "M. Schumacher|2001": 94, "M. Schumacher|2002": 94, "M. Schumacher|2003": 94
+  "M. Schumacher|2000": 94, "M. Schumacher|2001": 94, "M. Schumacher|2002": 94, "M. Schumacher|2003": 94,
+  "C. Leclerc|2019": 86, "C. Leclerc|2022": 88, "C. Leclerc|2023": 87, "C. Leclerc|2024": 89, "C. Leclerc|2025": 87, "C. Leclerc|2026": 85
 }
