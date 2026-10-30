@@ -600,8 +600,8 @@ $('mpCopy').onclick=async()=>{const a=$('mpAlias').textContent;
   try{await navigator.clipboard.writeText(a)}catch(e){const r=document.createRange();r.selectNodeContents($('mpAlias'));const s=getSelection();s.removeAllRanges();s.addRange(r);document.execCommand('copy')}
   $('mpCopy').textContent='¡Copiado!';setTimeout(()=>$('mpCopy').textContent='Copiar alias',1800)};
 $('fDonate').onclick=()=>{ ev('apoyo_abre'); openM('mDonate') };
-$('fSuggest').onclick=()=>{$('sType').selectedIndex=0;openM('mSuggest')};
-$('fRating').onclick=()=>{$('sType').selectedIndex=1;openM('mSuggest')};
+$('fSuggest').onclick=()=>{ev('sugerencias_abre',{via:'link'});$('sType').selectedIndex=0;openM('mSuggest')};
+$('fRating').onclick=()=>{ev('sugerencias_abre',{via:'media'});$('sType').selectedIndex=1;openM('mSuggest')};
 $('pLogin').onclick=()=>openM('mLogin');
 $('sSend').onclick=async()=>{ if(!$('sText').value.trim()){$('sOk').textContent='Escribe tu idea primero.';return}
   const btn=$('sSend'); if(btn.disabled) return; btn.disabled=true; $('sOk').textContent='Enviando…';
@@ -962,7 +962,17 @@ function startRoomRace(s){
 // Por ahora NO se envía nada a ningún servidor: queda en este navegador y se ve abriendo la página con ?metricas.
 const MET={max:400}, SESION=Math.random().toString(36).slice(2,10);
 function aid(){ try{ let a=localStorage.getItem('boxbox_aid'); if(!a){ a=Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4); localStorage.setItem('boxbox_aid',a); localStorage.setItem('boxbox_aid_t',String(Date.now())) } return a }catch(e){ return 'anon' } }
-function ev(nombre,datos){ try{ const q=JSON.parse(localStorage.getItem('boxbox_ev')||'[]'); q.push({t:Date.now(),e:nombre,d:datos||{},a:aid(),s:SESION}); localStorage.setItem('boxbox_ev',JSON.stringify(q.slice(-MET.max))) }catch(e){} }
+const MET_URL='https://vljuhibzzwtcswirunfr.supabase.co/functions/v1/eventos', EQ=[];
+const MET_TEST=(()=>{ try{ if(new URLSearchParams(location.search).has('metrica_test')) localStorage.setItem('boxbox_met_test','1'); return localStorage.getItem('boxbox_met_test')==='1' }catch(e){ return false } })();
+// Se envía solo desde el sitio publicado (o en localhost si se activó la prueba con ?metrica_test) y respetando "No rastrear" del navegador.
+const MET_ENVIAR=(!/^(localhost|127\.0\.0\.1)$/.test(location.hostname)||MET_TEST)&&navigator.doNotTrack!=='1';
+function ev(nombre,datos){ try{ const d={...(datos||{})}; if(MET_TEST) d.test=1;
+  const q=JSON.parse(localStorage.getItem('boxbox_ev')||'[]'); q.push({t:Date.now(),e:nombre,d,a:aid(),s:SESION}); localStorage.setItem('boxbox_ev',JSON.stringify(q.slice(-MET.max)));
+  if(MET_ENVIAR) EQ.push({e:nombre,d,a:aid(),s:SESION}) }catch(e){} }
+function vaciarEv(){ if(!MET_ENVIAR||!EQ.length) return; const lote=EQ.splice(0,40);
+  try{ fetch(MET_URL,{method:'POST',body:JSON.stringify({ev:lote}),keepalive:true,mode:'no-cors'}).catch(()=>{}) }catch(e){} if(EQ.length) setTimeout(vaciarEv,300) }
+setInterval(vaciarEv,8000); setInterval(()=>{ if(!document.hidden) ev('latido') },30000);
+addEventListener('pagehide',vaciarEv); document.addEventListener('visibilitychange',()=>{ if(document.hidden) vaciarEv() });
 (function(){
   const u=new URLSearchParams(location.search); let ref=''; try{ ref=document.referrer?new URL(document.referrer).hostname:'' }catch(e){}
   const primera=(()=>{ try{ return !localStorage.getItem('boxbox_aid') }catch(e){ return false } })();   // primera visita de este navegador
@@ -1272,6 +1282,7 @@ async function syncDown(){
   if($('s-champpage').classList.contains('on')) showChampPage();
 }
 async function signIn(q){
+  ev('login_click');
   if(!sb) return toast('No se pudo cargar el login. Revisa tu conexión y recarga.');
   const {error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname+(typeof q==='string'?q:'?ver=perfil')}});
   if(error) toast('No se pudo iniciar sesión: '+error.message);
@@ -1430,14 +1441,27 @@ function frInvitacion(p){
 $('lPlayers').onclick=e=>{ const b=e.target.closest('[data-uid]'); if(b) showFriendProfile(b.dataset.uid) };
 $('nFriends').onclick=()=>showFriends();
 if(sb){
-  sb.auth.onAuthStateChange((ev,session)=>{
+  sb.auth.onAuthStateChange((evt,session)=>{
     const u=session&&session.user||null, changed=(u&&u.id)!==(USER&&USER.id);
     USER=u; paintUser();
     if(changed) setTimeout(frLoad,0);
-    if(u&&changed) setTimeout(syncDown,0);
+    if(u&&changed){ ev('login_ok'); setTimeout(syncDown,0) }
     if(changed&&$('s-daily').classList.contains('on')) setTimeout(showDaily,0);
   });
 }
+
+// Eventos de la medición que no tienen un lugar propio en el código
+document.addEventListener('click',e=>{
+  const a=e.target.closest&&e.target.closest('a[href]'); if(a){ const h=a.href;
+    if(/x\.com\/boxf1boxx/.test(h)) ev('red_click',{red:'x'}); else if(/instagram\.com\/boxbox\.f1game/.test(h)) ev('red_click',{red:'instagram'});
+    else if(/tiktok\.com\/@boxbox/.test(h)) ev('red_click',{red:'tiktok'}); else if(/youtube\.com\/@Boxbox/i.test(h)) ev('red_click',{red:'youtube'});
+    else if(/ko-fi\.com/.test(h)) ev('apoyo_kofi'); else if(/cafecito\.app/.test(h)) ev('apoyo_cafecito') }
+  if(e.target.closest&&e.target.closest('#mpCopy')) ev('apoyo_mp');
+},true);
+{ const _sd=showDaily; showDaily=function(...a){ ev('desafio_abre'); return _sd(...a) };
+  const _sp=showProfile; showProfile=function(...a){ ev('perfil_abre'); return _sp(...a) };
+  const _sf=showFriends; showFriends=function(...a){ ev('amigos_abre'); return _sf(...a) };
+  const _ct=chatToggle; chatToggle=function(o){ if(o) ev('chat_abre'); return _ct(o) } }
 
 // ---------- ARRANQUE ----------
 { const g=$('guia'); try{ if(localStorage.getItem('boxbox_guia')!=='1') g.open=true }catch(e){ g.open=true }
