@@ -31,12 +31,13 @@ function carSVG(color){ // auto de fórmula visto desde arriba, dibujo propio
    <text x="70" y="64" fill="#fff" font-family="Titillium Web" font-weight="900" font-style="italic" font-size="14">${f>=1?'01':''}</text>
   </svg>`;
 }
+if(innerWidth<=700&&document.getElementById('guia')) document.getElementById('guia').open=false;
 function renderSlots(){
   const filled=Object.keys(picks).length;
   $('carsvg').innerHTML=carSVG(filled?'#ff3b30':null);
   $('slots').innerHTML=SLOTS.map(([k,l])=>{
     const p=picks[k];
-    return `<div class="slot ${p?'filled':''}"><span class="k">${l}</span>${p?`<span class="v">${p.n} <small style="color:var(--muted)">${p.y}</small> <span class="rt ${BLIND?'r0':rc(p.r)}" style="font-size:14px;padding:2px 6px;margin-left:6px">${BLIND?'?':p.r}</span></span>`:'<span style="color:#555">—</span>'}</div>`}).join('');
+    return `<div class="slot ${p?'filled':''}" data-k="${k}"><span class="k">${l}</span>${p?`<span class="v">${p.n} <small style="color:var(--muted)">${p.y}</small> <span class="rt ${BLIND?'r0':rc(p.r)}" style="font-size:14px;padding:2px 6px;margin-left:6px">${BLIND?'?':p.r}</span></span>`:'<span style="color:#555">—</span>'}</div>`}).join('');
   const vals=Object.values(picks).map(p=>p.r);
   $('avg').textContent=vals.length&&!BLIND?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length):'—';
   $('toRace').disabled=filled<5;
@@ -201,7 +202,8 @@ function runQualy(animate,onDone){
   if(!animate){paint(true);end();return}
   $('qdie').classList.add('spin'); paint();
   let i=0;
-  const step=()=>{ rev.add(seq[i].c); i++; paint(i>=seq.length); $('qdie').textContent=FACES[Math.floor(Math.random()*6)];
+  const alRevelado=c=>{ const box=$('qtower'); if(box.scrollHeight<=box.clientHeight) return; const r=box.querySelectorAll('.trow')[grid.indexOf(c)]; if(r) box.scrollTop=Math.max(0,r.offsetTop-box.clientHeight/2) };
+  const step=()=>{ rev.add(seq[i].c); alRevelado(seq[i].c); i++; paint(i>=seq.length); const mio=grid.find(c=>c.me); if(i>=seq.length&&mio) alRevelado(mio); $('qdie').textContent=FACES[Math.floor(Math.random()*6)];
     if(i>=seq.length) end(); else setTimeout(step,seq[i].ms) };
   setTimeout(step,200);
 }
@@ -280,7 +282,23 @@ function fichaSync(){
   document.querySelectorAll('.ficha .jbody').forEach(b=>{ b.innerHTML=hj });
   document.querySelectorAll('.ficha.inl').forEach(d=>{ const k=d.classList.contains('car')?hc:d.classList.contains('jef')?hj:h; d.style.display=k?'':'none' });
   $('fichaSide').classList.toggle('vacia',!h&&!hc&&!hj);
+  document.querySelectorAll('.fbtns [data-fi]').forEach(b=>{ b.style.display=({p:h,c:hc,j:hj})[b.dataset.fi]?'':'none' });
+  if($('mFicha').classList.contains('open')) renderSheet();
 }
+// Panel de fichas (celular y notebook): las tres fichas en pestañas, que se abren desde botones o tocando una casilla del armado
+let FSHEET='p';
+function sheetHtml(){
+  const pk=typeof picks!=='undefined'&&picks.piloto, ck=typeof picks!=='undefined'&&picks.coche, jk=typeof picks!=='undefined'&&picks.jefe;
+  return {p:pk?fichaHtml(pk.n,pk.y):'',c:ck?cocheHtml(ck.n,ck.y):'',j:jk?jefeHtml(jk.n,jk.y):''};
+}
+function renderSheet(){
+  const h=sheetHtml(); if(!h[FSHEET]) FSHEET=['p','c','j'].find(k=>h[k])||'p';
+  document.querySelectorAll('#ftabs button').forEach(b=>{ b.style.display=h[b.dataset.fi]?'':'none'; b.classList.toggle('on',b.dataset.fi===FSHEET) });
+  $('fsheet').innerHTML=h[FSHEET]||'';
+}
+function fichaSheet(w){ FSHEET=w||FSHEET; renderSheet(); openM('mFicha') }
+document.addEventListener('click',e=>{ const b=e.target.closest('[data-fi]'); if(b) fichaSheet(b.dataset.fi) });
+$('slots').addEventListener('click',e=>{ const s=e.target.closest('.slot.filled'); const w={piloto:'p',coche:'c',jefe:'j'}[s&&s.dataset.k]; if(w) fichaSheet(w) });
 function fichaPreviewCar(name,year){ if(!FICHAS) return; $('fichaSide').classList.remove('vacia'); $('fichaSide').querySelector('.cbody').innerHTML=cocheHtml(name,year) }
 function fichaPreviewJefe(name,year){ if(!FICHAS) return; $('fichaSide').classList.remove('vacia'); $('fichaSide').querySelector('.jbody').innerHTML=jefeHtml(name,year) }
 function fichaPreview(name,year){ if(!FICHAS) return; $('fichaSide').classList.remove('vacia'); $('fichaSide').querySelector('.fbody').innerHTML=fichaHtml(name,year) }
@@ -521,9 +539,16 @@ function gapOf(o,i){
 function paintGapSw(){ document.querySelectorAll('#gapSw [data-gap]').forEach(b=>b.classList.toggle('on',b.dataset.gap===GAP)) }
 $('gapSw').onclick=e=>{ const b=e.target.closest('[data-gap]'); if(!b) return; GAP=b.dataset.gap; ev('intervalo',{g:GAP}); try{ localStorage.setItem('boxbox_gap',GAP) }catch(err){} paintGapSw(); if(TOW) tower(TOW) };
 paintGapSw();
+let TOWUSER=0, TOWPROG=false;
+$('tower').addEventListener('scroll',()=>{ if(!TOWPROG) TOWUSER=Date.now() });
 function tower(o){
   TOW=o;
-  $('tower').innerHTML=o.map((c,i)=>`<div class="trow ${c.me?'me':''}" style="${c.out?'opacity:.4':''}"><span class="p">${i+1}</span><span class="c" style="background:${c.color}"></span><span>${c.name}</span><span class="g">${c.out?'OUT':c.inPit?'<b style="color:var(--yellow)">BOX</b>':i?'+'+gapOf(o,i).toFixed(1)+'s':'LÍDER'}</span></div>`).join('');
+  const box=$('tower'), st=box.scrollTop;
+  box.innerHTML=o.map((c,i)=>`<div class="trow ${c.me?'me':''}" style="${c.out?'opacity:.4':''}"><span class="p">${i+1}</span><span class="c" style="background:${c.color}"></span><span>${c.name}</span><span class="g">${c.out?'OUT':c.inPit?'<b style="color:var(--yellow)">BOX</b>':i?'+'+gapOf(o,i).toFixed(1)+'s':'LÍDER'}</span></div>`).join('');
+  // en pantallas chicas la lista tiene scroll propio: se queda donde estaba y, si no la tocaste hace poco, se centra en tu auto
+  TOWPROG=true; box.scrollTop=st;
+  if(box.scrollHeight>box.clientHeight&&Date.now()-TOWUSER>6000){ const me=box.querySelector('.trow.me'); if(me) box.scrollTop=Math.max(0,me.offsetTop-box.clientHeight/2+me.offsetHeight/2) }
+  requestAnimationFrame(()=>{ TOWPROG=false });
 }
 function msg(e){
   const mine=e.carKey===MEKEY;
@@ -543,7 +568,7 @@ function msg(e){
 // así la pantalla no da saltos mientras corre la carrera.
 function radioAdd(html){
   const box=$('radio'); box.insertAdjacentHTML('afterbegin',html);
-  while(box.children.length>5) box.lastChild.remove();
+  while(box.children.length>(innerWidth<=700?3:5)) box.lastChild.remove();
   let y=0; for(const k of box.children){ k.style.transform=`translateY(${y}px)`; y+=k.offsetHeight+6 }
   if(y>box.offsetHeight) box.style.height=y+'px';
 }
@@ -1718,7 +1743,7 @@ document.addEventListener('click',e=>{
   const _ct=chatToggle; chatToggle=function(o){ if(o) ev('chat_abre'); return _ct(o) } }
 
 // ---------- ARRANQUE ----------
-{ const g=$('guia'); try{ if(localStorage.getItem('boxbox_guia')!=='1') g.open=true }catch(e){ g.open=true }
+{ const g=$('guia'); const ancha=innerWidth>700; try{ if(ancha&&localStorage.getItem('boxbox_guia')!=='1') g.open=true }catch(e){ g.open=ancha }
   g.addEventListener('toggle',()=>{ if(!g.open) try{localStorage.setItem('boxbox_guia','1')}catch(e){} }); }
 // boxf1box.com/?desafio abre el desafío del día; ?ver=campeonato y ?ver=perfil abren esas pantallas.
 { const q=new URLSearchParams(location.search), v=q.get('ver');

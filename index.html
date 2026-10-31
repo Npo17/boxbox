@@ -26,8 +26,8 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <!-- Arranque rápido: conexiones y descargas en paralelo con el HTML -->
 <link rel="preconnect" href="https://vljuhibzzwtcswirunfr.supabase.co" crossorigin>
-<link rel="preload" href="supabase/functions/_shared/temporadas.json?v=19dc340f" as="fetch" crossorigin fetchpriority="low">
-<link rel="modulepreload" href="supabase/functions/_shared/engine.js?v=19dc340f" fetchpriority="low">
+<link rel="preload" href="supabase/functions/_shared/temporadas.json?v=76f37181" as="fetch" crossorigin fetchpriority="low">
+<link rel="modulepreload" href="supabase/functions/_shared/engine.js?v=76f37181" fetchpriority="low">
 <!-- Boceto de diseño, no es el juego final. Datos de ejemplo inventados. Sin marcas, logos ni fotos: todo dibujado en SVG. -->
 <!-- Fuente propia (Titillium Web) en vez de Google Fonts: sin precarga a propósito (precargarla retrasaba el primer dibujo en conexiones lentas) -->
 <style>
@@ -215,6 +215,18 @@ table.cal td{padding:7px 8px;font-size:14px}table.cal tr.nx td{background:rgba(2
   html[data-screen="s-build"] .ficha.side:not(.vacia),html[data-screen="s-quali"] .ficha.side:not(.vacia),html[data-screen="s-race"] .ficha.side:not(.vacia){display:block}
   .ficha.inl{display:none}
 }
+/* carrera: pista + posiciones a la par y la radio debajo de la pista */
+.racegrid{grid-template-areas:"pista pos" "radio pos";grid-template-rows:auto 1fr;align-items:start}
+#pistaPanel{grid-area:pista}#posPanel{grid-area:pos}#radioPanel{grid-area:radio}
+#radioPanel .radio{margin-top:0}
+/* botones de fichas y panel (donde no hay lugar para el lateral) */
+.fbtns{display:none;gap:8px;margin:12px 0 4px}
+.fbtns button,.ftabs button{flex:1;appearance:none;border:1px solid var(--line);background:var(--card);color:var(--text);font:inherit;font-weight:700;font-size:12px;letter-spacing:.5px;text-transform:uppercase;padding:9px 6px;border-radius:8px;cursor:pointer}
+.fbtns button::before{margin-right:5px}.fb-p::before{content:"🧑"}.fb-c::before{content:"🏎️"}.fb-j::before{content:"🔧"}
+.ftabs{display:flex;gap:6px;margin:0 28px 10px 0}.ftabs button.on{background:var(--red);border-color:var(--red);color:#fff}
+.ficha.sheetc{border:0;background:none;padding:0}
+@media (max-width:1619px){html[data-screen="s-build"] .fbtns,html[data-screen="s-quali"] .fbtns,html[data-screen="s-race"] .fbtns{display:flex}}
+.modal.sheet .box{max-width:460px;max-height:88vh;overflow:auto}
 .spd{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .spd .spdl{font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
 .spd input[type=range]{width:140px;max-width:46vw;padding:0;margin:0;accent-color:var(--yellow);background:none;border:0}
@@ -242,7 +254,39 @@ td.n{font-weight:900;font-style:italic;width:40px}
 td.pts{text-align:right;font-weight:900;font-variant-numeric:tabular-nums}
 tr.hl td{background:rgba(255,59,48,.14)}
 .note{color:var(--muted);font-size:13px;margin-top:10px}
-@media (max-width:860px){.grid,.racegrid{grid-template-columns:1fr} h1{font-size:32px} .year{font-size:56px} .steps{display:none}}
+@media (max-width:860px){.grid,.racegrid{grid-template-columns:1fr} h1{font-size:32px} .year{font-size:56px} .steps{display:none}
+  .racegrid{grid-template-areas:"pista" "pos" "radio"}}
+/* ===== celular: todo lo importante a la vista, sin tener que bajar ===== */
+@media (max-width:700px){
+  header{padding:8px 12px;gap:6px 10px}
+  .logo{font-size:20px}.flag{width:24px;height:16px}
+  nav.top{width:100%;gap:5px;flex-wrap:wrap}
+  .nb{padding:6px 8px;font-size:11px;letter-spacing:.2px}
+  main{padding:2px 12px 96px}
+  h1{font-size:24px;margin:4px 0 4px}
+  .sub{margin:0 0 10px;font-size:13px}
+  #s-quali .sub,#s-race .sub{display:none}
+  .panel{padding:12px}
+  .grid,.racegrid{gap:12px}
+  /* armado: el auto en la hoja ocupa menos y el botón de seguir queda fijo abajo */
+  #carsvg{display:none}
+  #list{min-height:300px;max-height:300px}
+  .tabs{margin:10px 0 6px}
+  .year{font-size:44px}
+  #toRace:not(:disabled){position:fixed;left:12px;right:12px;bottom:12px;width:auto;margin:0;z-index:40;box-shadow:0 8px 28px rgba(0,0,0,.65)}
+  /* qualy: tu vuelta y el botón primero, la tabla de tiempos después y con su propio scroll */
+  #s-quali .grid>.panel:nth-child(2){order:-1}
+  #qtrack,#qcircuit{display:none}
+  #qtower{min-height:0;max-height:320px;overflow:auto}
+  #qdie{font-size:44px!important}#qtime{font-size:38px!important;margin:4px 0!important}#qpos{min-height:0!important;font-size:17px!important}
+  #qBtn,#toRace2{position:sticky;bottom:12px;z-index:30;box-shadow:0 8px 24px rgba(0,0,0,.6)}
+  /* carrera: pista, posiciones (con scroll propio) y radio */
+  .trackfoot .note{display:none}
+  #tower{max-height:330px;overflow:auto}
+  #radioPanel .radio{height:215px}
+  .modal.sheet{align-items:flex-end;padding:0}
+  .modal.sheet .box{max-width:none;border-radius:16px 16px 0 0;max-height:86vh;padding:16px 14px 24px}
+}
 /* ---- Tema claro (Ajustes) ---- */
 :root{--card:#191b23;--deep:#0f1015;--glow:#2a1416}
 html[data-theme="light"]{--asphalt:#f3f3f6;--asphalt-2:#ffffff;--line:#d9dbe3;--text:#15161c;--muted:#5b5e6e;--card:#f5f6f9;--deep:#eceef3;--glow:#ffe1de;--yellow:#c99500}
@@ -524,9 +568,7 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
       <h3>Tu auto</h3>
       <div class="carwrap" id="carsvg"></div>
       <div class="slots" id="slots"></div>
-      <details class="ficha inl"><summary>Ficha del piloto</summary><div class="fbody"></div></details>
-      <details class="ficha inl car"><summary>Ficha del coche</summary><div class="cbody"></div></details>
-      <details class="ficha inl jef"><summary>Ficha del jefe de equipo</summary><div class="jbody"></div></details>
+      <div class="fbtns"><button type="button" data-fi="p" class="fb-p">Piloto</button><button type="button" data-fi="c" class="fb-c">Coche</button><button type="button" data-fi="j" class="fb-j">Jefe de equipo</button></div>
       <div class="avg"><span class="k" style="color:var(--muted);font-weight:700;letter-spacing:1px">MEDIA DEL AUTO</span><b id="avg">—</b></div>
       <button class="btn cta" id="toRace" disabled><span>A la clasificación →</span></button>
       <details id="guia" class="guia"><summary>ℹ️ ¿Cómo influye cada pieza?</summary>
@@ -558,9 +600,7 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
       <div id="qpos" style="font-size:20px;font-weight:700;min-height:56px"></div>
       <button class="btn cta" id="qBtn"><span>Tirar la qualy</span></button>
       <div id="stratPick" class="stratpick" style="display:none"></div>
-      <details class="ficha inl"><summary>Ficha del piloto</summary><div class="fbody"></div></details>
-      <details class="ficha inl car"><summary>Ficha del coche</summary><div class="cbody"></div></details>
-      <details class="ficha inl jef"><summary>Ficha del jefe de equipo</summary><div class="jbody"></div></details>
+      <div class="fbtns"><button type="button" data-fi="p" class="fb-p">Piloto</button><button type="button" data-fi="c" class="fb-c">Coche</button><button type="button" data-fi="j" class="fb-j">Jefe de equipo</button></div>
       <div class="spd" id="spdQ" style="display:none;margin:12px 0 4px;justify-content:center"><span class="spdl">Velocidad de la carrera</span><input type="range" id="spdQR" min="0" max="5" step="1" aria-label="Velocidad de la carrera"><b id="spdQV"></b></div>
       <button class="btn cta" id="toRace2" style="display:none"><span>A la parrilla →</span></button>
       <div id="qWait" style="display:none;font-size:20px;font-weight:700;margin-top:10px"></div>
@@ -573,7 +613,7 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
   <h1 id="raceTitle">Gran Premio</h1>
   <p class="sub" id="raceSub"></p>
   <div class="racegrid">
-    <div class="panel">
+    <div class="panel" id="pistaPanel">
       <div class="hud"><div class="lights" id="lights"><i></i><i></i><i></i><i></i><i></i></div><div class="lap" id="lap">VUELTA 0/20</div></div>
       <div id="scBanner">🚨 SAFETY CAR</div>
       <svg class="track" viewBox="0 0 800 460" id="track">
@@ -598,16 +638,14 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
       <div class="trackfoot"><div class="fsw" id="fondoSw"><button type="button" data-f="cl" title="Clásico" style="background:#173320"></button><button type="button" data-f="a" title="Telemetría" style="background:repeating-linear-gradient(45deg,#10131a 0 3px,#1a1f2a 3px 6px)"></button><button type="button" data-f="b" title="Césped" style="background:radial-gradient(circle at 50% 40%,#2c6a3f,#0e2a19)"></button><button type="button" data-f="c" title="Plano" style="background:linear-gradient(#0b1426,#0b1426) padding-box,#0b1426;box-shadow:inset 0 0 0 5px #0b1426,inset 0 0 0 6px #7aa2ff"></button><button type="button" data-f="d" title="Noche TV" style="background:radial-gradient(circle at 50% 120%,#ff3b30,#0a0c11 70%)"></button></div><div class="note">Trazado: datos abiertos f1-circuits (MIT)</div></div>
       <div class="spd" id="spdBox" style="margin-top:10px"><span class="spdl">Velocidad</span><input type="range" id="spdR" min="0" max="5" step="1" aria-label="Velocidad de la carrera"><b id="spdV"></b><span class="note" id="spdNote" style="display:none;margin:0">La elige el anfitrión</span></div>
       <div id="myStrat" style="display:none"></div>
-      <details class="ficha inl"><summary>Ficha del piloto</summary><div class="fbody"></div></details>
-      <details class="ficha inl car"><summary>Ficha del coche</summary><div class="cbody"></div></details>
-      <details class="ficha inl jef"><summary>Ficha del jefe de equipo</summary><div class="jbody"></div></details>
-      <div class="radio" id="radio"></div>
+      <div class="fbtns"><button type="button" data-fi="p" class="fb-p">Piloto</button><button type="button" data-fi="c" class="fb-c">Coche</button><button type="button" data-fi="j" class="fb-j">Jefe de equipo</button></div>
     </div>
-    <div class="panel">
+    <div class="panel" id="posPanel">
       <div class="towerhd"><h3>Posiciones</h3><div class="seg" id="gapSw"><button type="button" data-gap="lider">Líder</button><button type="button" data-gap="int">Intervalo</button></div></div>
       <div class="tower" id="tower"></div>
       <button class="btn cta" id="toResult" style="display:none"><span>Ver resultado →</span></button>
     </div>
+    <div class="panel" id="radioPanel"><div class="radio" id="radio"></div></div>
   </div>
 </section>
 
@@ -655,6 +693,12 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
   </nav>
   <span class="privnote" style="flex-basis:100%;text-align:right;font-size:12px;color:var(--muted)">Medimos visitas de forma anónima, sin datos personales.</span>
 </footer>
+
+<div class="modal sheet" id="mFicha"><div class="box">
+  <button class="x" data-close>×</button>
+  <div class="ftabs" id="ftabs"><button type="button" data-fi="p">Piloto</button><button type="button" data-fi="c">Coche</button><button type="button" data-fi="j">Jefe de equipo</button></div>
+  <div class="ficha sheetc" id="fsheet"></div>
+</div></div>
 
 <div class="modal" id="mStrat"><div class="box" style="max-width:660px;max-height:92vh;overflow:auto">
   <button class="x" id="stratX" aria-label="Cerrar">✕</button>
@@ -752,7 +796,7 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
 
 
 <script src="vendor/supabase.min.js" defer></script>
-<script src="tracks.js?v=19dc340f" defer></script>
-<script src="game.js?v=19dc340f" defer></script>
+<script src="tracks.js?v=76f37181" defer></script>
+<script src="game.js?v=76f37181" defer></script>
 </body>
 </html>
