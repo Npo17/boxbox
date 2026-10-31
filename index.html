@@ -26,8 +26,8 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <!-- Arranque rápido: conexiones y descargas en paralelo con el HTML -->
 <link rel="preconnect" href="https://vljuhibzzwtcswirunfr.supabase.co" crossorigin>
-<link rel="preload" href="supabase/functions/_shared/temporadas.json?v=d0bf4214" as="fetch" crossorigin fetchpriority="low">
-<link rel="modulepreload" href="supabase/functions/_shared/engine.js?v=d0bf4214" fetchpriority="low">
+<link rel="preload" href="supabase/functions/_shared/temporadas.json?v=8a7a2630" as="fetch" crossorigin fetchpriority="low">
+<link rel="modulepreload" href="supabase/functions/_shared/engine.js?v=8a7a2630" fetchpriority="low">
 <!-- Boceto de diseño, no es el juego final. Datos de ejemplo inventados. Sin marcas, logos ni fotos: todo dibujado en SVG. -->
 <!-- Fuente propia (Titillium Web) en vez de Google Fonts: sin precarga a propósito (precargarla retrasaba el primer dibujo en conexiones lentas) -->
 <style>
@@ -81,7 +81,11 @@ h1 em{color:var(--red);font-style:italic}
 .die{font-size:44px;display:inline-block}
 .die.spin{animation:spin .6s ease}
 @keyframes spin{to{transform:rotate(720deg)}}
-.tabs{display:flex;gap:6px;margin:14px 0 8px;flex-wrap:wrap}
+.tabs{display:flex;gap:6px;margin:14px 0 8px;flex-wrap:wrap;min-height:34px}
+@media (max-width:560px){.tabs{min-height:74px}}
+#list{min-height:330px}
+#qtower{min-height:701px}
+@media (max-width:560px){#qtower{min-height:722px}}
 .tab{cursor:pointer;padding:6px 12px;border:1px solid var(--line);border-radius:4px;font-size:13px;font-weight:700;color:var(--muted)}
 .tab.on{color:#fff;border-color:var(--red);background:rgba(255,59,48,.12)}
 .tab.done{text-decoration:line-through;opacity:.4;cursor:default}
@@ -131,7 +135,9 @@ table.cal td{padding:7px 8px;font-size:14px}table.cal tr.nx td{background:rgba(2
 .trow .p{font-weight:900;font-style:italic;text-align:right}
 .trow .c{width:6px;height:18px;border-radius:2px}
 .trow .g{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
-.radio{margin-top:14px;display:grid;gap:6px;min-height:150px}
+.radio{margin-top:14px;position:relative;height:300px}
+.radio .msg{position:absolute;left:0;right:0;top:0;transition:transform .3s;animation:fadein .3s ease}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
 .msg{background:var(--deep);border-left:3px solid var(--yellow);padding:8px 10px;border-radius:4px;font-size:14px;animation:in .3s ease}
 .msg b{color:var(--yellow);font-size:12px;letter-spacing:1px;text-transform:uppercase;display:block}
 .msg.inc{border-color:var(--red)} .msg.inc b{color:var(--red)}
@@ -637,7 +643,7 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
 
 
 <script src="vendor/supabase.min.js" defer></script>
-<script src="tracks.js?v=d0bf4214" defer></script>
-<script src="game.js?v=d0bf4214" defer></script>
+<script src="tracks.js?v=8a7a2630" defer></script>
+<script src="game.js?v=8a7a2630" defer></script>
 </body>
 </html>
