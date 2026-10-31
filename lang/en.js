@@ -210,7 +210,14 @@ export default {
     "Estrategia inválida.": "Invalid strategy.",
     "Q3 · Top 10": "Q3 · Top 10",
     "Eliminados en Q2": "Out in Q2",
-    "Eliminados en Q1": "Out in Q1"
+    "Eliminados en Q1": "Out in Q1",
+    "Velocidad": "Speed",
+    "Velocidad de la carrera": "Race speed",
+    "La elige el anfitrión": "The host chooses it",
+    "Solo quien creó la sala elige la velocidad.": "Only the room host chooses the speed.",
+    "Ahora no se puede cambiar la velocidad.": "You cannot change the speed right now.",
+    "Se acabó el tiempo para cambiar la velocidad.": "Time is up to change the speed.",
+    "Velocidad inválida.": "Invalid speed."
   },
   p: {
     "👥 Amigos ({0})": "👥 Friends ({0})",

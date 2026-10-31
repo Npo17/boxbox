@@ -26,8 +26,8 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <!-- Arranque rápido: conexiones y descargas en paralelo con el HTML -->
 <link rel="preconnect" href="https://vljuhibzzwtcswirunfr.supabase.co" crossorigin>
-<link rel="preload" href="supabase/functions/_shared/temporadas.json?v=7b5c649b" as="fetch" crossorigin fetchpriority="low">
-<link rel="modulepreload" href="supabase/functions/_shared/engine.js?v=7b5c649b" fetchpriority="low">
+<link rel="preload" href="supabase/functions/_shared/temporadas.json?v=6544f407" as="fetch" crossorigin fetchpriority="low">
+<link rel="modulepreload" href="supabase/functions/_shared/engine.js?v=6544f407" fetchpriority="low">
 <!-- Boceto de diseño, no es el juego final. Datos de ejemplo inventados. Sin marcas, logos ni fotos: todo dibujado en SVG. -->
 <!-- Fuente propia (Titillium Web) en vez de Google Fonts: sin precarga a propósito (precargarla retrasaba el primer dibujo en conexiones lentas) -->
 <style>
@@ -167,6 +167,10 @@ table.cal td{padding:7px 8px;font-size:14px}table.cal tr.nx td{background:rgba(2
 .sbar.mini .ty{width:18px;height:18px}.sbar.mini .sl{font-size:10px}
 .sbar .mk{position:absolute;top:0;bottom:0;width:3px;background:#fff;box-shadow:0 0 8px #fff;z-index:2;transition:left .25s linear}
 @media (max-width:560px){.sbar .sl .lg{display:none}.sbar .sl .sh{display:inline}.sbar .sl{font-size:12px}.sbar .ty{width:24px;height:24px}.scard .nm{font-size:16px}}
+.spd{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.spd .spdl{font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+.spd input[type=range]{width:140px;max-width:46vw;padding:0;margin:0;accent-color:var(--yellow);background:none;border:0}
+.spd b{min-width:48px;font-variant-numeric:tabular-nums}
 .stratpick{margin:12px 0 4px;text-align:left}
 .stratpick .lbl{font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:5px;display:flex;justify-content:space-between;align-items:center}
 .stratpick .lbl button{background:none;border:0;color:var(--yellow);font:inherit;font-weight:700;cursor:pointer;text-decoration:underline;padding:0}
@@ -503,6 +507,7 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
       <div id="qpos" style="font-size:20px;font-weight:700;min-height:56px"></div>
       <button class="btn cta" id="qBtn"><span>Tirar la qualy</span></button>
       <div id="stratPick" class="stratpick" style="display:none"></div>
+      <div class="spd" id="spdQ" style="display:none;margin:12px 0 4px;justify-content:center"><span class="spdl">Velocidad de la carrera</span><input type="range" id="spdQR" min="0" max="5" step="1" aria-label="Velocidad de la carrera"><b id="spdQV"></b></div>
       <button class="btn cta" id="toRace2" style="display:none"><span>A la parrilla →</span></button>
       <div id="qWait" style="display:none;font-size:20px;font-weight:700;margin-top:10px"></div>
     </div>
@@ -537,6 +542,7 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
         <g id="rainfx" style="pointer-events:none"></g>
       </svg>
       <div class="trackfoot"><div class="fsw" id="fondoSw"><button type="button" data-f="cl" title="Clásico" style="background:#173320"></button><button type="button" data-f="a" title="Telemetría" style="background:repeating-linear-gradient(45deg,#10131a 0 3px,#1a1f2a 3px 6px)"></button><button type="button" data-f="b" title="Césped" style="background:radial-gradient(circle at 50% 40%,#2c6a3f,#0e2a19)"></button><button type="button" data-f="c" title="Plano" style="background:linear-gradient(#0b1426,#0b1426) padding-box,#0b1426;box-shadow:inset 0 0 0 5px #0b1426,inset 0 0 0 6px #7aa2ff"></button><button type="button" data-f="d" title="Noche TV" style="background:radial-gradient(circle at 50% 120%,#ff3b30,#0a0c11 70%)"></button></div><div class="note">Trazado: datos abiertos f1-circuits (MIT)</div></div>
+      <div class="spd" id="spdBox" style="margin-top:10px"><span class="spdl">Velocidad</span><input type="range" id="spdR" min="0" max="5" step="1" aria-label="Velocidad de la carrera"><b id="spdV"></b><span class="note" id="spdNote" style="display:none;margin:0">La elige el anfitrión</span></div>
       <div id="myStrat" style="display:none"></div>
       <div class="radio" id="radio"></div>
     </div>
@@ -687,7 +693,7 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
 
 
 <script src="vendor/supabase.min.js" defer></script>
-<script src="tracks.js?v=7b5c649b" defer></script>
-<script src="game.js?v=7b5c649b" defer></script>
+<script src="tracks.js?v=6544f407" defer></script>
+<script src="game.js?v=6544f407" defer></script>
 </body>
 </html>

@@ -208,7 +208,14 @@ export default {
     "Estrategia inválida.": "Geçersiz strateji.",
     "Q3 · Top 10": "Q3 · İlk 10",
     "Eliminados en Q2": "Q2’de elenenler",
-    "Eliminados en Q1": "Q1’de elenenler"
+    "Eliminados en Q1": "Q1’de elenenler",
+    "Velocidad": "Hız",
+    "Velocidad de la carrera": "Yarış hızı",
+    "La elige el anfitrión": "Ev sahibi seçer",
+    "Solo quien creó la sala elige la velocidad.": "Hızı yalnızca odayı kuran seçer.",
+    "Ahora no se puede cambiar la velocidad.": "Şu anda hız değiştirilemez.",
+    "Se acabó el tiempo para cambiar la velocidad.": "Hızı değiştirme süresi doldu.",
+    "Velocidad inválida.": "Geçersiz hız."
   },
   p: {
     "👥 Amigos ({0})": "👥 Arkadaşlar ({0})",

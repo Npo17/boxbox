@@ -208,7 +208,14 @@ export default {
     "Estrategia inválida.": "Strategia non valida.",
     "Q3 · Top 10": "Q3 · Top 10",
     "Eliminados en Q2": "Eliminati in Q2",
-    "Eliminados en Q1": "Eliminati in Q1"
+    "Eliminados en Q1": "Eliminati in Q1",
+    "Velocidad": "Velocità",
+    "Velocidad de la carrera": "Velocità della gara",
+    "La elige el anfitrión": "La sceglie chi ha creato la stanza",
+    "Solo quien creó la sala elige la velocidad.": "Solo chi ha creato la stanza sceglie la velocità.",
+    "Ahora no se puede cambiar la velocidad.": "Ora non si può cambiare la velocità.",
+    "Se acabó el tiempo para cambiar la velocidad.": "Il tempo per cambiare la velocità è finito.",
+    "Velocidad inválida.": "Velocità non valida."
   },
   p: {
     "👥 Amigos ({0})": "👥 Amici ({0})",

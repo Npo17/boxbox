@@ -14,7 +14,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2.45.4";
 import DATA from "../_shared/temporadas.json" with { type: "json" };
 // Ofertas y reglas: el mismo motor que usa el juego en el navegador (una sola fuente de verdad).
-import { makeOffer, mulberry32, yearsFor, runRace, humanFromPicks, eventosDe, validarCalendario, fechasDe, campeonato, PTS, SPRINT_PTS, SPRINT_LAPS, LAPS } from "../_shared/engine.js";
+import { makeOffer, mulberry32, yearsFor, runRace, humanFromPicks, eventosDe, validarCalendario, fechasDe, campeonato, PTS, SPRINT_PTS, SPRINT_LAPS, LAPS, RACE_SPEEDS, RACE_SPEED_DEFAULT } from "../_shared/engine.js";
 import TRACKS from "../_shared/circuitos.json" with { type: "json" };
 
 type Item = [string, string, number];
@@ -133,7 +133,7 @@ async function newPlayer(code: string, name: string, color: string, userId: stri
 // Safety car en salas: la carrera es la misma para todos, así que las decisiones se juntan en un plazo común.
 // El servidor corre la carrera (sin decisiones) para saber cuándo sale el safety car en pantalla y fija el cierre del plazo
 // (se guarda en "deadline", que durante la carrera no se usa para otra cosa). Hasta ese momento las decisiones quedan ocultas.
-async function scDeadline(room: Record<string, any>, race_seed: string, race_start: string, ronda = room.ronda): Promise<string | null> {
+async function scDeadline(room: Record<string, any>, race_seed: string, race_start: string, ronda = room.ronda, speed = RACE_SPEED_DEFAULT): Promise<string | null> {
   try {
     const ev = room.modo === "carrera" ? eventosOf(room)[ronda] : null;
     if (ev?.k === "sprint") return null;
@@ -142,7 +142,7 @@ async function scDeadline(room: Record<string, any>, race_seed: string, race_sta
     const humans = players.map((p: any) => humanFromPicks(p.pid, p.color, p.picks, p.name));
     const race = runRace({ DATA, tracks: TRACKS, seed: String(race_seed), humans, real: true, ...(ev ? { trackIdx: ev.t } : {}) });
     if (!race.sc || race.nopit) return null;
-    const endT = Math.min(...race.cars.filter((c: any) => !c.dnf).map((c: any) => c.cum[race.laps])) + 6, scale = endT / 32;   // igual que la animación del navegador
+    const endT = Math.min(...race.cars.filter((c: any) => !c.dnf).map((c: any) => c.cum[race.laps])) + 6, scale = endT / 32 * speed;   // igual que la animación del navegador (la velocidad la elige el anfitrión)
     return new Date(Date.parse(race_start) + 2000 + (race.sc.T / scale) * 1000 + SC_WINDOW_MS).toISOString();
   } catch (e) { console.error("scDeadline", e); return null; }
 }
@@ -222,6 +222,7 @@ async function stateFor(room: Record<string, any>, me: Record<string, any> | nul
   // Estrategias de gomas: se eligen hasta 4 s antes de largar y se muestran 3 s antes, para que todos corran la misma carrera.
   const showEst = racing && !!room.race_start && Date.now() >= Date.parse(room.race_start) - EST_REVEAL_MS;
   const estOf = (p: Record<string, any>) => (p.rolls ?? []).find((r: any) => r.k === "est")?.v;
+  const velOf = (room.host && players.find((p: any) => p.pid === room.host)?.rolls?.find((r: any) => r.k === "vel")?.v) ?? RACE_SPEED_DEFAULT;
   const current = me ? (me.rolls as Roll[]).find((r) => !r.used) ?? null : null;
   return {
     now: Date.now(),
@@ -230,6 +231,7 @@ async function stateFor(room: Record<string, any>, me: Record<string, any> | nul
       deadline: room.deadline, race_start: room.race_start,
       dice_hash: room.dice_hash, race_hash: room.race_hash,
       est_rev: showEst,
+      vel: showEst ? velOf : undefined,
       race_seed: racing ? room.race_seed : null,
       dice_seed: racing ? room.dice_seed : null,
       modo: room.modo ?? "normal", ronda: room.ronda ?? 0, total: eventosOf(room).length, fechas: room.modo === "carrera" ? fechasDe(room.calendario ?? null) : undefined,
@@ -409,6 +411,20 @@ async function handle(body: Record<string, any>) {
     return { ok: true, now: Date.now() };
   }
 
+  if (action === "velocidad") {
+    // Velocidad de la animación: solo la elige el anfitrión, antes de largar. Cambia el plazo del safety car (dura más o menos).
+    if (room.host !== me.pid) throw new Fail("Solo quien creó la sala elige la velocidad.", 403);
+    if (room.status !== "racing" || !room.race_start) throw new Fail("Ahora no se puede cambiar la velocidad.", 409);
+    if (Date.now() >= Date.parse(room.race_start) - EST_CLOSE_MS) throw new Fail("Se acabó el tiempo para cambiar la velocidad.", 409);
+    const value = Number(body.value);
+    if (!RACE_SPEEDS.includes(value)) throw new Fail("Velocidad inválida.");
+    const rolls = [...(me.rolls as any[]).filter((r) => r.k !== "vel"), { k: "vel", v: value, used: true }];
+    await db.from("jugadores").update({ rolls }).eq("sala", code).eq("pid", me.pid);
+    const deadline = await scDeadline(room, String(room.race_seed), room.race_start, room.ronda, value);
+    await db.from("salas").update({ deadline }).eq("code", code);
+    return { ok: true, now: Date.now() };
+  }
+
   if (action === "next") {
     // Modo carrera: el anfitrión pasa a la siguiente fecha (o a la carrera del GP si recién terminó la sprint).
     if (room.host !== me.pid) throw new Fail("Solo quien creó la sala puede pasar a la siguiente fecha.", 403);
@@ -427,7 +443,7 @@ async function handle(body: Record<string, any>) {
       ok = await db.from("salas").update({ ...common, race_start: rs, deadline: await scDeadline(room, race_seed, rs, room.ronda + 1) })
         .eq("code", code).eq("ronda", room.ronda).select("code").maybeSingle();
       if (ok.data) for (const p of await getPlayers(code, true) as any[]) {
-        await db.from("jugadores").update({ rolls: (p.rolls ?? []).filter((r: any) => r.k !== "sc" && r.k !== "est") }).eq("sala", code).eq("pid", p.pid);
+        await db.from("jugadores").update({ rolls: (p.rolls ?? []).filter((r: any) => r.k !== "sc" && r.k !== "est" && r.k !== "vel") }).eq("sala", code).eq("pid", p.pid);
       }
     } else {
       const dice_seed = String(randU32());
