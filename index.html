@@ -26,8 +26,8 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <!-- Arranque rápido: conexiones y descargas en paralelo con el HTML -->
 <link rel="preconnect" href="https://vljuhibzzwtcswirunfr.supabase.co" crossorigin>
-<link rel="preload" href="supabase/functions/_shared/temporadas.json?v=604cb910" as="fetch" crossorigin fetchpriority="low">
-<link rel="modulepreload" href="supabase/functions/_shared/engine.js?v=604cb910" fetchpriority="low">
+<link rel="preload" href="supabase/functions/_shared/temporadas.json?v=f8abca14" as="fetch" crossorigin fetchpriority="low">
+<link rel="modulepreload" href="supabase/functions/_shared/engine.js?v=f8abca14" fetchpriority="low">
 <!-- Boceto de diseño, no es el juego final. Datos de ejemplo inventados. Sin marcas, logos ni fotos: todo dibujado en SVG. -->
 <!-- Fuente propia (Titillium Web) en vez de Google Fonts: sin precarga a propósito (precargarla retrasaba el primer dibujo en conexiones lentas) -->
 <style>
@@ -167,6 +167,54 @@ table.cal td{padding:7px 8px;font-size:14px}table.cal tr.nx td{background:rgba(2
 .sbar.mini .ty{width:18px;height:18px}.sbar.mini .sl{font-size:10px}
 .sbar .mk{position:absolute;top:0;bottom:0;width:3px;background:#fff;box-shadow:0 0 8px #fff;z-index:2;transition:left .25s linear}
 @media (max-width:560px){.sbar .sl .lg{display:none}.sbar .sl .sh{display:inline}.sbar .sl{font-size:12px}.sbar .ty{width:24px;height:24px}.scard .nm{font-size:16px}}
+/* ficha del piloto: al costado en pantallas anchas y plegable en el resto */
+.ficha{background:rgba(26,29,36,.94);border:1px solid var(--line);border-radius:12px;font-size:13px;line-height:1.35}
+.ficha .fh{display:flex;gap:10px;align-items:center;margin-bottom:8px}
+.ficha .ftx{min-width:0}
+.ficha .fph{position:relative;flex:none;width:64px;height:80px;border-radius:8px;overflow:hidden;background:var(--deep);display:flex;align-items:center;justify-content:center;color:var(--muted);font-weight:900;font-style:italic;font-size:22px}
+.ficha .fph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top}
+.ficha .fcred{margin-top:8px;font-size:10px;line-height:1.3;color:var(--muted);word-break:break-word}
+.ficha .fcred a{color:var(--muted);text-decoration:underline}
+.ficha .fn{display:block;font-size:19px;font-weight:900;font-style:italic;text-transform:uppercase;line-height:1.1}
+.ficha .fm{display:block;color:var(--muted);font-size:12px;margin-top:3px}
+.ficha .fsec{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin:12px 0 5px;display:flex;gap:6px;align-items:baseline}
+.ficha .fsec b{color:var(--yellow)}
+.ficha .fgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.ficha .ft{background:var(--deep);border-radius:8px;padding:6px 4px;text-align:center}
+.ficha .ft b{display:block;font-size:20px;font-weight:900;font-style:italic;line-height:1.1}
+.ficha .ft span{display:block;font-size:10px;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin-top:2px}
+.ficha .fchip{display:inline-block;font-size:11px;font-weight:900;letter-spacing:1px;text-transform:uppercase;padding:2px 9px;border-radius:999px;margin:6px 6px 0 0;background:var(--yellow);color:#111}
+.ficha .fchip.g{background:var(--deep);color:var(--muted);font-weight:700}
+.ficha.side{display:none;position:fixed;top:92px;right:calc(50% + 602px);width:212px;max-height:calc(100vh - 108px);overflow:auto;padding:10px 12px;z-index:5}
+.ficha .cbody:not(:empty),.ficha .jbody:not(:empty){margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+/* lateral de pantalla ancha: más compacto para que las tres fichas entren sin barra de desplazamiento; si la pantalla es baja, barra fina y oscura */
+.ficha.side{scrollbar-width:thin;scrollbar-color:#3a3f4b transparent}
+.ficha.side::-webkit-scrollbar{width:6px}.ficha.side::-webkit-scrollbar-thumb{background:#3a3f4b;border-radius:3px}.ficha.side::-webkit-scrollbar-track{background:transparent}
+.ficha.side .fph{width:52px;height:66px;font-size:18px}
+.ficha.side .fph.car{width:84px;height:56px}
+.ficha.side .fn{font-size:16px}.ficha.side .fph.car+.ftx .fn{font-size:14px}
+.ficha.side .fm{font-size:11px}
+.ficha.side .fh{margin-bottom:5px;gap:8px}
+.ficha.side .fsec{margin:6px 0 3px;font-size:10px}
+.ficha.side .fgrid{gap:4px}
+.ficha.side .ft{padding:4px 2px}.ficha.side .ft b{font-size:16px}.ficha.side .ft span{font-size:9px;margin-top:1px}
+.ficha.side .fchip{margin-top:4px;padding:1px 8px;font-size:10px}
+.ficha.side .fdr{padding:2px 0;font-size:12px}
+.ficha.side .fcred{margin-top:5px;font-size:9px}
+.ficha.side .cbody:not(:empty),.ficha.side .jbody:not(:empty){margin-top:7px;padding-top:6px}
+.ficha.inl.car,.ficha.inl.jef{margin-top:8px}.ficha .cbody:empty,.ficha .jbody:empty{display:none}
+.ficha .fph.car{width:96px;height:64px;background:linear-gradient(135deg,var(--deep),rgba(255,255,255,.04))}
+.ficha .fph.car svg{width:88%;height:auto;display:block}
+.ficha .fph.car+.ftx .fn{font-size:15px;overflow-wrap:anywhere}
+.ficha .fdr{display:flex;justify-content:space-between;gap:8px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.ficha .fdr b{font-weight:700;white-space:nowrap}.ficha .fdr b i{font-style:normal;font-weight:400;color:var(--muted);font-size:11px}
+.ficha.inl{margin:12px 0 4px;padding:0}
+.ficha.inl summary{cursor:pointer;padding:9px 12px;font-weight:700;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+.ficha.inl .fbody,.ficha.inl .cbody,.ficha.inl .jbody{padding:0 12px 12px;margin-top:0;border-top:0}
+@media (min-width:1620px){
+  html[data-screen="s-build"] .ficha.side:not(.vacia),html[data-screen="s-quali"] .ficha.side:not(.vacia),html[data-screen="s-race"] .ficha.side:not(.vacia){display:block}
+  .ficha.inl{display:none}
+}
 .spd{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .spd .spdl{font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
 .spd input[type=range]{width:140px;max-width:46vw;padding:0;margin:0;accent-color:var(--yellow);background:none;border:0}
@@ -476,6 +524,9 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
       <h3>Tu auto</h3>
       <div class="carwrap" id="carsvg"></div>
       <div class="slots" id="slots"></div>
+      <details class="ficha inl"><summary>Ficha del piloto</summary><div class="fbody"></div></details>
+      <details class="ficha inl car"><summary>Ficha del coche</summary><div class="cbody"></div></details>
+      <details class="ficha inl jef"><summary>Ficha del jefe de equipo</summary><div class="jbody"></div></details>
       <div class="avg"><span class="k" style="color:var(--muted);font-weight:700;letter-spacing:1px">MEDIA DEL AUTO</span><b id="avg">—</b></div>
       <button class="btn cta" id="toRace" disabled><span>A la clasificación →</span></button>
       <details id="guia" class="guia"><summary>ℹ️ ¿Cómo influye cada pieza?</summary>
@@ -507,6 +558,9 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
       <div id="qpos" style="font-size:20px;font-weight:700;min-height:56px"></div>
       <button class="btn cta" id="qBtn"><span>Tirar la qualy</span></button>
       <div id="stratPick" class="stratpick" style="display:none"></div>
+      <details class="ficha inl"><summary>Ficha del piloto</summary><div class="fbody"></div></details>
+      <details class="ficha inl car"><summary>Ficha del coche</summary><div class="cbody"></div></details>
+      <details class="ficha inl jef"><summary>Ficha del jefe de equipo</summary><div class="jbody"></div></details>
       <div class="spd" id="spdQ" style="display:none;margin:12px 0 4px;justify-content:center"><span class="spdl">Velocidad de la carrera</span><input type="range" id="spdQR" min="0" max="5" step="1" aria-label="Velocidad de la carrera"><b id="spdQV"></b></div>
       <button class="btn cta" id="toRace2" style="display:none"><span>A la parrilla →</span></button>
       <div id="qWait" style="display:none;font-size:20px;font-weight:700;margin-top:10px"></div>
@@ -544,6 +598,9 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
       <div class="trackfoot"><div class="fsw" id="fondoSw"><button type="button" data-f="cl" title="Clásico" style="background:#173320"></button><button type="button" data-f="a" title="Telemetría" style="background:repeating-linear-gradient(45deg,#10131a 0 3px,#1a1f2a 3px 6px)"></button><button type="button" data-f="b" title="Césped" style="background:radial-gradient(circle at 50% 40%,#2c6a3f,#0e2a19)"></button><button type="button" data-f="c" title="Plano" style="background:linear-gradient(#0b1426,#0b1426) padding-box,#0b1426;box-shadow:inset 0 0 0 5px #0b1426,inset 0 0 0 6px #7aa2ff"></button><button type="button" data-f="d" title="Noche TV" style="background:radial-gradient(circle at 50% 120%,#ff3b30,#0a0c11 70%)"></button></div><div class="note">Trazado: datos abiertos f1-circuits (MIT)</div></div>
       <div class="spd" id="spdBox" style="margin-top:10px"><span class="spdl">Velocidad</span><input type="range" id="spdR" min="0" max="5" step="1" aria-label="Velocidad de la carrera"><b id="spdV"></b><span class="note" id="spdNote" style="display:none;margin:0">La elige el anfitrión</span></div>
       <div id="myStrat" style="display:none"></div>
+      <details class="ficha inl"><summary>Ficha del piloto</summary><div class="fbody"></div></details>
+      <details class="ficha inl car"><summary>Ficha del coche</summary><div class="cbody"></div></details>
+      <details class="ficha inl jef"><summary>Ficha del jefe de equipo</summary><div class="jbody"></div></details>
       <div class="radio" id="radio"></div>
     </div>
     <div class="panel">
@@ -583,11 +640,13 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
   </div>
 </section>
 </main>
+<aside class="ficha side" id="fichaSide" aria-label="Ficha del piloto, del coche y del jefe de equipo"><div class="fbody"></div><div class="cbody"></div><div class="jbody"></div></aside>
 <footer>
   <button class="pill" id="fDonate">☕ Apoya a BoxBox</button>
   <button class="link" id="fSuggest">Sugerencias y mejoras</button>
   <button class="link" id="fRating">¿No estás de acuerdo con alguna media?</button>
   <span style="margin-left:auto">Juego de fans · sin afiliación con la F1, equipos ni pilotos · Trazados: f1-circuits (MIT)</span>
+  <span class="note" style="margin:0 0 0 8px">Estadísticas: Jolpica F1</span>
   <nav class="social" aria-label="Seguinos en redes"><span>Seguinos:</span>
     <a href="https://x.com/boxf1boxx" target="_blank" rel="noopener" aria-label="BoxBox en X"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.9 2H22l-7.2 8.2L23 22h-6.4l-5-6.6L5.8 22H2.7l7.7-8.8L2 2h6.5l4.5 6L18.9 2zm-1.1 18h1.7L7.3 3.9H5.5L17.8 20z"/></svg>X</a>
     <a href="https://www.instagram.com/boxbox.f1game/" target="_blank" rel="noopener" aria-label="BoxBox en Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5zm0 2a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3H7zm5 3.5a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9zm0 2a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM17.3 5.8a1.1 1.1 0 1 1 0 2.2 1.1 1.1 0 0 1 0-2.2z"/></svg>Instagram</a>
@@ -693,7 +752,7 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
 
 
 <script src="vendor/supabase.min.js" defer></script>
-<script src="tracks.js?v=604cb910" defer></script>
-<script src="game.js?v=604cb910" defer></script>
+<script src="tracks.js?v=f8abca14" defer></script>
+<script src="game.js?v=f8abca14" defer></script>
 </body>
 </html>

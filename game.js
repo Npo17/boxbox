@@ -12,7 +12,7 @@ const PTS=[25,18,15,12,10,8,6,4,2,1];
 let LAPS=+(new URLSearchParams(location.search).get('laps')||20);   // ?laps=N solo para pruebas; en salas y desafío siempre 20
 
 // ---------- Estado ----------
-let year=null, cat=null, rerolls=2, picks={}, offer={}, FIELD=[], GRID=[], MODE='solo';
+let year=null, cat=null, rerolls=2, picks={}, offer={}, FIELD=[], GRID=[], MODE='solo', FICHAS=null, FOTOS={}, COCHES=null, FOTOSC={p:[],k:{}}, JEFES=null, fichaLoading=false;
 const $=id=>document.getElementById(id);
 const rc=r=>r>=95?'r95':r>=90?'r90':r>=80?'r80':'r0';
 const FACES=['⚀','⚁','⚂','⚃','⚄','⚅'];   // caras de dado
@@ -42,6 +42,7 @@ function renderSlots(){
   $('toRace').disabled=filled<5;
   $('toRace').style.display=MODE==='room'?'none':'';
   $('rollBtn').disabled=filled>=5;
+  fichaSync();
 }
 
 // Cada tirada muestra solo parte de la temporada: las piezas top aparecen menos (lo decide el motor).
@@ -58,6 +59,7 @@ function renderList(){
   const {shown,total}=offer[cat];
   $('list').innerHTML=`<div class="note" style="margin:0 0 4px">${shown.length} de ${total} disponibles en esta tirada</div>`+
     shown.map((it,i)=>`<div class="pick" data-i="${i}"><div class="who"><b>${it[0]}</b><small>${it[1]||year}</small></div><div class="rt ${BLIND?'r0':rc(it[2])}">${BLIND?'?':it[2]}</div></div>`).join('');
+  if((cat==='piloto'||cat==='coche'||cat==='jefe')&&!BLIND) document.querySelectorAll('.pick').forEach(el=>{ el.onmouseenter=()=>(cat==='piloto'?fichaPreview:cat==='coche'?fichaPreviewCar:fichaPreviewJefe)(shown[+el.dataset.i][0],year); el.onmouseleave=fichaSync });   // vista previa de la ficha (no en los modos a ciegas)
   document.querySelectorAll('.pick').forEach(el=>el.onclick=()=>{
     if(MODE==='room'){roomPick(cat,+el.dataset.i,shown[+el.dataset.i]);return}
     if(MODE==='daily'){dailyPick(cat,+el.dataset.i,shown[+el.dataset.i]);return}
@@ -80,7 +82,7 @@ $('rollBtn').onclick=async()=>{
 };
 renderSlots();
 
-function go(screen,step){if(screen!=='s-home')document.documentElement.classList.add('ready');document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$(screen).classList.add('on');
+function go(screen,step){document.documentElement.dataset.screen=screen;if(screen!=='s-home')document.documentElement.classList.add('ready');document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$(screen).classList.add('on');
   ['st1','st2','st3','st4'].forEach((s,i)=>$(s).classList.toggle('on',i+1===step));window.scrollTo(0,0)}
 
 // ---------- Carrera: el motor (supabase/functions/_shared/engine.js) la calcula y acá se anima ----------
@@ -171,6 +173,85 @@ function runQualy(animate,onDone){
     if(i>=seq.length) end(); else setTimeout(step,seq[i].ms) };
   setTimeout(step,200);
 }
+// ---------- FICHA DEL PILOTO ----------
+// Datos de data/pilotos.json (armado con scripts/armar-fichas.mjs a partir de Jolpica): estadísticas de la temporada elegida y de toda la carrera.
+function fichaLoad(){
+  if(FICHAS||fichaLoading) return; fichaLoading=true;
+  const get=u=>fetch(u+'?v='+BUILD).then(r=>r.json());
+  Promise.all([get('data/pilotos.json'),get('data/fotos.json').catch(()=>({})),get('data/coches.json').catch(()=>null),get('data/fotos-coches.json').catch(()=>({p:[],k:{}})),get('data/jefes.json').catch(()=>null)])
+    .then(([j,f,c,fc,jf])=>{ FICHAS=j; FOTOS=f; COCHES=c; FOTOSC=fc; JEFES=jf; fichaSync() }).catch(()=>{ fichaLoading=false });
+}
+const fichaPais=c=>{ try{ return new Intl.DisplayNames([LOCALES[LANG]||'es'],{type:'region'}).of(c) }catch(e){ return c } };
+function fichaHtml(name,year){
+  const row=(DATA[year]&&DATA[year].piloto||[]).find(r=>r[0]===name), team=row?row[1]:'';
+  const hit=FICHAS&&FICHAS.s[year]&&FICHAS.s[year][name], p=hit&&FICHAS.p[hit[0]];
+  // foto libre de Wikimedia Commons (con crédito al pie); si no hay o no carga, las iniciales
+  const nombre=p?p[0]:name, foto=p&&FOTOS[hit[0]], ini=esc(nombre.split(' ').filter(Boolean).map(w=>w[0]).slice(0,2).join('').toUpperCase());
+  const head=`<div class="fh"><div class="fph"><span>${ini}</span>${foto?`<img src="${esc(foto[0])}" alt="" width="64" height="80" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">`:''}</div><div class="ftx"><b class="fn">${esc(nombre)}</b><span class="fm">${[p&&p[1]?esc(fichaPais(p[1])):'',p&&p[2]?'<span>Nacido en</span> '+p[2]:''].filter(Boolean).join(' · ')}</span></div></div>`;
+  const cred=foto?`<div class="fcred"><span>Foto:</span> ${esc(foto[1])}${foto[2]?` · <a href="${esc(foto[3])}" target="_blank" rel="noopener">${esc(foto[2])}</a>`:''}</div>`:'';
+  if(!p) return head+(FICHAS?'<div class="fm">Sin datos de este piloto.</div>':'');
+  const t=(v,l)=>`<div class="ft"><b>${v}</b><span>${l}</span></div>`;
+  const pos=hit[1], titulo=pos===1&&year<2026?'<span class="fchip">Campeón del mundo</span>':pos===2&&year<2026?'<span class="fchip">Subcampeón</span>':'';
+  const activo=p[9]>=2026;
+  return head+`<div class="fsec"><span>Temporada</span> <b>${year}</b>${team?' · '+esc(team):''}</div>${titulo}
+    <div class="fgrid" style="margin-top:6px">${t(pos||'—','Puesto')}${t(String(hit[2]).replace('.',','),'Puntos')}${t(hit[3],'Victorias')}</div>
+    <div class="fsec"><span>Carrera</span> <b>${p[8]}–${activo?'':p[9]}</b></div>
+    <div class="fgrid">${t(p[3].length,'Títulos')}${t(p[4],'Victorias')}${t(p[5],'Podios')}${t(p[6],'Poles')}${t(p[7],'Grandes Premios')}</div>
+    <span class="fchip g">${activo?'En actividad':'Retirado'}</span>${cred}`;
+}
+// ---------- FICHA DEL COCHE ----------
+// Datos de data/coches.json (scripts/armar-coches.mjs): puesto, puntos y victorias del equipo en esa temporada y los pilotos que lo usaron.
+// Foto libre solo para los modelos con nombre propio; para el resto, la silueta del monoplaza con los colores del equipo.
+const TEAM_COLOR=[[/ferrari/,'#dc0000'],[/mclaren/,'#ff8000'],[/mercedes/,'#00b8a9'],[/redbull/,'#1e41ff'],[/rbf1|racingbulls|toro|alphatauri/,'#6692ff'],[/williams/,'#00a0de'],[/lotus/,'#d4a017'],[/renault/,'#ffd800'],[/alpine/,'#0090ff'],[/benetton/,'#00a651'],[/brabham/,'#2a6bd1'],[/tyrrell/,'#1b3fa0'],[/astonmartin|racingpoint|forceindia/,'#00846f'],[/alfa/,'#9b0000'],[/sauber|kick/,'#00b140'],[/haas/,'#b6babd'],[/ligier|prost|gordini|talbot/,'#2f6fe0'],[/jordan/,'#f5e400'],[/arrows|footwork/,'#ff7a00'],[/brawn/,'#dfff4f'],[/^bar/,'#cc0000'],[/honda/,'#e8e8e8'],[/toyota/,'#d4002a'],[/bmw/,'#1c69d4'],[/jaguar|cooper|vanwall/,'#0b6b3a'],[/stewart|hesketh/,'#f0f0f0'],[/march/,'#7a2bc4'],[/maserati|matra/,'#b30000'],[/spyker|mf1|midland/,'#e8590c'],[/minardi/,'#222831']];
+const teamColor=n=>{ const k=String(n).toLowerCase().replace(/[^a-z0-9]/g,''); for(const [re,c] of TEAM_COLOR) if(re.test(k)) return c; return '#6b7280' };
+const carMini=c=>`<svg viewBox="0 0 250 120"><rect x="18" y="8" width="34" height="26" rx="5" fill="#111"/><rect x="18" y="86" width="34" height="26" rx="5" fill="#111"/><rect x="172" y="4" width="40" height="30" rx="6" fill="#111"/><rect x="172" y="86" width="40" height="30" rx="6" fill="#111"/><rect x="2" y="22" width="12" height="76" rx="3" fill="${c}"/><rect x="228" y="18" width="18" height="84" rx="3" fill="${c}"/><path d="M10 52 L70 44 L120 38 L190 40 L232 48 L232 72 L190 80 L120 82 L70 76 L10 68 Z" fill="${c}"/><path d="M95 46 L150 42 L175 50 L175 70 L150 78 L95 74 Z" fill="#000" opacity=".25"/><ellipse cx="130" cy="60" rx="18" ry="11" fill="#0d0d12"/><circle cx="132" cy="60" r="7" fill="#ffd23f"/></svg>`;
+const norm0=s=>String(s).toLowerCase().replace(/[^a-z0-9]/g,'');
+function cocheHtml(name,year){
+  const hit=COCHES&&COCHES.s[year]&&COCHES.s[year][name], team=hit?COCHES.c[hit[0]]:'', foto=FOTOSC.p&&FOTOSC.k[year+'|'+name]!=null?FOTOSC.p[FOTOSC.k[year+'|'+name]]:null, col=teamColor(team||name);
+  const head=`<div class="fh"><div class="fph car">${foto?`<img src="${esc(foto[0])}" alt="" width="96" height="64" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" style="object-position:center">`:carMini(col)}</div><div class="ftx"><b class="fn">${esc(name)}</b>${foto&&foto[4]&&norm0(foto[4])!==norm0(name)?`<span class="fm">${esc(foto[4])}</span>`:(team&&team!==name?`<span class="fm">${esc(team)}</span>`:'')}</div></div>`;
+  const cred=foto?`<div class="fcred"><span>Foto:</span> ${esc(foto[1])}${foto[2]?` · <a href="${esc(foto[3])}" target="_blank" rel="noopener">${esc(foto[2])}</a>`:''}</div>`:'';
+  if(!hit) return head+cred;
+  const t=(v,l)=>`<div class="ft"><b>${v}</b><span>${l}</span></div>`, pos=hit[1], antes=+year<1958;
+  const chip=pos===1&&year<2026?'<span class="fchip">Campeón de constructores</span>':pos===2&&year<2026?'<span class="fchip">Subcampeón</span>':'';
+  const pil=hit[4].map(d=>`<div class="fdr"><span>${esc(d[0])}</span><b>${String(d[1]).replace('.',',')} <i>pts</i></b></div>`).join('');
+  return head+`<div class="fsec"><span>Temporada</span> <b>${year}</b></div>${chip}
+    ${antes?`<div class="fgrid" style="margin-top:6px">${t(hit[3],'Victorias')}</div><div class="fm" style="margin-top:6px">Todavía no había campeonato de constructores.</div>`
+    :`<div class="fgrid" style="margin-top:6px">${t(pos||'—','Puesto')}${t(hit[2],'Puntos')}${t(hit[3],'Victorias')}</div>`}
+    <div class="fsec"><span>Pilotos</span></div>${pil}${hit[5]>hit[4].length?`<div class="fm" style="margin-top:4px">y ${hit[5]-hit[4].length} más</div>`:''}${cred}`;
+}
+// ---------- FICHA DEL JEFE DE EQUIPO ----------
+// Datos de data/jefes.json (scripts/armar-jefes.mjs): nacimiento y país de Wikipedia/Wikidata, foto libre de Commons y estadísticas de su equipo
+// en las temporadas en que figura en el juego (campeonatos de constructores, puntos y victorias del equipo).
+function jefeHtml(name,year){
+  const row=(DATA[year]&&DATA[year].jefe||[]).find(r=>r[0]===name), team=row?String(row[1]).split(' · ')[0]:'';
+  const pid=JEFES&&JEFES.s[year]&&JEFES.s[year][name], p=pid&&JEFES.p[pid];
+  const ini=esc(String(p?p[0]:name).split(' ').filter(w=>/^[A-ZÁÉÍÓÚÑ]/.test(w)).map(w=>w[0]).slice(0,2).join('').toUpperCase()||'JE');
+  const foto=p&&p[11];
+  const head=`<div class="fh"><div class="fph"><span>${ini}</span>${foto?`<img src="${esc(foto[0])}" alt="" width="64" height="80" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">`:''}</div><div class="ftx"><b class="fn">${esc(p?p[0]:name)}</b><span class="fm">${p?[p[1]?esc(fichaPais(p[1])):'',p[2]?'<span>Nacido en</span> '+p[2]:'',p[3]?'<span>Fallecido en</span> '+p[3]:''].filter(Boolean).join(' · '):''}</span></div></div>`;
+  const cred=foto?`<div class="fcred"><span>Foto:</span> ${esc(foto[1])}${foto[2]?` · <a href="${esc(foto[3])}" target="_blank" rel="noopener">${esc(foto[2])}</a>`:''}</div>`:'';
+  if(!p) return head+(JEFES?'<div class="fm">Sin datos de este jefe de equipo.</div>':'');
+  const t=(v,l)=>`<div class="ft"><b>${v}</b><span>${l}</span></div>`;
+  const campeon=p[8].includes(+year)&&+year<2026?'<span class="fchip">Campeón de constructores</span>':'';
+  const activo=p[6]>=2025;
+  return head+`<div class="fsec"><span>Temporada</span> <b>${year}</b>${team?' · '+esc(team):''}</div>${campeon}
+    <div class="fsec"><span>Carrera</span> <b>${p[5]}–${activo?'':p[6]}</b></div>
+    <div class="fgrid">${t(p[8].length,'Campeonatos')}${t(p[7],'Temporadas')}${t(p[9].toLocaleString(LOCALES[LANG]||'es'),'Puntos')}</div>${cred}`;
+}
+// Muestra la ficha del piloto elegido (en todos los contenedores). El lateral también admite una vista previa al pasar el mouse por la lista.
+function fichaSync(){
+  const pk=typeof picks!=='undefined'&&picks.piloto; fichaLoad();
+  const ck=typeof picks!=='undefined'&&picks.coche;
+  const jk=typeof picks!=='undefined'&&picks.jefe;
+  const h=pk?fichaHtml(pk.n,pk.y):'', hc=ck?cocheHtml(ck.n,ck.y):'', hj=jk?jefeHtml(jk.n,jk.y):'';
+  document.querySelectorAll('.ficha .fbody').forEach(b=>{ b.innerHTML=h });
+  document.querySelectorAll('.ficha .cbody').forEach(b=>{ b.innerHTML=hc });
+  document.querySelectorAll('.ficha .jbody').forEach(b=>{ b.innerHTML=hj });
+  document.querySelectorAll('.ficha.inl').forEach(d=>{ const k=d.classList.contains('car')?hc:d.classList.contains('jef')?hj:h; d.style.display=k?'':'none' });
+  $('fichaSide').classList.toggle('vacia',!h&&!hc&&!hj);
+}
+function fichaPreviewCar(name,year){ if(!FICHAS) return; $('fichaSide').classList.remove('vacia'); $('fichaSide').querySelector('.cbody').innerHTML=cocheHtml(name,year) }
+function fichaPreviewJefe(name,year){ if(!FICHAS) return; $('fichaSide').classList.remove('vacia'); $('fichaSide').querySelector('.jbody').innerHTML=jefeHtml(name,year) }
+function fichaPreview(name,year){ if(!FICHAS) return; $('fichaSide').classList.remove('vacia'); $('fichaSide').querySelector('.fbody').innerHTML=fichaHtml(name,year) }
 // ---------- VELOCIDAD DE LA CARRERA ----------
 // Solo, modo carrera y amistoso: se cambia en vivo y se recuerda. En salas la maneja solo el anfitrión, antes de largar y en vivo:
 // el servidor guarda cada cambio con la hora (unos 3 s después) y todos los jugadores consultan esa línea de tiempo, así nadie se desfasa.
