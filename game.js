@@ -121,22 +121,54 @@ function paintFondo(){
 }
 $('fondoSw').onclick=e=>{ const b=e.target.closest('[data-f]'); if(!b) return; FONDO=b.dataset.f; ev('fondo',{f:FONDO}); try{ localStorage.setItem('boxbox_fondo',FONDO) }catch(err){} paintFondo() };
 paintFondo();
+// Lugar de la calle de boxes: segmento paralelo a la recta de meta. Se prueban ambos lados, varias distancias y corrimientos a lo largo de la recta,
+// y se elige el más cercano a la meta que deje un hueco libre respecto de cualquier otro tramo de la pista (la cinta de la pista mide 34 de ancho).
+function pitSpot(pth){
+  const PL=pth.getTotalLength(), a=pth.getPointAtLength(0), b=pth.getPointAtLength(Math.min(PL*0.01,12));
+  let tx=b.x-a.x, ty=b.y-a.y; const nn=Math.hypot(tx,ty)||1; tx/=nn; ty/=nn;
+  const N=Math.max(240,Math.round(PL/6)), pts=[]; for(let i=0;i<N;i++) pts.push(pth.getPointAtLength(PL*i/N));
+  const inside=(x,y)=>x>14&&x<786&&y>14&&y<446, NEED=31;     // 17 de cinta + 6,5 de calle de boxes + margen
+  let best=null;
+  // primero la calle de boxes completa (±40) y lo más cerca posible de la meta; si no entra, más corta (±32, ±26) y/o corrida a lo largo de la recta
+  for(const h of [40,32,26]) for(const sh of [0,-16,16,-32,32,-48,48,-64,64,-80,80,-96,96]) for(const off of [34,40,48,56,66,78]) for(const side of [1,-1]){
+    const nx=-ty*side, ny=tx*side, cx=a.x+tx*sh+nx*off, cy=a.y+ty*sh+ny*off;
+    let min=1e9, ok=true;
+    for(let k=-5;k<=4;k++){   // k=-5: el cartel "BOX", que va 17 más afuera
+      const x=k<-4?cx+nx*17:cx+tx*k*h/4, y=k<-4?cy+ny*17:cy+ty*k*h/4; if(!inside(x,y)){ ok=false; break }
+      for(const p of pts){ const d=Math.hypot(p.x-x,p.y-y); if(d<min) min=d }
+    }
+    if(!ok) continue;
+    if(min>=NEED) return {x:cx,y:cy,tx,ty,nx,ny,h,libre:min,pts};
+    if(!best||min>best.libre) best={x:cx,y:cy,tx,ty,nx,ny,h,libre:min,pts};
+  }
+  return best||{x:a.x+(-ty)*34,y:a.y+tx*34,tx,ty,nx:-ty,ny:tx,h:40,libre:0,pts};
+}
 function setTrack(){
   TRACK=TRACKS[RACE.trackIdx];
   const s=TRACK.d.match(/M([0-9.]+),([0-9.]+)/), layers=(id)=>`<path ${id} class="pk" d="${TRACK.d}" fill="none" stroke="url(#kerbp)" stroke-width="34" stroke-linejoin="round"/>
    <path class="pa" d="${TRACK.d}" fill="none" stroke="#3a3c44" stroke-width="26" stroke-linejoin="round"/>
    <path class="pd" d="${TRACK.d}" fill="none" stroke="#fff" stroke-opacity=".25" stroke-width="1.5" stroke-dasharray="10 12"/>
    <circle class="ps" cx="${s[1]}" cy="${s[2]}" r="7" fill="#fff"/>`;
-  $('trackg').innerHTML=layers('id="tp"')+`<text x="${+s[1]+12}" y="${+s[2]+24}" fill="#fff" fill-opacity=".5" font-size="13" font-family="Titillium Web" font-weight="700">LARGADA / META</text>`;
+  $('trackg').innerHTML=layers('id="tp"');
   paintFondo();
-  // calle de boxes: paralela a la recta de meta, del lado con más espacio
-  const pth=$('tp'), PL=pth.getTotalLength(), a=pth.getPointAtLength(0), b=pth.getPointAtLength(Math.min(PL*0.01,12));
-  let tx=b.x-a.x, ty=b.y-a.y; const nn=Math.hypot(tx,ty)||1; tx/=nn; ty/=nn;
-  let nx=-ty, ny=tx; const inside=(x,y)=>x>16&&x<784&&y>16&&y<444;
-  if(!inside(a.x+nx*40,a.y+ny*40)){nx=-nx;ny=-ny}
-  PIT={x:a.x+nx*34,y:a.y+ny*34,tx,ty};
-  $('trackg').insertAdjacentHTML('beforeend',`<line x1="${PIT.x-tx*40}" y1="${PIT.y-ty*40}" x2="${PIT.x+tx*40}" y2="${PIT.y+ty*40}" stroke="#555a66" stroke-width="13" stroke-linecap="round"/>
-   <text x="${PIT.x+nx*16}" y="${PIT.y+ny*16+4}" text-anchor="middle" fill="#fff" fill-opacity=".6" font-size="11" font-family="Titillium Web" font-weight="700">BOX</text>`);
+  // calle de boxes: paralela a la recta de meta, en el lado y a la distancia donde no pisa ninguna otra parte de la pista
+  const pth=$('tp'), P=pitSpot(pth); PIT=P; const {x:px,y:py,tx,ty,nx,ny,h}=P;
+  $('trackg').insertAdjacentHTML('beforeend',`<line x1="${px-tx*h}" y1="${py-ty*h}" x2="${px+tx*h}" y2="${py+ty*h}" stroke="#555a66" stroke-width="13" stroke-linecap="round"/>
+   <text x="${px+nx*16}" y="${py+ny*16+4}" text-anchor="middle" fill="#fff" fill-opacity=".6" font-size="11" font-family="Titillium Web" font-weight="700">BOX</text>`);
+  // "LARGADA / META": el lugar más libre cerca de la meta (lejos de la pista y de los boxes)
+  { const a=pth.getPointAtLength(0); let mejor=null; const W=104, S2=Math.SQRT1_2;
+    // direcciones: opuesta a los boxes primero, luego arriba, abajo, a los lados y diagonales; texto centrado o pegado a un lado
+    const dirs=[[-nx,-ny],[0,-1],[0,1],[1,0],[-1,0],[S2,-S2],[-S2,-S2],[S2,S2],[-S2,S2]];
+    busca: for(const d of [26,36,48,62,80,100]) for(const [dx,dy] of dirs) for(const anc of ['middle','start','end']){
+      const cx=Math.max(8+(anc==='end'?W:anc==='middle'?W/2:0),Math.min(792-(anc==='start'?W:anc==='middle'?W/2:0),a.x+dx*d)), cy=Math.max(20,Math.min(440,a.y+dy*d));
+      const x0=anc==='start'?cx:anc==='end'?cx-W:cx-W/2;
+      if(Math.hypot(cx-px,cy-py)<56&&Math.hypot(x0+W/2-px,cy-py)<56) continue;
+      let min=1e9; for(let k=0;k<=4;k++) for(const q of P.pts){ const e=Math.hypot(q.x-(x0+k*W/4),q.y-cy); if(e<min) min=e }
+      for(let k=0;k<=4;k++){ const e=Math.hypot(x0+k*W/4-px,cy-py); if(e<30) min=Math.min(min,e-6) }   // tampoco pisar los boxes
+      if(min>=25){ mejor={cx,cy,min,anc}; break busca }
+      if(!mejor||min>mejor.min) mejor={cx,cy,min,anc};
+    }
+    if(mejor) $('trackg').insertAdjacentHTML('beforeend',`<text x="${mejor.cx}" y="${mejor.cy+4}" text-anchor="${mejor.anc}" fill="#fff" fill-opacity=".5" font-size="13" font-family="Titillium Web" font-weight="700">LARGADA / META</text>`); }
   $('qtrack').innerHTML='<defs><pattern id="kerbq" width="16" height="16" patternUnits="userSpaceOnUse"><rect width="8" height="16" fill="#ff3b30"/><rect x="8" width="8" height="16" fill="#fff"/></pattern></defs>'+layers('').replace('url(#kerbp)','url(#kerbq)');
   $('qcircuit').textContent=`${RACE.sprint?'Sprint · ':''}Ronda ${MODE==='career'&&CAR_EVT?CAR_EVT.i+1:TRACK.round} · ${TRACK.circuit} · ${TRACK.km.replace('.',',')} km`;
   $('raceTitle').innerHTML=`${RACE.sprint?'Sprint':'Gran Premio'} <em>de ${GPN()}</em>${RACE.rain?' 🌧️':''}`;
