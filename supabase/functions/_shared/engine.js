@@ -88,7 +88,9 @@ export const SC_ON_CRASH_SPRINT = 0.2;  // sprint de 8 vueltas: el safety car (3
 export const SPRINT_LAPS = 8;
 // Vueltas reales de cada Gran Premio (por índice de circuitos.json). Con real:true, runRace las usa en vez de 20.
 export const GP_LAPS = [58, 56, 53, 57, 50, 57, 70, 78, 66, 71, 52, 44, 70, 72, 53, 56, 51, 62, 56, 71, 71, 50, 57, 58];
-export const lapsFor = (trackIdx) => GP_LAPS[trackIdx] ?? LAPS;
+// Se corre la mitad de las vueltas reales: la carrera dura lo mismo en pantalla pero cada vuelta se ve más despacio y se alcanza a leer lo que pasa.
+export const LAPS_FACTOR = 0.5;
+export const lapsFor = (trackIdx) => (GP_LAPS[trackIdx] == null ? LAPS : Math.max(10, Math.round(GP_LAPS[trackIdx] * LAPS_FACTOR)));
 export const SPRINT_PTS = [8, 7, 6, 5, 4, 3, 2, 1];
 export const crashChanceWet = (d) => (d < 90 ? (90 - d) * 0.00025 + 0.0004 : 0.0003);
 
