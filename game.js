@@ -98,7 +98,7 @@ const ptsTable=()=>RACE&&RACE.sprint?E.SPRINT_PTS:PTS;
 // Solo, amistoso y desafío del día: carrera nueva con el auto que armaste
 function prepareRace(seed){
   SEED=seed||('s'+Date.now().toString(36)+Math.random().toString(36).slice(2,8));
-  HUMANS=[E.humanFromPicks('me','#ff3b30',picks)]; MEKEY='h:me'; DECISIONS={};
+  HUMANS=[E.humanFromPicks('me','#ff3b30',picks)]; MEKEY='h:me'; DECISIONS={}; STRAT=null; paintStratPick();
   RACE=newRace({}); setTrack();
 }
 // Fondo de la pista: el usuario elige entre 5 (se recuerda). Se dibuja debajo (bgl) y encima (bgfx) del trazado.
@@ -143,25 +143,88 @@ function setTrack(){
 }
 
 // ---------- QUALY ----------
-// El orden en que aparecen los tiempos es solo visual (Math.random): el resultado ya viene del motor.
+// Un solo tiro de dado. Los tiempos aparecen como en la transmisión: primero los eliminados en Q1 (P22 a P17), después los de Q2
+// (P16 a P11) y al final el top 10, de P10 hasta la pole. Cada auto ocupa su lugar final desde el principio (la tabla no se mueve).
 function runQualy(animate,onDone){
   const cars=RACE.cars; cars.forEach(c=>{c.me=c.key===MEKEY});
-  const grid=RACE.grid.map(carByKey);
-  const order=[...cars]; for(let k=order.length-1;k>0;k--){const j=Math.floor(Math.random()*(k+1));[order[k],order[j]]=[order[j],order[k]]}
-  let i=animate?0:order.length, done=animate?[]:[...order];
-  const paint=()=>{done.sort((a,b)=>a.q-b.q); const best=done[0].q;
-    $('qtower').innerHTML=done.map((c,k)=>`<div class="trow ${c.me?'me':''}"><span class="p">${k+1}</span><span class="c" style="background:${c.color}"></span><span>${c.name}${c.qErr?` <small style="color:var(--red)">· error en ${c.qErr}</small>`:''}</span><span class="g">${k?'+'+(c.q-best).toFixed(3):fmt(c.q)}</span></div>`).join('')};
+  const grid=RACE.grid.map(carByKey), N=grid.length, q3=Math.min(10,N), q2=Math.min(16,N);
+  const seq=[]; const add=(from,to,ms,pause)=>{ for(let k=from;k>=to;k--) seq.push({c:grid[k],ms:k===from?pause:ms}) };
+  add(N-1,q2,70,0); if(q2>q3) add(q2-1,q3,90,300); add(q3-1,0,130,300);
+  seq[seq.length-1].ms+=350;                                   // un respiro antes de la pole
+  const rev=new Set(animate?[]:grid);
+  const DIV={0:'Q3 · Top 10',[q3]:'Eliminados en Q2',[q2]:'Eliminados en Q1'};
+  const paint=final=>{
+    const best=grid[0].q;
+    $('qtower').innerHTML=grid.map((c,k)=>(DIV[k]&&k<N&&(k===0||k===q3&&q2>q3||k===q2&&q2<N)?`<div class="qdiv">${DIV[k]}</div>`:'')+(rev.has(c)
+      ?`<div class="trow ${c.me?'me':''}"><span class="p">${k+1}</span><span class="c" style="background:${c.color}"></span><span>${c.name}${c.qErr?` <small style="color:var(--red)">· error en ${c.qErr}</small>`:''}</span><span class="g">${final&&k?'+'+(c.q-best).toFixed(3):fmt(c.q)}</span></div>`
+      :`<div class="trow ph"><span class="p">${k+1}</span><span class="c"></span><span></span><span class="g"></span></div>`)).join('')};
   const end=()=>{ const m=carByKey(MEKEY), me=grid.indexOf(m)+1;
     $('qtime').textContent=fmt(m.q);
     $('qdie').textContent=FACES[m.luck-1];
     const lk=m.luck<=2?'vuelta mala':m.luck<=4?'vuelta normal':'¡vuelta redonda!';
     $('qpos').innerHTML=`Largas <b style="color:var(--red)">P${me}</b>${m.qErr?`<br><small style="color:var(--muted)">Error en ${m.qErr}: perdiste tiempo</small>`:me===1?'<br><small style="color:var(--yellow)">¡POLE POSITION!</small>':''}<br><small style="color:var(--muted)">Dado de suerte: ${m.luck}/6 · ${lk}</small>`;
     $('qBtn').style.display='none'; onDone&&onDone(); };
-  if(!animate){paint();end();return}
-  $('qdie').classList.add('spin');
-  const t=setInterval(()=>{ done.push(order[i++]); paint(); $('qdie').textContent=FACES[Math.floor(Math.random()*6)]; if(i>=order.length){clearInterval(t);end()} },110);
+  if(!animate){paint(true);end();return}
+  $('qdie').classList.add('spin'); paint();
+  let i=0;
+  const step=()=>{ rev.add(seq[i].c); i++; paint(i>=seq.length); $('qdie').textContent=FACES[Math.floor(Math.random()*6)];
+    if(i>=seq.length) end(); else setTimeout(step,seq[i].ms) };
+  setTimeout(step,200);
 }
-$('qBtn').onclick=()=>{ $('qBtn').disabled=true; runQualy(true,()=>{$('toRace2').style.display='block'}); };
+// ---------- ESTRATEGIA DE GOMAS ----------
+// Antes de largar se elige entre 3 estrategias (2 con lluvia). El motor decide cuál rinde más según el desgaste de la pista;
+// el estratega aconseja, y acierta más cuanto mayor es su media. En salas, la elección se manda al servidor.
+const TY={S:{n:'Blanda',c:'#e8332a'},M:{n:'Media',c:'#ffd23f'},H:{n:'Dura',c:'#f2f2f2'},I:{n:'Intermedia',c:'#2fbf4a'},W:{n:'Full wet',c:'#2f7bff'}};
+const STRAT_INFO={
+  A:['Una parada · Segura','Una sola parada hacia la mitad: gomas medias y después duras. Pocas sorpresas.'],
+  B:['Dos paradas · Ataque','Arrancás con blandas y parás dos veces. Gana si las gomas se gastan rápido.'],
+  C:['Una parada · Apuesta','Salís con blandas, parás temprano y seguís con duras. Gana si la pista cuida las gomas.'],
+  W:['Full wet · Toda la carrera','Gomas de lluvia extrema: las mejores si el diluvio es fuerte.'],
+  I:['Intermedias · Toda la carrera','Gomas de lluvia ligera: las mejores si llueve poco. Con lluvia fuerte pierden tiempo.']};
+let STRAT=null;
+const myId=()=>MEKEY.slice(2);
+const tyreSvg=c=>`<svg class="ty" viewBox="0 0 32 32"><circle cx="16" cy="16" r="15" fill="#13151a"/><circle cx="16" cy="16" r="12.4" fill="none" stroke="${TY[c].c}" stroke-width="2.6"/><circle cx="16" cy="16" r="8.2" fill="#262a32"/><path d="M16 9v14M9 16h14M11 11l10 10M21 11L11 21" stroke="#555b66" stroke-width="1.4"/><circle cx="16" cy="16" r="2.6" fill="#9aa0ab"/></svg>`;
+// Franja de tandas: degradé entre gomas, vueltas de cada tanda y una rueda al final de cada una
+function stintBar(stints,laps,cls,marker){
+  let acc=0;
+  const bg=stints.map((s,i)=>{ const a=acc/laps*100; acc+=s.b-s.a+1; const b=acc/laps*100, f=i?3:0, g=i<stints.length-1?3:0; return `${TY[s.c].c} ${(a+f).toFixed(1)}%,${TY[s.c].c} ${(b-g).toFixed(1)}%` }).join(',');
+  const segs=stints.map(s=>{ const n=s.b-s.a+1, nr=n/laps<0.22?' nr':'';
+    return `<div class="sg c${s.c}${nr}" style="flex:${n}"><span class="sl"><span class="lg">Vuelta ${s.a} a ${s.b}</span><span class="sh">${s.a}–${s.b}</span></span>${tyreSvg(s.c)}</div>` }).join('');
+  return `<div class="sbar ${cls||''}" style="background:linear-gradient(90deg,${bg})">${segs}${marker?`<i class="mk" id="${marker}" style="left:0"></i>`:''}</div>`;
+}
+function stratAsk(done){
+  STRAT=null;
+  if(!RACE||RACE.sprint||MODE==='daily'){ paintStratPick(); done&&done(); return }
+  STRAT=E.strategyOptions({seed:SEED,key:MEKEY,laps:RACE.laps,rain:!!RACE.rain,s:carByKey(MEKEY).s});
+  STRAT.done=done; paintStratPick(); renderStrat(); openM('mStrat');
+}
+function renderStrat(){
+  const S=STRAT, rec=S.opts.find(o=>o.id===S.rec), sel=DECISIONS['s:'+myId()];
+  $('stratHint').innerHTML=(S.kind==='wet'
+    ?`<div>${S.hint==='heavy'?'🧠 Tu estratega ve una lluvia fuerte en este circuito.':'🧠 Tu estratega ve una lluvia ligera en este circuito.'}</div>`
+    :`<div>${{low:'🧠 Tu estratega prevé poco desgaste de gomas en este circuito.',normal:'🧠 Tu estratega prevé un desgaste normal de gomas en este circuito.',high:'🧠 Tu estratega prevé mucho desgaste de gomas en este circuito.'}[S.hint]}</div>`)
+    +`<div>Recomienda: <b>${STRAT_INFO[rec.id][0]}</b></div>`;
+  $('stratList').innerHTML=S.opts.map(o=>`<button type="button" class="scard${sel===o.id?' on':''}" data-id="${o.id}"><div class="top"><span class="nm">${STRAT_INFO[o.id][0]}</span>${o.id===S.rec?'<span class="rec">⭐ Recomendada</span>':''}</div>${stintBar(o.stints,RACE.laps)}<div class="seq">${o.stints.map(s=>`<span><i style="background:${TY[s.c].c}"></i>${TY[s.c].n}</span>`).join('<span>→</span>')}</div><div class="sd">${STRAT_INFO[o.id][1]}</div></button>`).join('');
+  $('stratNote').textContent=BLIND?'El aviso del estratega puede fallar: con menos media se equivoca más.':'El aviso del estratega acierta más cuanto mayor es su media. Con menos media también se equivoca más en las vueltas de parada.';
+}
+function stratChoose(id){
+  DECISIONS={...DECISIONS,['s:'+myId()]:id};
+  if(MODE==='room') api('estrategia',{choice:id}).catch(e=>toast(e.message));
+  else RACE=newRace(DECISIONS);                                     // la clasificación no cambia: solo la carrera
+  $('mStrat').classList.remove('open'); paintStratPick(); STRAT&&STRAT.done&&STRAT.done();
+}
+function paintStratPick(){
+  const el=$('stratPick');
+  if(!STRAT){ el.style.display='none'; el.innerHTML=''; return }
+  const id=DECISIONS['s:'+myId()], o=id&&STRAT.opts.find(x=>x.id===id);
+  el.style.display='block';
+  el.innerHTML=`<div class="lbl"><span>Tu estrategia</span><button type="button" id="stratChg">${o?'Cambiar':'Elegir'}</button></div>`
+    +(o?stintBar(o.stints,RACE.laps,'mini')+`<div class="note" style="margin:4px 0 0">${STRAT_INFO[o.id][0]}</div>`:'<div class="note" style="margin:0">Sin estrategia elegida: se corre con el plan de siempre.</div>');
+  $('stratChg').onclick=()=>{ renderStrat(); openM('mStrat') };
+}
+$('stratList').onclick=e=>{ const b=e.target.closest('.scard'); if(b) stratChoose(b.dataset.id) };
+$('stratX').onclick=()=>{ $('mStrat').classList.remove('open'); STRAT&&STRAT.done&&STRAT.done() };
+$('qBtn').onclick=()=>{ $('qBtn').disabled=true; runQualy(true,()=>stratAsk(()=>{$('toRace2').style.display='block'})); };
 $('toRace2').onclick=()=>{go('s-race',3);startRace(0,MODE==='solo'||MODE==='friendly'||MODE==='daily'||MODE==='career')};
 $('toRace').onclick=()=>{
   if(MODE==='daily'){dailyToRace();return}
@@ -188,6 +251,11 @@ function startRace(syncAt,interactive){
   scEl.innerHTML='<rect x="-13" y="-8" width="26" height="16" rx="4" fill="#ffd23f" stroke="#000" stroke-width="2"/><text y="4" text-anchor="middle" font-size="10" font-weight="900" font-family="Titillium Web" fill="#000">SC</text>';
   scEl.style.display='none'; $('cars').appendChild(scEl);
   let cars=RACE.cars, events=RACE.events;
+  // tu estrategia, con una marca que avanza con las vueltas
+  const sId=DECISIONS['s:'+myId()], sOpt=sId&&!RACE.sprint&&E.strategyOptions({seed:SEED,key:MEKEY,laps:RACE.laps,rain:!!RACE.rain,s:carByKey(MEKEY).s}).opts.find(o=>o.id===sId);
+  $('myStrat').style.display=sOpt?'block':'none';
+  $('myStrat').innerHTML=sOpt?`<div class="lbl"><span>Tu estrategia</span> · <span>${STRAT_INFO[sOpt.id][0]}</span></div>${stintBar(sOpt.stints,RACE.laps,'mini','myMk')}`:'';
+  const myMk=$('myMk');
   const winnerEnd=()=>Math.min(...cars.filter(c=>!c.dnf).map(c=>c.cum[RACE.laps]));
   let endT=winnerEnd()+6; const scale=endT/32;               // toda la carrera en ~32 segundos
   const hashKey=k=>[...k].reduce((a,ch)=>a+ch.charCodeAt(0),0);
@@ -208,6 +276,7 @@ function startRace(syncAt,interactive){
     $('scBanner').style.display=scOn?'block':'none';
     $('lights').className=scOn?'lights sc':'lights go';
     tower(o);
+    if(myMk){ const me=cars.find(c=>c.key===MEKEY); if(me) myMk.style.left=Math.min(99.5,me.p/RACE.laps*100)+'%' }
     $('lap').textContent=`VUELTA ${Math.min(RACE.laps,Math.floor(o[0].p)+1)}/${RACE.laps}`;
   };
   draw(0);
@@ -226,7 +295,7 @@ function startRace(syncAt,interactive){
     const me=carByKey(MEKEY), sc=RACE.sc, dl=RS&&RS.room.deadline?srvToLocal(RS.room.deadline):0;
     const apply=async()=>{
       $('mSC').classList.remove('open');
-      try{ const s2=await api('state'), d={}; (s2.players||[]).forEach(p=>{ if(p.sc) d[p.pid]=p.sc });
+      try{ const s2=await api('state'), d={}; (s2.players||[]).forEach(p=>{ if(p.sc) d[p.pid]=p.sc; if(p.est) d['s:'+p.pid]=p.est });
         DECISIONS=d; RACE=newRace(d); RACE.cars.forEach(c=>{c.me=c.key===MEKEY}); cars=RACE.cars; events=RACE.events;
         evI=events.filter(e=>e.T<=playT).length; endT=winnerEnd()+6;
       }catch(e){}
@@ -938,17 +1007,30 @@ function startRoomRace(s){
   try{ localStorage.setItem('boxbox_raced',ROOM.code+':'+s.room.ronda) }catch(e){}
   picks={...s.players.find(p=>p.pid===ROOM.pid).picks};
   HUMANS=s.players.map(p=>E.humanFromPicks(p.pid,p.color,p.picks,`${esc(p.name)} · ${p.picks.piloto.n} '${String(p.picks.piloto.y).slice(2)}`));
-  MEKEY='h:'+ROOM.pid; SEED=String(s.room.race_seed); DECISIONS={};
+  MEKEY='h:'+ROOM.pid; SEED=String(s.room.race_seed); DECISIONS={}; STRAT=null; paintStratPick();
   RACE=newRace({}); setTrack();
   const raceAt=srvToLocal(s.room.race_start), syncAt=raceAt+2000, late=Date.now()>=raceAt;
   $('qBtn').style.display='none'; $('toRace2').style.display='none';
   go('s-quali',2);
   // El safety car se decide cuando sale en la carrera (ver askSCRoom): acá solo se larga.
-  const toRace=()=>{ $('mSC').classList.remove('open'); go('s-race',3); startRace(syncAt,'room') };
+  // Las estrategias de gomas de todos se piden 3 s antes de largar (el servidor las muestra desde ahí): la carrera sale igual para todos.
+  let estLoad=null;
+  const loadEst=()=>estLoad||(estLoad=(async()=>{
+    for(let i=0;i<5;i++){
+      try{ const s2=await api('state');
+        if(s2.room.est_rev||i===4){ const d={}; (s2.players||[]).forEach(p=>{ if(p.est) d['s:'+p.pid]=p.est; if(p.sc) d[p.pid]=p.sc }); DECISIONS=d; RACE=newRace(d); return }
+      }catch(e){}
+      await new Promise(r=>setTimeout(r,350));
+    }
+  })());
+  const toRace=async()=>{ $('mSC').classList.remove('open'); $('mStrat').classList.remove('open'); await loadEst(); go('s-race',3); startRace(syncAt,'room') };
   if(late){ runQualy(false); toRace(); return; }
   runQualy(true,()=>{
+    stratAsk(null);
     $('qWait').style.display='block';
     const t=setInterval(()=>{ const left=Math.ceil((raceAt-Date.now())/1000);
+      if(left<=4&&$('mStrat').classList.contains('open')) $('mStrat').classList.remove('open');      // se cerró el plazo para elegir
+      if(left<=3&&!estLoad) setTimeout(loadEst,300);                                                  // ya se pueden ver las estrategias de todos
       if(left<=0){clearInterval(t);toRace()} else $('qWait').textContent=`La carrera larga en ${left}s…`; },250);
   });
 }

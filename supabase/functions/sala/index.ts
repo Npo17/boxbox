@@ -27,6 +27,8 @@ const MAX_PLAYERS = 22;
 const MAX_REROLLS = 2;
 const BUILD_MS = 3 * 60 * 1000;     // tiempo para armar
 const RACE_DELAY_MS = 25 * 1000;    // de cierre a largada (qualy + decisión del safety car + cuenta regresiva)
+const EST_CLOSE_MS = 4 * 1000;      // las estrategias de gomas se pueden elegir hasta 4 s antes de largar
+const EST_REVEAL_MS = 3 * 1000;     // y se muestran a todos 3 s antes de largar
 const SC_WINDOW_MS = 9 * 1000;      // plazo para decidir qué hacer con el safety car, desde que sale en la carrera
 const ROOM_TTL_MS = 24 * 60 * 60 * 1000;
 // Modo carrera: eventos de la sala en orden (temporada completa: 6 sprints + 23 GP; o el calendario a medida que eligió el anfitrión al crearla).
@@ -184,7 +186,10 @@ async function maybeClose(room: Record<string, any>, known?: Record<string, any>
   const players = known && known.length && known[0].rolls !== undefined ? known : await getPlayers(room.code, true);
   const humans = players.map((p: any) => humanFromPicks(p.pid, p.color, p.picks, p.name));
   const decisions: Record<string, string> = {};
-  for (const p of players as any[]) { const d = (p.rolls ?? []).find((r: any) => r.k === "sc")?.v; if (d) decisions[p.pid] = d; }
+  for (const p of players as any[]) {
+    const d = (p.rolls ?? []).find((r: any) => r.k === "sc")?.v; if (d) decisions[p.pid] = d;
+    const s = (p.rolls ?? []).find((r: any) => r.k === "est")?.v; if (s) decisions["s:" + p.pid] = s;      // estrategia de gomas elegida antes de largar
+  }
   const sprint = ev.k === "sprint";
   const race = runRace({ DATA, tracks: TRACKS, seed: String(room.race_seed), humans, laps: sprint ? SPRINT_LAPS : LAPS, real: true, decisions, trackIdx: ev.t, sprint });
   const table: number[] = sprint ? SPRINT_PTS : PTS;
@@ -214,6 +219,9 @@ async function stateFor(room: Record<string, any>, me: Record<string, any> | nul
   // Decisiones de safety car: se muestran recién cuando se cierra el plazo (para que nadie copie la de otro).
   const showSc = racing && !!room.deadline && Date.now() >= Date.parse(room.deadline);
   const scOf = (p: Record<string, any>) => (p.rolls ?? []).find((r: any) => r.k === "sc")?.v;
+  // Estrategias de gomas: se eligen hasta 4 s antes de largar y se muestran 3 s antes, para que todos corran la misma carrera.
+  const showEst = racing && !!room.race_start && Date.now() >= Date.parse(room.race_start) - EST_REVEAL_MS;
+  const estOf = (p: Record<string, any>) => (p.rolls ?? []).find((r: any) => r.k === "est")?.v;
   const current = me ? (me.rolls as Roll[]).find((r) => !r.used) ?? null : null;
   return {
     now: Date.now(),
@@ -221,6 +229,7 @@ async function stateFor(room: Record<string, any>, me: Record<string, any> | nul
       code: room.code, status: room.status, host: room.host,
       deadline: room.deadline, race_start: room.race_start,
       dice_hash: room.dice_hash, race_hash: room.race_hash,
+      est_rev: showEst,
       race_seed: racing ? room.race_seed : null,
       dice_seed: racing ? room.dice_seed : null,
       modo: room.modo ?? "normal", ronda: room.ronda ?? 0, total: eventosOf(room).length, fechas: room.modo === "carrera" ? fechasDe(room.calendario ?? null) : undefined,
@@ -239,6 +248,7 @@ async function stateFor(room: Record<string, any>, me: Record<string, any> | nul
       filled: Object.keys(p.picks).length,
       picks: racing ? p.picks : undefined,          // ocultas hasta la largada
       sc: showSc ? scOf(p) : undefined,
+      est: showEst ? estOf(p) : undefined,
     })),
     me: me ? { pid: me.pid, picks: me.picks, rerolls: me.rerolls, current } : null,
   };
@@ -388,6 +398,17 @@ async function handle(body: Record<string, any>) {
     return { ok: true, now: Date.now() };
   }
 
+  if (action === "estrategia") {
+    // Estrategia de gomas: se elige antes de largar (ver EST_CLOSE_MS) para que todos corran la misma carrera.
+    if (room.status !== "racing" || !room.race_start) throw new Fail("Ahora no se puede elegir estrategia.", 409);
+    if (Date.now() >= Date.parse(room.race_start) - EST_CLOSE_MS) throw new Fail("Se acabó el tiempo para elegir estrategia.", 409);
+    const choice = String(body.choice ?? "");
+    if (!/^[ABCWI]$/.test(choice)) throw new Fail("Estrategia inválida.");
+    const rolls = [...(me.rolls as any[]).filter((r) => r.k !== "est"), { k: "est", v: choice, used: true }];
+    await db.from("jugadores").update({ rolls }).eq("sala", code).eq("pid", me.pid);
+    return { ok: true, now: Date.now() };
+  }
+
   if (action === "next") {
     // Modo carrera: el anfitrión pasa a la siguiente fecha (o a la carrera del GP si recién terminó la sprint).
     if (room.host !== me.pid) throw new Fail("Solo quien creó la sala puede pasar a la siguiente fecha.", 403);
@@ -406,7 +427,7 @@ async function handle(body: Record<string, any>) {
       ok = await db.from("salas").update({ ...common, race_start: rs, deadline: await scDeadline(room, race_seed, rs, room.ronda + 1) })
         .eq("code", code).eq("ronda", room.ronda).select("code").maybeSingle();
       if (ok.data) for (const p of await getPlayers(code, true) as any[]) {
-        await db.from("jugadores").update({ rolls: (p.rolls ?? []).filter((r: any) => r.k !== "sc") }).eq("sala", code).eq("pid", p.pid);
+        await db.from("jugadores").update({ rolls: (p.rolls ?? []).filter((r: any) => r.k !== "sc" && r.k !== "est") }).eq("sala", code).eq("pid", p.pid);
       }
     } else {
       const dice_seed = String(randU32());

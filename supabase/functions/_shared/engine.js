@@ -94,6 +94,46 @@ export const lapsFor = (trackIdx) => (GP_LAPS[trackIdx] == null ? LAPS : Math.ma
 export const SPRINT_PTS = [8, 7, 6, 5, 4, 3, 2, 1];
 export const crashChanceWet = (d) => (d < 90 ? (90 - d) * 0.00025 + 0.0004 : 0.0003);
 
+// ---------- estrategia de gomas ----------
+// Antes de largar el jugador elige una de 3 estrategias (en lluvia, una de 2). Si nadie elige, la carrera es la de siempre.
+// Con elección, todos los autos pasan al modelo de gomas con compuestos (S blanda, M media, H dura): el desgaste de la pista
+// (bajo, normal o alto, lo decide la semilla) hace que gane una estrategia u otra. El estratega aconseja con una precisión
+// que depende de su media. Con lluvia: W (full wet) o I (intermedias), según qué tan fuerte llueva.
+export const TYRE = { S: { off: -0.66, W: 3.01, Q: 20.99 }, M: { off: 0, W: 1.38, Q: 22.72 }, H: { off: 0.02, W: 1.4, Q: 8.48 } };
+export const DEG_LEVELS = [0.6, 1, 1.6];                  // desgaste bajo, normal, alto
+export const STRATS = { A: { c: ["M", "H"], f: [0.47] }, B: { c: ["S", "M", "S"], f: [0.3, 0.67] }, C: { c: ["S", "H"], f: [0.27] } };
+export const STRAT_BEST = ["C", "A", "B"];                // la mejor según el desgaste (bajo, normal, alto)
+export const WET_WRONG = 0.35;                            // segundos por vuelta (de 20) que cuesta la goma de lluvia equivocada
+const degIdxOf = (seed) => { const x = rngFor(String(seed), "desgaste")(); return x < 0.28 ? 0 : x < 0.72 ? 1 : 2; };
+const wetHeavyOf = (seed) => rngFor(String(seed), "mojado")() < 0.5;
+const tyreLoss = (comp, age, laps, deg) => { const t = TYRE[comp], x = age / laps; return (t.off + (t.W * x + t.Q * x * x) * deg) * (30 / laps); };
+// Vueltas de parada de una estrategia: el estratega malo se equivoca de vuelta (igual que en el plan de siempre).
+export function stopsFor(optId, seed, key, laps, s) {
+  const K = laps / LAPS, e = (96 - s) / 5, R = rngFor(String(seed), "estrat", key, optId), out = [];
+  let prev = 1;
+  for (const f of STRATS[optId].f) {
+    const l = clamp(Math.round(f * laps + (R() * 2 - 1) * e * K), prev + Math.max(3, Math.round(3 * K)), laps - 2);
+    out.push(l); prev = l;
+  }
+  return out;
+}
+// Lo que ve el jugador antes de largar: las opciones con sus tandas, el aviso del estratega y cuál recomienda.
+export function strategyOptions({ seed, key, laps, rain, s }) {
+  seed = String(seed);
+  const acc = clamp(0.5 + (s - 60) / 70, 0.45, 0.97), Rh = rngFor(seed, "pista", key), right = Rh() < acc;
+  if (rain) {
+    const heavy = wetHeavyOf(seed), hint = right ? heavy : !heavy;
+    return { kind: "wet", hint: hint ? "heavy" : "light", rec: hint ? "W" : "I", sure: acc,
+      opts: ["W", "I"].map((id) => ({ id, stops: [], stints: [{ c: id, a: 1, b: laps }] })) };
+  }
+  const lvl = degIdxOf(seed), hint = right ? lvl : (lvl + 1 + Math.floor(Rh() * 2)) % 3;
+  const opts = Object.keys(STRATS).map((id) => {
+    const stops = stopsFor(id, seed, key, laps, s), cs = STRATS[id].c, bounds = [0, ...stops, laps];
+    return { id, stops, stints: cs.map((c, i) => ({ c, a: bounds[i] + 1, b: bounds[i + 1] })) };
+  });
+  return { kind: "dry", hint: ["low", "normal", "high"][hint], rec: STRAT_BEST[hint], sure: acc, opts };
+}
+
 export function humanFromPicks(id, color, picks, label) {
   const p = picks.piloto;
   return { id, driver: p.n, year: p.y, color, name: label || `${p.n} '${String(p.y).slice(2)}`,
@@ -144,6 +184,9 @@ export function runRace({ DATA, tracks, seed, humans, laps = LAPS, decisions = {
   const rain = forcedRain ?? rngFor(seed, "lluvia")() < RAIN_CHANCE;
   const BASE = track.lap, OPT = Math.round(laps / 2), WET = rain ? WET_FACTOR : 1;
   const noPit = rain || sprint;                       // lluvia total y sprint: nadie entra a boxes
+  // Estrategia de gomas elegida por algún jugador (A/B/C en seco, W/I con lluvia). Sin elección: modelo de siempre.
+  const stratOf = (h) => { const v = decisions["s:" + h.id]; return rain ? (!sprint && (v === "W" || v === "I") ? v : null) : (!noPit && STRATS[v] ? v : null); };
+  const stratMode = humans.some((h) => stratOf(h)), DEG = DEG_LEVELS[degIdxOf(seed)], wetHeavy = wetHeavyOf(seed);
   let storm = null;
   if (allowStorm && !rain && !sprint && rngFor(seed, "lluvia")() < RAIN_CHANCE + STORM_CHANCE) {
     const S = rngFor(seed, "tormenta"), ann = Math.round((4 + Math.floor(S() * 8)) * K);
@@ -178,6 +221,13 @@ export function runRace({ DATA, tracks, seed, humans, laps = LAPS, decisions = {
     c.dnf = 0; c.dnfT = 0; c.stops = 0; c.stopped = false; c.stopLap = 0;
     if (noPit) { c.pit = 0; c.extra = 0; c.stopped = true; }          // lluvia o sprint: nadie entra a boxes
     c.tyre = rain ? "wet" : "slick";
+    c.pits = noPit ? [] : [c.pit]; c.stopIdx = 0; c.comps = ["M", "H"]; c.strat = null; c.wrongWet = false;
+    if (stratMode) {
+      const so = c.human ? stratOf(c) : null;
+      if (so && !rain) { c.strat = so; c.pits = stopsFor(so, seed, c.key, laps, c.s); c.comps = STRATS[so].c; c.pit = c.pits[0]; c.extra = 0; }
+      else if (so) { c.strat = so; c.wrongWet = so !== (wetHeavy ? "W" : "I"); }
+      else if (rain) c.wrongWet = rngFor(seed, "gomaLluvia", c.key)() < 0.5;
+    }
   }
 
   let sc = null;
@@ -206,7 +256,8 @@ export function runRace({ DATA, tracks, seed, humans, laps = LAPS, decisions = {
       const onWet = c.tyre === "wet", mis = !scNow && wetNow && !onWet;       // mis: slicks sobre pista mojada
       let t0 = scNow ? BASE * 1.4
         : BASE * (wetNow ? (onWet ? WET_FACTOR : SLICK_ON_WET) : 1) - paceOf(c) * F - (wetNow ? (c.d - 85) * 0.04 : 0) * F + (r[0] - 0.5) * (wetNow ? 1.5 : 0.6) * Fn
-          + (onWet ? (wetNow ? 0 : 2.8) : (wetNow ? 0 : age * 0.22)) * F;     // gomas gastadas (con lluvia casi no se gastan; mojadas sobre seco: lentas)
+          + (onWet ? (wetNow ? (stratMode && c.wrongWet ? WET_WRONG : 0) : 2.8) : (wetNow ? 0 : stratMode ? 0 : age * 0.22)) * F     // gomas gastadas (con lluvia casi no se gastan; mojadas sobre seco: lentas)
+          + (stratMode && !onWet && !wetNow ? tyreLoss(c.comps[Math.min(c.stops, c.comps.length - 1)], age, laps, DEG) : 0);
       let tp = 0, why = null;
 
       // paradas
@@ -225,21 +276,23 @@ export function runRace({ DATA, tracks, seed, humans, laps = LAPS, decisions = {
         else if (!c.stopped) { if (r[6] < clamp((c.s - 65) / 30, 0.15, 0.95)) why = "sc"; }
         else if (age >= 8 * K && laps - lap >= 6 * K && r[6] < 0.25 * clamp((c.s - 60) / 35, 0, 1)) why = "sc";
       }
-      if (!why && !c.stopped && lap === c.pit) why = scNow ? "sc" : "plan";
+      if (!why && !c.stopped && lap === c.pits[c.stopIdx]) why = scNow ? "sc" : "plan";
       if (!why && c.extra && lap === c.extra && c.stopped && !scNow) why = "extra";
       if (why) {
         tp = (scNow ? PIT_LOSS_SC : PIT_LOSS) + c.stat; c.stops++;
-        const late = why === "plan" && Math.abs(c.pit - OPT) >= 3 * K ? (c.pit > OPT ? " (tarde: las gomas ya estaban muertas)" : " (demasiado pronto)") : "";
+        const late = why === "plan" && !c.strat && Math.abs(c.pit - OPT) >= 3 * K ? (c.pit > OPT ? " (tarde: las gomas ya estaban muertas)" : " (demasiado pronto)") : "";
+        const nxt = c.comps[Math.min(c.stops, c.comps.length - 1)];
         const txt = why === "wet" ? `Box, box: gomas de lluvia por el pronóstico. Parada de ${c.stat}s`
           : why === "wetlate" ? `¡Ya llueve fuerte! Box, box: gomas de lluvia, entramos tarde. Parada de ${c.stat}s`
           : why === "dryback" ? `La lluvia no llegó: volvemos a slicks. Parada de ${c.stat}s`
           : why === "sc" ? `Box, box: aprovechamos el safety car. Parada de ${c.stat}s`
           : why === "extra" ? `Box, box… ¿otra vez? Parada de ${c.stat}s y las gomas estaban bien`
+          : c.strat && c.human && (why === "plan" || why === "sc") && !rain ? `Box, box: gomas ${nxt === "S" ? "blandas" : nxt === "M" ? "medias" : "duras"}. Parada de ${c.stat}s`
           : `Box, box. Parada de ${c.stat}s${late}`;
-        ev(c, T0 + t0, lap, "pit", txt, { why });
-        c._stop = true; c._tyre = why === "wet" || why === "wetlate" ? "wet" : why === "dryback" ? "slick" : null;
+        ev(c, T0 + t0, lap, "pit", txt, { why, tyre: c.strat && !rain ? nxt : undefined });
+        c._why = why; c._stop = true; c._tyre = why === "wet" || why === "wetlate" ? "wet" : why === "dryback" ? "slick" : null;
       } else { c._stop = false; c._tyre = null; }
-      if (c.human && lap === OPT + Math.round(2 * K) && c.pit > OPT + Math.round(2 * K) && !c.stopped && !scNow) ev(c, T0 + t0, lap, "radio", "¡Estas gomas no dan más! ¿Cuándo paro?", { who: "pilot" });
+      if (c.human && lap === OPT + Math.round(2 * K) && c.pit > OPT + Math.round(2 * K) && !c.stopped && !scNow && !c.strat) ev(c, T0 + t0, lap, "radio", "¡Estas gomas no dan más! ¿Cuándo paro?", { who: "pilot" });
 
       // incidentes (no con safety car en pista)
       c._crash = false; c._dead = false;
@@ -283,7 +336,10 @@ export function runRace({ DATA, tracks, seed, humans, laps = LAPS, decisions = {
     for (const c of running) {
       if (c.dnf) continue;
       c.cum.push(c._T0 + c._t0 + c._tp); c.tp.push(c._tp);
-      if (c._stop) { c.stopped = true; c.stopLap = lap; if (c._tyre) c.tyre = c._tyre; }
+      if (c._stop) {
+        c.stopLap = lap; if (c._tyre) c.tyre = c._tyre;
+        if (c._why === "plan" || c._why === "sc") { c.stopIdx++; c.stopped = c.stopIdx >= c.pits.length; } else c.stopped = true;
+      }
     }
     // con el safety car el pelotón se junta: las diferencias se achican
     if (scNow) {

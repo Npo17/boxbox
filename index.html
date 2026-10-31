@@ -26,8 +26,8 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <!-- Arranque rápido: conexiones y descargas en paralelo con el HTML -->
 <link rel="preconnect" href="https://vljuhibzzwtcswirunfr.supabase.co" crossorigin>
-<link rel="preload" href="supabase/functions/_shared/temporadas.json?v=8a7a2630" as="fetch" crossorigin fetchpriority="low">
-<link rel="modulepreload" href="supabase/functions/_shared/engine.js?v=8a7a2630" fetchpriority="low">
+<link rel="preload" href="supabase/functions/_shared/temporadas.json?v=7b5c649b" as="fetch" crossorigin fetchpriority="low">
+<link rel="modulepreload" href="supabase/functions/_shared/engine.js?v=7b5c649b" fetchpriority="low">
 <!-- Boceto de diseño, no es el juego final. Datos de ejemplo inventados. Sin marcas, logos ni fotos: todo dibujado en SVG. -->
 <!-- Fuente propia (Titillium Web) en vez de Google Fonts: sin precarga a propósito (precargarla retrasaba el primer dibujo en conexiones lentas) -->
 <style>
@@ -84,8 +84,10 @@ h1 em{color:var(--red);font-style:italic}
 .tabs{display:flex;gap:6px;margin:14px 0 8px;flex-wrap:wrap;min-height:34px}
 @media (max-width:560px){.tabs{min-height:74px}}
 #list{min-height:330px}
-#qtower{min-height:701px}
-@media (max-width:560px){#qtower{min-height:722px}}
+.qdiv{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);padding:8px 4px 2px}
+.trow.ph{opacity:.28}.trow.ph .c{background:transparent}
+#qtower{min-height:788px}
+@media (max-width:560px){#qtower{min-height:851px}}
 .tab{cursor:pointer;padding:6px 12px;border:1px solid var(--line);border-radius:4px;font-size:13px;font-weight:700;color:var(--muted)}
 .tab.on{color:#fff;border-color:var(--red);background:rgba(255,59,48,.12)}
 .tab.done{text-decoration:line-through;opacity:.4;cursor:default}
@@ -138,6 +140,38 @@ table.cal td{padding:7px 8px;font-size:14px}table.cal tr.nx td{background:rgba(2
 .radio{margin-top:14px;position:relative;height:300px}
 .radio .msg{position:absolute;left:0;right:0;top:0;transition:transform .3s;animation:fadein .3s ease}
 @keyframes fadein{from{opacity:0}to{opacity:1}}
+/* estrategia de gomas: tandas como en la transmisión (franja con degradé entre gomas, vueltas y rueda al final de cada tanda) */
+.stratHint{background:var(--deep);border-left:3px solid var(--yellow);padding:10px 12px;border-radius:6px;font-size:14px;margin:0 0 12px}
+.stratHint b{color:var(--yellow)}
+.stratList{display:grid;gap:12px}
+.scard{display:block;width:100%;text-align:left;font:inherit;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px 12px;cursor:pointer;transition:border-color .15s,transform .15s}
+.scard:hover{border-color:rgba(255,255,255,.4);transform:translateY(-1px)}
+.scard.on{border-color:var(--red);box-shadow:0 0 0 2px rgba(255,59,48,.35)}
+.scard .top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.scard .nm{font-weight:900;font-style:italic;text-transform:uppercase;font-size:18px;letter-spacing:.5px}
+.scard .rec{font-size:11px;font-weight:900;letter-spacing:1px;color:#111;background:var(--yellow);padding:2px 9px;border-radius:999px;text-transform:uppercase;white-space:nowrap}
+.scard .seq{display:flex;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--muted);font-weight:700;margin-top:8px}
+.scard .seq i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px;box-shadow:0 0 0 1px rgba(255,255,255,.25)}
+.scard .sd{font-size:13px;color:var(--muted);margin-top:6px}
+.sbar{position:relative;display:flex;height:46px;border-radius:7px;overflow:hidden;background:#111}
+.sbar::after{content:"";position:absolute;inset:0;background:radial-gradient(rgba(0,0,0,.28) 1px,transparent 1.3px) 0 0/4px 4px;pointer-events:none}
+.sbar.mini{height:26px;border-radius:5px}
+.sbar .sg{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:4px;padding:0 6px;min-width:0}
+.sbar .sl{font-style:italic;font-weight:900;text-transform:uppercase;font-size:13px;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-shadow:0 1px 2px rgba(0,0,0,.25)}
+.sbar .sl .sh{display:none}
+.sbar .sg.nr .lg{display:none}.sbar .sg.nr .sh{display:inline}
+.sbar .sl small{font-weight:600;font-size:inherit;opacity:.75}
+.sbar .sg.cS .sl,.sbar .sg.cI .sl,.sbar .sg.cW .sl{color:#fff}
+.sbar .sg.cM .sl,.sbar .sg.cH .sl{color:#14161a;text-shadow:none}
+.sbar .ty{flex:none;width:30px;height:30px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))}
+.sbar.mini .ty{width:18px;height:18px}.sbar.mini .sl{font-size:10px}
+.sbar .mk{position:absolute;top:0;bottom:0;width:3px;background:#fff;box-shadow:0 0 8px #fff;z-index:2;transition:left .25s linear}
+@media (max-width:560px){.sbar .sl .lg{display:none}.sbar .sl .sh{display:inline}.sbar .sl{font-size:12px}.sbar .ty{width:24px;height:24px}.scard .nm{font-size:16px}}
+.stratpick{margin:12px 0 4px;text-align:left}
+.stratpick .lbl{font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:5px;display:flex;justify-content:space-between;align-items:center}
+.stratpick .lbl button{background:none;border:0;color:var(--yellow);font:inherit;font-weight:700;cursor:pointer;text-decoration:underline;padding:0}
+#myStrat{margin-top:12px}
+#myStrat .lbl{font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
 .msg{background:var(--deep);border-left:3px solid var(--yellow);padding:8px 10px;border-radius:4px;font-size:14px;animation:in .3s ease}
 .msg b{color:var(--yellow);font-size:12px;letter-spacing:1px;text-transform:uppercase;display:block}
 .msg.inc{border-color:var(--red)} .msg.inc b{color:var(--red)}
@@ -197,7 +231,7 @@ nav.top{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .how small{color:var(--muted)}
 footer{max-width:1180px;margin:0 auto;padding:0 24px 40px;display:flex;gap:16px;align-items:center;flex-wrap:wrap;color:var(--muted);font-size:13px;border-top:1px solid var(--line);padding-top:18px}
 .pill{background:var(--yellow);color:#1a1300;border:0;border-radius:999px;padding:10px 18px;font:inherit;font-weight:900;text-transform:uppercase;cursor:pointer}
-.social{display:flex;gap:10px;align-items:center;margin-left:auto}
+.social{display:flex;gap:10px;align-items:center;margin-left:auto;flex-wrap:wrap;max-width:100%}
 .social a{display:inline-flex;align-items:center;gap:7px;color:var(--text);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:7px 13px;font-weight:700;font-size:13px;background:var(--card)}
 .social a:hover{border-color:var(--yellow);color:var(--yellow)}
 .social svg{width:16px;height:16px;fill:currentColor}
@@ -468,6 +502,7 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
       <div class="year" id="qtime" style="font-size:54px;margin:8px 0">-:--.---</div>
       <div id="qpos" style="font-size:20px;font-weight:700;min-height:56px"></div>
       <button class="btn cta" id="qBtn"><span>Tirar la qualy</span></button>
+      <div id="stratPick" class="stratpick" style="display:none"></div>
       <button class="btn cta" id="toRace2" style="display:none"><span>A la parrilla →</span></button>
       <div id="qWait" style="display:none;font-size:20px;font-weight:700;margin-top:10px"></div>
     </div>
@@ -502,6 +537,7 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
         <g id="rainfx" style="pointer-events:none"></g>
       </svg>
       <div class="trackfoot"><div class="fsw" id="fondoSw"><button type="button" data-f="cl" title="Clásico" style="background:#173320"></button><button type="button" data-f="a" title="Telemetría" style="background:repeating-linear-gradient(45deg,#10131a 0 3px,#1a1f2a 3px 6px)"></button><button type="button" data-f="b" title="Césped" style="background:radial-gradient(circle at 50% 40%,#2c6a3f,#0e2a19)"></button><button type="button" data-f="c" title="Plano" style="background:linear-gradient(#0b1426,#0b1426) padding-box,#0b1426;box-shadow:inset 0 0 0 5px #0b1426,inset 0 0 0 6px #7aa2ff"></button><button type="button" data-f="d" title="Noche TV" style="background:radial-gradient(circle at 50% 120%,#ff3b30,#0a0c11 70%)"></button></div><div class="note">Trazado: datos abiertos f1-circuits (MIT)</div></div>
+      <div id="myStrat" style="display:none"></div>
       <div class="radio" id="radio"></div>
     </div>
     <div class="panel">
@@ -554,6 +590,14 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
   </nav>
   <span class="privnote" style="flex-basis:100%;text-align:right;font-size:12px;color:var(--muted)">Medimos visitas de forma anónima, sin datos personales.</span>
 </footer>
+
+<div class="modal" id="mStrat"><div class="box" style="max-width:660px;max-height:92vh;overflow:auto">
+  <button class="x" id="stratX" aria-label="Cerrar">✕</button>
+  <h2>Estrategia de carrera</h2>
+  <div class="stratHint" id="stratHint"></div>
+  <div class="stratList" id="stratList"></div>
+  <p class="note" id="stratNote" style="margin-bottom:0"></p>
+</div></div>
 
 <div class="modal" id="mSC"><div class="box">
   <h2>🚨 Safety car</h2>
@@ -643,7 +687,7 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
 
 
 <script src="vendor/supabase.min.js" defer></script>
-<script src="tracks.js?v=8a7a2630" defer></script>
-<script src="game.js?v=8a7a2630" defer></script>
+<script src="tracks.js?v=7b5c649b" defer></script>
+<script src="game.js?v=7b5c649b" defer></script>
 </body>
 </html>
