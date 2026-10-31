@@ -215,7 +215,11 @@ export default {
     "Solo quien creó la sala elige la velocidad.": "Hızı yalnızca odayı kuran seçer.",
     "Ahora no se puede cambiar la velocidad.": "Şu anda hız değiştirilemez.",
     "Se acabó el tiempo para cambiar la velocidad.": "Hızı değiştirme süresi doldu.",
-    "Velocidad inválida.": "Geçersiz hız."
+    "Velocidad inválida.": "Geçersiz hız.",
+    "Se aplica a todos en 3 s": "3 sn içinde herkese uygulanır",
+    "La carrera ya terminó.": "Yarış zaten bitti.",
+    "Resultado copiado: pegalo donde quieras.": "Sonuç kopyalandı: istediğin yere yapıştır.",
+    "No se pudo copiar el resultado.": "Sonuç kopyalanamadı."
   },
   p: {
     "👥 Amigos ({0})": "👥 Arkadaşlar ({0})",

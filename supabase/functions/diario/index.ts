@@ -71,11 +71,11 @@ const pickNames = (p: Record<string, any>) => Object.fromEntries(Object.entries(
 const resultOf = (e: any) => ({ pos: e.pos, dnf: e.dnf, laps: e.laps, grid: e.grid, stops: e.stops, pts: e.pts, tiempo: e.tiempo == null ? null : Number(e.tiempo), decision: e.decision });
 
 // Cierra la carrera: el servidor calcula el resultado oficial con el mismo motor del juego.
-async function finalizar(uid: string, day: string, entry: any, decision?: string) {
+async function finalizar(uid: string, day: string, entry: any, decision?: string, estrategia?: string) {
   if (entry.status === "listo") return entry;
   const seed = await raceSecret(day);
   const race = E.runRace({ DATA, tracks: TRACKS, seed, humans: [E.humanFromPicks("me", "#ff3b30", entry.picks)], laps: E.LAPS,
-    decisions: decision === "pit" || decision === "stay" ? { me: decision } : {} });
+    decisions: { ...(decision === "pit" || decision === "stay" ? { me: decision } : {}), ...(estrategia ? { "s:me": estrategia } : {}) } });   // estrategia de gomas elegida antes de largar
   const s = E.summary(race, "me");
   const { data } = await db.from("desafios").update({
     status: "listo", decision: decision === "pit" || decision === "stay" ? decision : null, pos: s.pos, dnf: s.dnf, laps: s.laps,
@@ -191,7 +191,8 @@ async function handle(req: Request, body: Record<string, any>) {
     const u = need(user);
     const entry = await getEntry(u.id, day);
     if (!entry || entry.status === "armando") throw new Fail("Todavía no completaste tu auto.", 409);
-    const done = await finalizar(u.id, day, entry, body.decision ? String(body.decision) : undefined);
+    const est = /^[ABCWI]$/.test(String(body.estrategia ?? "")) ? String(body.estrategia) : undefined;
+    const done = await finalizar(u.id, day, entry, body.decision ? String(body.decision) : undefined, est);
     return { result: resultOf(done), rank: await rankOf(day, done), total: await totalOf(day), streak: await streakOf(u.id, day) };
   }
 

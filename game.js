@@ -172,23 +172,40 @@ function runQualy(animate,onDone){
   setTimeout(step,200);
 }
 // ---------- VELOCIDAD DE LA CARRERA ----------
-// Solo, modo carrera y amistoso: se cambia en vivo y se recuerda. En salas la elige solo el anfitrión antes de largar (así nadie se desfasa).
+// Solo, modo carrera y amistoso: se cambia en vivo y se recuerda. En salas la maneja solo el anfitrión, antes de largar y en vivo:
+// el servidor guarda cada cambio con la hora (unos 3 s después) y todos los jugadores consultan esa línea de tiempo, así nadie se desfasa.
 const SPEEDS=[0.25,0.5,0.75,1,1.5,2], SPD_DEF=0.75;      // las mismas que RACE_SPEEDS y RACE_SPEED_DEFAULT del motor (el motor se carga después)
 let SPD=(()=>{ try{ const v=+localStorage.getItem('boxbox_vel'); return SPEEDS.includes(v)?v:SPD_DEF }catch(e){ return SPD_DEF } })();
+let ROOMVEL={init:SPD_DEF,log:[]}, SPDSEL=null, velPoll=null;   // sala: velocidad inicial y cambios en vivo [{at (hora del servidor), v}]
 const spdTxt=v=>String(v).replace('.',',')+'×';
-function paintSpd(){ [['spdR','spdV'],['spdQR','spdQV']].forEach(([r,v])=>{ $(r).value=SPEEDS.indexOf(SPD); $(v).textContent=spdTxt(SPD) }) }
+// velocidad vigente ahora, y segundos de carrera (a 1×) transcurridos desde startLocal con esa línea de tiempo
+function curSpd(){ if(MODE!=='room') return SPD; let v=ROOMVEL.init; const now=Date.now(); for(const e of ROOMVEL.log) if(e.at-OFF<=now) v=e.v; return v }
+function baseSince(startLocal){
+  let t=startLocal, v=ROOMVEL.init, b=0; const now=Date.now();
+  for(const e of ROOMVEL.log){ const at=e.at-OFF; if(at<=t){ v=e.v; continue } if(at>=now) break; b+=v*(at-t)/1000; t=at; v=e.v }
+  return b+v*Math.max(0,now-t)/1000;
+}
+const shownSpd=()=>MODE!=='room'?SPD:SPDSEL!=null?SPDSEL:(ROOMVEL.log.length?ROOMVEL.log[ROOMVEL.log.length-1].v:ROOMVEL.init);
+function paintSpd(){ const s=shownSpd(); [['spdR','spdV'],['spdQR','spdQV']].forEach(([r,v])=>{ $(r).value=SPEEDS.indexOf(s); $(v).textContent=spdTxt(s) }) }
 let spdSend=null;
 function onSpd(e){
-  SPD=SPEEDS[+e.target.value]; paintSpd();
-  if(MODE==='room'){ clearTimeout(spdSend); spdSend=setTimeout(()=>api('velocidad',{value:SPD}).catch(err=>toast(err.message)),300) }
-  else try{ localStorage.setItem('boxbox_vel',String(SPD)) }catch(err){}
+  const v=SPEEDS[+e.target.value];
+  if(MODE==='room'){
+    SPDSEL=v; paintSpd(); clearTimeout(spdSend);
+    spdSend=setTimeout(()=>api('velocidad',{value:v}).then(r=>{
+      ROOMVEL=r.at?{init:ROOMVEL.init,log:[...ROOMVEL.log.filter(x=>x.at<r.at),{at:r.at,v:r.v}]}:{init:r.v,log:[]};
+      if(SPDSEL===v) SPDSEL=null; paintSpd();
+    }).catch(err=>{ SPDSEL=null; paintSpd(); toast(err.message) }),300);
+  } else { SPD=v; paintSpd(); try{ localStorage.setItem('boxbox_vel',String(v)) }catch(err){} }
 }
 $('spdR').oninput=onSpd; $('spdQR').oninput=onSpd;
-// Muestra la barra según el modo: en salas solo el anfitrión la mueve (antes de largar); los demás la ven bloqueada.
+// Muestra la barra según el modo: en salas solo el anfitrión la mueve; los demás la ven bloqueada y siguiendo al anfitrión.
 function spdSetup(){
   const room=MODE==='room', host=room&&RS&&RS.room.host===ROOM.pid;
-  if(room) SPD=SPD_DEF; else try{ const v=+localStorage.getItem('boxbox_vel'); SPD=SPEEDS.includes(v)?v:SPD_DEF }catch(e){ SPD=SPD_DEF }
-  $('spdR').disabled=room; $('spdNote').style.display=room?'inline':'none';
+  if(room){ ROOMVEL={init:SPD_DEF,log:[]}; SPDSEL=null }
+  else try{ const v=+localStorage.getItem('boxbox_vel'); SPD=SPEEDS.includes(v)?v:SPD_DEF }catch(e){ SPD=SPD_DEF }
+  $('spdR').disabled=room&&!host; $('spdNote').style.display=room?'inline':'none';
+  $('spdNote').textContent=host?'Se aplica a todos en 3 s':'La elige el anfitrión';
   $('spdQ').style.display=host?'flex':'none'; paintSpd();
 }
 paintSpd();
@@ -215,7 +232,7 @@ function stintBar(stints,laps,cls,marker){
 }
 function stratAsk(done){
   STRAT=null;
-  if(!RACE||RACE.sprint||MODE==='daily'){ paintStratPick(); done&&done(); return }
+  if(!RACE||RACE.sprint){ paintStratPick(); done&&done(); return }
   STRAT=E.strategyOptions({seed:SEED,key:MEKEY,laps:RACE.laps,rain:!!RACE.rain,s:carByKey(MEKEY).s});
   STRAT.done=done; paintStratPick(); renderStrat(); openM('mStrat');
 }
@@ -263,6 +280,8 @@ function paintRain(on){
 }
 function startRace(syncAt,interactive){
   const tp=$('tp'), L=tp.getTotalLength(), els={};
+  clearInterval(velPoll);
+  if(interactive==='room') velPoll=setInterval(async()=>{ try{ const r=await api('vel'); if(SPEEDS.includes(r.vel)) ROOMVEL={init:r.vel,log:r.log||[]} }catch(e){} },2500);
   paintRain(!!RACE.rain);
   $('cars').innerHTML=''; $('radio').innerHTML=''; $('radio').style.height=''; $('scBanner').style.display='none'; $('toResult').style.display='none';
   RACE.cars.forEach(c=>{c.me=c.key===MEKEY});
@@ -364,11 +383,13 @@ function startRace(syncAt,interactive){
   };
 
   function run(lateMs){
-    playT=lateMs/1000*scale*SPD; last=performance.now();
+    playT=(MODE==='room'?baseSince(syncAt):lateMs/1000*SPD)*scale; last=performance.now();
+    let spdN=0;
     const tick=()=>{
       if(paused){setTimeout(tick,100);return}
       const now=performance.now(), sc0=RACE.sc, slow=sc0&&playT>=sc0.T&&playT<sc0.endT?0.5:1;   // con safety car, cámara lenta para ver las paradas
-      playT=Math.min(endT,playT+(now-last)/1000*scale*slow*SPD); last=now;
+      playT=Math.min(endT,playT+(now-last)/1000*scale*slow*curSpd()); last=now;
+      if(MODE==='room'&&++spdN%15===0) paintSpd();
       while(evI<events.length && events[evI].T<=playT) msg(events[evI++]);
       draw(playT);
       if(!rainAsked && RACE.storm && playT>=RACE.storm.T){ rainAsked=true; const me=carByKey(MEKEY); if(me&&(!me.dnf||me.dnf>RACE.storm.ann)){ paused=true; askRain(); setTimeout(tick,100); return } }
@@ -415,6 +436,7 @@ function radioAdd(html){
 }
 let RESULT=null;
 function finish(){
+  clearInterval(velPoll);
   const cls=RACE.classification.map(carByKey), me=carByKey(MEKEY);
   RESULT={pos:me.pos,dnf:me.dnf,grid:me.grid,stops:me.stops,cls};
   radioAdd(`<div class="msg" style="border-color:#fff"><b>🏁 Bandera a cuadros</b>${me.dnf?'Abandonaste en la vuelta '+me.dnf:'Terminaste P'+me.pos}.</div>`);
@@ -1039,7 +1061,7 @@ function startRoomRace(s){
   const loadEst=()=>estLoad||(estLoad=(async()=>{
     for(let i=0;i<5;i++){
       try{ const s2=await api('state');
-        if(s2.room.est_rev||i===4){ const d={}; (s2.players||[]).forEach(p=>{ if(p.est) d['s:'+p.pid]=p.est; if(p.sc) d[p.pid]=p.sc }); DECISIONS=d; RACE=newRace(d); if(SPEEDS.includes(s2.room.vel)){ SPD=s2.room.vel; paintSpd() } return }
+        if(s2.room.est_rev||i===4){ const d={}; (s2.players||[]).forEach(p=>{ if(p.est) d['s:'+p.pid]=p.est; if(p.sc) d[p.pid]=p.sc }); DECISIONS=d; RACE=newRace(d); if(SPEEDS.includes(s2.room.vel)){ ROOMVEL={init:s2.room.vel,log:s2.room.vel_log||[]}; paintSpd() } return }
       }catch(e){}
       await new Promise(r=>setTimeout(r,350));
     }
@@ -1272,6 +1294,15 @@ async function loadRank(dia){
     $('dRankMe').textContent=j.mine?`Estás en el #${j.mine.rank} de ${j.total} ${dia==='hoy'?'hoy':'ayer'}.`:(j.total?`${j.total} jugaron ${dia==='hoy'?'hoy':'ayer'}.`:'');
   }catch(e){ $('dRank').innerHTML=`<div class="note" style="text-align:center">${esc(e.message)}</div>` }
 }
+// Comparte un texto: con el menú del sistema si hay, y si no lo copia al portapapeles.
+async function shareText(text){
+  try{ if(navigator.share){ await navigator.share({text}); return } }catch(e){ if(e&&e.name==='AbortError') return }
+  try{
+    try{ await navigator.clipboard.writeText(text) }
+    catch(e){ const ta=document.createElement('textarea'); ta.value=text; ta.style.cssText='position:fixed;opacity:0'; document.body.appendChild(ta); ta.select(); const ok=document.execCommand('copy'); ta.remove(); if(!ok) throw e }
+    toast('Resultado copiado: pegalo donde quieras.');
+  }catch(e){ toast('No se pudo copiar el resultado.') }
+}
 $('dShare').onclick=()=>{ const e=DST&&DST.entry; if(!e||!e.result) return;
   const d=new Date(Date.now()+DOFF).toLocaleDateString('es',{day:'numeric',month:'numeric',timeZone:'America/Argentina/Buenos_Aires'});
   shareText(`🏁 BoxBox · Desafío del día ${d}\n#${e.rank} de ${DST.total} · ${fmtPos(e.result)}${e.result.dnf?'':' ('+fmtRace(e.result.tiempo)+')'}\n${DST.streak>1?'🔥 '+DST.streak+' días seguidos\n':''}¿Me ganás? 👉 ${SITE}/?desafio`); };
@@ -1301,7 +1332,7 @@ function dailyToRace(){ LAPS=20; picks=DAILY.picks; DRES=null; prepareRace(DAILY
 // el servidor calcula el resultado oficial (con tu decisión del safety car) y devuelve tu puesto
 async function dailyFinish(){
   try{
-    const j=await dApi('cerrar',{decision:DECISIONS.me}); DRES=j;
+    const j=await dApi('cerrar',{decision:DECISIONS.me,estrategia:DECISIONS['s:me']}); DRES=j;
     if(j.result.pos!==RESULT.pos||!!j.result.dnf!==!!RESULT.dnf) console.warn('El resultado del servidor difiere del local',j.result,RESULT);
   }catch(e){ DRES={error:e.message}; }
   paintDailyResult();

@@ -217,7 +217,11 @@ export default {
     "Solo quien creó la sala elige la velocidad.": "Only the room host chooses the speed.",
     "Ahora no se puede cambiar la velocidad.": "You cannot change the speed right now.",
     "Se acabó el tiempo para cambiar la velocidad.": "Time is up to change the speed.",
-    "Velocidad inválida.": "Invalid speed."
+    "Velocidad inválida.": "Invalid speed.",
+    "Se aplica a todos en 3 s": "Applies to everyone in 3 s",
+    "La carrera ya terminó.": "The race is already over.",
+    "Resultado copiado: pegalo donde quieras.": "Result copied: paste it wherever you like.",
+    "No se pudo copiar el resultado.": "Could not copy the result."
   },
   p: {
     "👥 Amigos ({0})": "👥 Friends ({0})",

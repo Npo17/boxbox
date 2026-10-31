@@ -20,5 +20,15 @@ ok(s.room.vel === undefined, 'antes de largar nadie ve la velocidad elegida');
 const rs = Date.parse(s.room.race_start) - s.now + Date.now();
 await sleep(Math.max(0, rs - 3000 + 600 - Date.now()));
 for (const who of [A, B]) { const t = await call({ action: 'state', ...who }); ok(t.room.vel === 0.5, 'a 3 s de largar todos ven la velocidad del anfitrión (0,5×)'); }
-await falla({ action: 'velocidad', ...A, value: 1 }, 409, 'pasado el plazo ni el anfitrión puede cambiarla');
+// en vivo: el anfitrión puede cambiarla; vale unos 3 s después y todos consultan la misma línea de tiempo
+await sleep(Math.max(0, rs + 500 - Date.now()));
+const c1 = await call({ action: 'velocidad', ...A, value: 2 });
+ok(c1.at > Date.now() + 1500 && c1.at < Date.now() + 4000, 'en vivo: el cambio vale unos 3 s después');
+const c2 = await call({ action: 'velocidad', ...A, value: 1 });
+ok(c2.at >= c1.at + 500, 'los cambios en vivo quedan ordenados en el tiempo');
+await falla({ action: 'velocidad', ...B, value: 2 }, 403, 'un invitado tampoco puede cambiarla en vivo');
+for (const [n, who] of [['anfitrión', A], ['invitado', B]]) {
+  const v = await call({ action: 'vel', ...who });
+  ok(v.vel === 0.5 && v.log.length === 2 && v.log[0].v === 2 && v.log[1].v === 1, 'el ' + n + ' ve la misma línea de tiempo (inicial 0,5×, luego 2× y 1×)');
+}
 console.log('sala de prueba:', code);

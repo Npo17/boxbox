@@ -215,7 +215,11 @@ export default {
     "Solo quien creó la sala elige la velocidad.": "Tylko gospodarz pokoju wybiera prędkość.",
     "Ahora no se puede cambiar la velocidad.": "Teraz nie można zmienić prędkości.",
     "Se acabó el tiempo para cambiar la velocidad.": "Czas na zmianę prędkości minął.",
-    "Velocidad inválida.": "Nieprawidłowa prędkość."
+    "Velocidad inválida.": "Nieprawidłowa prędkość.",
+    "Se aplica a todos en 3 s": "Obowiązuje wszystkich za 3 s",
+    "La carrera ya terminó.": "Wyścig już się skończył.",
+    "Resultado copiado: pegalo donde quieras.": "Wynik skopiowany: wklej go, gdzie chcesz.",
+    "No se pudo copiar el resultado.": "Nie udało się skopiować wyniku."
   },
   p: {
     "👥 Amigos ({0})": "👥 Znajomi ({0})",

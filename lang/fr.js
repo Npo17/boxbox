@@ -215,7 +215,11 @@ export default {
     "Solo quien creó la sala elige la velocidad.": "Seul l’hôte du salon choisit la vitesse.",
     "Ahora no se puede cambiar la velocidad.": "Impossible de changer la vitesse maintenant.",
     "Se acabó el tiempo para cambiar la velocidad.": "Le temps pour changer la vitesse est écoulé.",
-    "Velocidad inválida.": "Vitesse invalide."
+    "Velocidad inválida.": "Vitesse invalide.",
+    "Se aplica a todos en 3 s": "S’applique à tous dans 3 s",
+    "La carrera ya terminó.": "La course est déjà terminée.",
+    "Resultado copiado: pegalo donde quieras.": "Résultat copié : colle-le où tu veux.",
+    "No se pudo copiar el resultado.": "Impossible de copier le résultat."
   },
   p: {
     "👥 Amigos ({0})": "👥 Amis ({0})",
