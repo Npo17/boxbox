@@ -82,8 +82,8 @@ try {
 
   // el resultado oficial del servidor coincide con el del motor local (con y sin safety car)
   const humans = [E.humanFromPicks('me', '#ff3b30', g.last.picks)];
-  const local = (dec) => E.summary(E.runRace({ DATA, tracks, seed: g.last.raceSeed, humans, laps: E.LAPS, decisions: dec ? { me: dec } : {} }), 'me');
-  const race0 = E.runRace({ DATA, tracks, seed: g.last.raceSeed, humans, laps: E.LAPS });
+  const local = (dec) => E.summary(E.runRace({ DATA, tracks, seed: g.last.raceSeed, humans, real: true, decisions: dec ? { me: dec } : {} }), 'me');
+  const race0 = E.runRace({ DATA, tracks, seed: g.last.raceSeed, humans, real: true });
   const decision = race0.sc && !race0.cars.find((c) => c.human).dnf ? 'pit' : undefined;
   console.log('   safety car hoy:', race0.sc ? `sí (vuelta ${race0.sc.lap})` : 'no', '| decisión:', decision || 'ninguna');
   const cl = await call(A, 'cerrar', decision ? { decision } : {});
