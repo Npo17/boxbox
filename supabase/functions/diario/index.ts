@@ -74,7 +74,7 @@ const resultOf = (e: any) => ({ pos: e.pos, dnf: e.dnf, laps: e.laps, grid: e.gr
 async function finalizar(uid: string, day: string, entry: any, decision?: string, estrategia?: string) {
   if (entry.status === "listo") return entry;
   const seed = await raceSecret(day);
-  const race = E.runRace({ DATA, tracks: TRACKS, seed, humans: [E.humanFromPicks("me", "#ff3b30", entry.picks)], laps: E.LAPS,
+  const race = E.runRace({ DATA, tracks: TRACKS, seed, humans: [E.humanFromPicks("me", "#ff3b30", entry.picks)], real: true,
     decisions: { ...(decision === "pit" || decision === "stay" ? { me: decision } : {}), ...(estrategia ? { "s:me": estrategia } : {}) } });   // estrategia de gomas elegida antes de largar
   const s = E.summary(race, "me");
   const { data } = await db.from("desafios").update({

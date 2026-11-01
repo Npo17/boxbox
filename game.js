@@ -93,8 +93,8 @@ let RACE=null, MEKEY='h:me', SEED='', HUMANS=[], DECISIONS={}, PIT=null;
 const carByKey=k=>RACE.cars.find(c=>c.key===k);
 // Opciones según el modo: en el modo carrera el circuito y la sprint vienen del calendario. El aviso de tormenta con decisión
 // solo existe en solo, amistoso y carrera (en salas y desafío del día la lluvia, si sale, es la de toda la carrera).
-const REAL_LAPS=!new URLSearchParams(location.search).get('laps');   // vueltas reales de cada GP (el desafío del día y el amistoso siguen con 20)
-const raceOpts=()=>({...(REAL_LAPS&&/^(solo|career|room)$/.test(MODE)?{real:true}:{}),...raceOpts0()});
+const REAL_LAPS=!new URLSearchParams(location.search).get('laps');   // vueltas de cada GP (la mitad de las reales): también en el desafío del día y el amistoso
+const raceOpts=()=>({...(REAL_LAPS&&/^(solo|career|room|daily|friendly)$/.test(MODE)?{real:true}:{}),...raceOpts0()});
 const raceOpts0=()=>MODE==='room'&&RS&&RS.room.evento?{trackIdx:RS.room.evento.t,sprint:RS.room.evento.k==='sprint',storm:false}:MODE==='career'&&CAR_EVT?{trackIdx:CAR_EVT.trackIdx,sprint:CAR_EVT.kind==='sprint',storm:CAR_EVT.kind!=='sprint'}:{storm:MODE==='solo'||MODE==='friendly'};
 const newRace=(decisions)=>E.runRace({DATA,tracks:TRACKS,seed:SEED,humans:HUMANS,laps:LAPS,decisions,...raceOpts()});
 const GPN=()=>MODE==='career'&&CAR_EVT?CAR_EVT.gp:MODE==='room'&&RS&&RS.room.evento?RS.room.evento.gp:TRACK.gp;

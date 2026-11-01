@@ -18,7 +18,7 @@ Después de cambiar los datos: `node scripts/generar-temporadas.mjs` y volver a 
 1. **Tira:** sale un año. Solo ves parte de esa temporada y las piezas top aparecen poco.
 2. **Arma:** elige una pieza de ese año para una casilla libre. 5 tiradas, 2 re-sorteos.
 3. **Qualy:** una vuelta lanzada con dado. Tu piloto y tu auto deciden dónde largas.
-4. **Carrera:** 22 autos, 20 vueltas, una parada obligatoria, radio y dirección de carrera. Un estratega malo para tarde, un piloto flojo se sale o choca, un motor flojo se rompe. Los pilotos de menos de 75 de media abandonan seguido; cuando alguien choca sale el **safety car** (el pelotón se junta, la carrera se pone en cámara lenta y todos entran a boxes) y tú decides si entras por gomas nuevas o te quedas en pista.
+4. **Carrera:** 22 autos, la mitad de las vueltas reales de cada GP, una parada obligatoria, radio y dirección de carrera. Un estratega malo para tarde, un piloto flojo se sale o choca, un motor flojo se rompe. Los pilotos de menos de 75 de media abandonan seguido; cuando alguien choca sale el **safety car** (el pelotón se junta, la carrera se pone en cámara lenta y todos entran a boxes) y tú decides si entras por gomas nuevas o te quedas en pista.
 5. **Campeonato:** los 22 pilotos suman 25-18-15-12-10-8-6-4-2-1 en cada carrera que juegas.
 
 ### Desafío del día
