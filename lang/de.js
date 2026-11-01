@@ -216,7 +216,7 @@ export default {
     "Ahora no se puede cambiar la velocidad.": "Die Geschwindigkeit kann jetzt nicht geändert werden.",
     "Se acabó el tiempo para cambiar la velocidad.": "Die Zeit zum Ändern der Geschwindigkeit ist abgelaufen.",
     "Velocidad inválida.": "Ungültige Geschwindigkeit.",
-    "Se aplica a todos en 3 s": "Gilt in 3 s für alle",
+    "Se aplica a todos en 2 s": "Gilt in 2 s für alle",
     "La carrera ya terminó.": "Das Rennen ist schon vorbei.",
     "Resultado copiado: pegalo donde quieras.": "Ergebnis kopiert: Füge es ein, wo du willst.",
     "No se pudo copiar el resultado.": "Das Ergebnis konnte nicht kopiert werden.",

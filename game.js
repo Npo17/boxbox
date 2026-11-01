@@ -326,9 +326,9 @@ function onSpd(e){
   if(MODE==='room'){
     SPDSEL=v; paintSpd(); clearTimeout(spdSend);
     spdSend=setTimeout(()=>api('velocidad',{value:v}).then(r=>{
-      ROOMVEL=r.at?{init:ROOMVEL.init,log:[...ROOMVEL.log.filter(x=>x.at<r.at),{at:r.at,v:r.v}]}:{init:r.v,log:[]};
+      ROOMVEL=r.at?{init:ROOMVEL.init,log:[...ROOMVEL.log.filter(x=>x.at-OFF<=Date.now()&&x.at<r.at),{at:r.at,v:r.v}]}:{init:r.v,log:[]};   // los cambios que todavía no empezaron se reemplazan
       if(SPDSEL===v) SPDSEL=null; paintSpd();
-    }).catch(err=>{ SPDSEL=null; paintSpd(); toast(err.message) }),300);
+    }).catch(err=>{ SPDSEL=null; paintSpd(); toast(err.message) }),150);
   } else { SPD=v; paintSpd(); try{ localStorage.setItem('boxbox_vel',String(v)) }catch(err){} }
 }
 $('spdR').oninput=onSpd; $('spdQR').oninput=onSpd;
@@ -338,7 +338,7 @@ function spdSetup(){
   if(room){ ROOMVEL={init:SPD_DEF,log:[]}; SPDSEL=null }
   else try{ const v=+localStorage.getItem('boxbox_vel'); SPD=SPEEDS.includes(v)?v:SPD_DEF }catch(e){ SPD=SPD_DEF }
   $('spdR').disabled=room&&!host; $('spdNote').style.display=room?'inline':'none';
-  $('spdNote').textContent=host?'Se aplica a todos en 3 s':'La elige el anfitrión';
+  $('spdNote').textContent=host?'Se aplica a todos en 2 s':'La elige el anfitrión';
   $('spdQ').style.display=host?'flex':'none'; paintSpd();
 }
 paintSpd();
@@ -414,7 +414,7 @@ function paintRain(on){
 function startRace(syncAt,interactive){
   const tp=$('tp'), L=tp.getTotalLength(), els={};
   clearInterval(velPoll);
-  if(interactive==='room') velPoll=setInterval(async()=>{ try{ const r=await api('vel'); if(SPEEDS.includes(r.vel)) ROOMVEL={init:r.vel,log:r.log||[]} }catch(e){} },2500);
+  if(interactive==='room') velPoll=setInterval(async()=>{ try{ const r=await api('vel'); if(SPEEDS.includes(r.vel)) ROOMVEL={init:r.vel,log:r.log||[]} }catch(e){} },1000);   // cada 1 s: los cambios del anfitrión valen 1,5 s después y tienen que llegar antes
   paintRain(!!RACE.rain);
   $('cars').innerHTML=''; $('radio').innerHTML=''; $('radio').style.height=''; $('scBanner').style.display='none'; $('toResult').style.display='none';
   RACE.cars.forEach(c=>{c.me=c.key===MEKEY});

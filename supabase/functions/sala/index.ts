@@ -138,7 +138,7 @@ async function newPlayer(code: string, name: string, color: string, userId: stri
 // Velocidad de la animación: el anfitrión la elige antes de largar (entrada con at = 0) y puede cambiarla en vivo (entradas con la hora
 // del servidor en que empiezan a valer, siempre unos segundos en el futuro para que todos las reciban antes). Se guarda en las tiradas del anfitrión.
 type VelEntry = { at: number; v: number };
-const VEL_LEAD_MS = 3000;
+const VEL_LEAD_MS = 1500;   // antes 3000: el anfitrión notaba el retraso
 const velLogOf = (rolls: any[] | undefined): VelEntry[] => { const v = (rolls ?? []).find((r: any) => r.k === "vel")?.v; return Array.isArray(v) ? v : typeof v === "number" ? [{ at: 0, v }] : []; };
 const velInit = (log: VelEntry[]) => log.find((e) => e.at === 0)?.v ?? RACE_SPEED_DEFAULT;
 const velLive = (log: VelEntry[]) => log.filter((e) => e.at > 0).sort((a, b) => a.at - b.at);
@@ -461,8 +461,9 @@ async function handle(body: Record<string, any>) {
     if (now < start - EST_CLOSE_MS) log = [{ at: 0, v: value }];
     else {
       if (room.cerrada) throw new Fail("La carrera ya terminó.", 409);
-      const live = velLive(log);
-      at = Math.max(now + VEL_LEAD_MS, (live.length ? live[live.length - 1].at : 0) + 500);
+      // un cambio nuevo reemplaza a los que todavía no empezaron (si no, al mover la barra rápido se aplicaban todos uno tras otro: pasaba por 2× y recién después bajaba)
+      const live = velLive(log).filter((e) => e.at <= now);
+      at = now + VEL_LEAD_MS;
       log = [{ at: 0, v: velInit(log) }, ...live, { at, v: value }].slice(-40);
     }
     const rolls = [...(me.rolls as any[]).filter((r) => r.k !== "vel"), { k: "vel", v: log, used: true }];
