@@ -432,8 +432,27 @@ function startRace(syncAt,interactive){
   // tu estrategia, con una marca que avanza con las vueltas
   const sId=DECISIONS['s:'+myId()], sOpt=sId&&!RACE.sprint&&E.strategyOptions({seed:SEED,key:MEKEY,laps:RACE.laps,rain:!!RACE.rain,s:carByKey(MEKEY).s}).opts.find(o=>o.id===sId);
   $('myStrat').style.display=sOpt?'block':'none';
-  $('myStrat').innerHTML=sOpt?`<div class="lbl"><span>Tu estrategia</span> · <span>${STRAT_INFO[sOpt.id][0]}</span></div>${stintBar(sOpt.stints,RACE.laps,'mini','myMk')}`:'';
-  const myMk=$('myMk');
+  // La barra muestra lo que de verdad pasó en tus paradas (si entraste por lluvia, sale la goma de lluvia) y lo que queda del plan.
+  // Solo se mira hasta la vuelta actual: el futuro sigue siendo el plan (así no se adelanta si la lluvia llega o no).
+  const realStints=(lapNow)=>{
+    const me=carByKey(MEKEY), comps=sOpt.stints.map(s=>s.c), out=[]; if(!me) return sOpt.stints;
+    let cur=comps[0], a=1, stops=0, idx=0, sigue=true;
+    const pits=(me.ev||[]).filter(e=>e.k==='pit'&&e.lap<=lapNow).sort((x,y)=>x.lap-y.lap);
+    for(const e of pits){
+      out.push({c:cur,a,b:e.lap}); a=e.lap+1; stops++;
+      if(e.why==='wet'||e.why==='wetlate'){ cur='I'; sigue=false }
+      else if(e.why==='plan'||e.why==='sc'){ cur=e.tyre||comps[Math.min(stops,comps.length-1)]; idx++ }
+      else { cur=comps[Math.min(stops,comps.length-1)]; sigue=false }   // vuelta a slicks o parada de más: el resto del plan ya no corre
+    }
+    const plan=(me.pits||[]).slice(idx).filter(l=>l>=a);
+    if(sigue&&!RACE.rain) for(const l of plan){ if(l>=RACE.laps) break; out.push({c:cur,a,b:l}); a=l+1; stops++; cur=comps[Math.min(stops,comps.length-1)] }
+    if(a<=RACE.laps) out.push({c:cur,a,b:RACE.laps});
+    return out.filter(s=>s.b>=s.a);
+  };
+  let myMk=null, myPits=-1;
+  const paintMyStrat=(lapNow)=>{ if(!sOpt) return; const st=realStints(lapNow), real=st.map(s=>s.c+s.a+'-'+s.b).join(), plan=sOpt.stints.map(s=>s.c+s.a+'-'+s.b).join();
+    $('myStrat').innerHTML=`<div class="lbl"><span>Tu estrategia</span> · <span>${real===plan?STRAT_INFO[sOpt.id][0]:'Cambio de estrategia'}</span></div>${stintBar(st,RACE.laps,'mini','myMk')}`; myMk=$('myMk') };
+  if(sOpt){ $('myStrat').innerHTML=`<div class="lbl"><span>Tu estrategia</span> · <span>${STRAT_INFO[sOpt.id][0]}</span></div>${stintBar(sOpt.stints,RACE.laps,'mini','myMk')}`; myMk=$('myMk') } else $('myStrat').innerHTML='';
   const winnerEnd=()=>Math.min(...cars.filter(c=>!c.dnf).map(c=>c.cum[RACE.laps]));
   let endT=winnerEnd()+6; const scale=endT/32;               // toda la carrera en ~32 segundos
   const hashKey=k=>[...k].reduce((a,ch)=>a+ch.charCodeAt(0),0);
@@ -454,7 +473,7 @@ function startRace(syncAt,interactive){
     $('scBanner').style.display=scOn?'block':'none';
     $('lights').className=scOn?'lights sc':'lights go';
     tower(o);
-    if(myMk){ const me=cars.find(c=>c.key===MEKEY); if(me) myMk.style.left=Math.min(99.5,me.p/RACE.laps*100)+'%' }
+    if(sOpt){ const me=cars.find(c=>c.key===MEKEY); if(me){ const n=(me.ev||[]).filter(e=>e.k==='pit'&&e.T<=T).length; if(n!==myPits){ myPits=n; paintMyStrat(Math.floor(me.p)+1) } if(myMk) myMk.style.left=Math.min(99.5,me.p/RACE.laps*100)+'%' } }
     $('lap').textContent=`VUELTA ${Math.min(RACE.laps,Math.floor(o[0].p)+1)}/${RACE.laps}`;
   };
   draw(0);
@@ -1453,14 +1472,14 @@ function renderDaily(){
   $('dStreakSub').textContent=played?'Jugaste hoy':(st&&st.streak?'Juega hoy para mantener tu racha':'Juega hoy para empezar tu racha');
   let h='';
   if(!st) h='<div class="note" style="text-align:center">No se pudo cargar el desafío. Revisa tu conexión.</div><button class="btn cta" id="dRetry"><span>Reintentar</span></button>';
-  else if(!st.logged) h='<button class="btn cta" id="dLogin"><span>Entrar con Google para jugar</span></button><button class="btn ghost cta" id="dFriend"><span>Jugar amistoso →</span></button><div class="note" style="text-align:center">Con tu cuenta se registra tu resultado, tu racha y tu lugar en el ranking.</div>';
+  else if(!st.logged) h='<button class="btn cta" id="dAnon"><span>Jugar con un apodo →</span></button><button class="btn ghost cta" id="dLogin"><span>Entrar con Google</span></button><button class="btn ghost cta" id="dFriend"><span>Jugar amistoso (sin ranking)</span></button><div class="note" style="text-align:center">Con un apodo entrás al ranking sin registrarte. Con Google, además, tu racha te sigue en cualquier dispositivo.</div>';
   else if(!st.nickname) h='<div class="note" style="text-align:center">Elige tu nombre para el ranking (3 a 16 letras, números, punto, guion o _).</div><input id="dNick" maxlength="16" placeholder="Tu nombre de piloto" autocomplete="off"><button class="btn cta" id="dNickSave"><span>Guardar nombre</span></button><div class="note" id="dNickErr" style="color:var(--red);text-align:center;min-height:18px"></div>';
   else if(played) h=`<button class="btn cta" disabled><span>Ya jugaste hoy</span></button><div class="dres">Tu resultado: <b>${fmtPos(E0.result)}</b> · ${E0.result.dnf?'':fmtRace(E0.result.tiempo)+' · '}<b>#${E0.rank}</b> de ${st.total}</div><button class="btn ghost cta" id="dFriend"><span>Jugar amistoso →</span></button><div class="note" style="text-align:center">no cuenta para el ranking ni para la racha</div>`;
   else h=`<button class="btn cta" id="dPlay"><span>${E0&&E0.nPicks?'Continuar el desafío →':'Jugar el desafío →'}</span></button><div class="note" style="text-align:center">Tienes una sola partida por día.</div>`;
   $('dActions').innerHTML=h;
   try{ localStorage.setItem('boxbox_dact_h',String(Math.round($('dActions').getBoundingClientRect().height))) }catch(e){}
   const on=(id,fn)=>{const e=$(id); if(e) e.onclick=fn};
-  on('dRetry',showDaily); on('dLogin',()=>signIn('?desafio')); on('dFriend',startFriendly); on('dPlay',startDaily); on('dNickSave',saveNick);
+  on('dRetry',showDaily); on('dLogin',()=>signIn('?desafio')); on('dAnon',playAnon); on('dFriend',startFriendly); on('dPlay',startDaily); on('dNickSave',saveNick);
   $('dShare').style.display=played?'block':'none';
 }
 function startDTimer(){
@@ -1581,13 +1600,14 @@ const inRoom=()=>MODE==='room'&&!!ROOM&&!(RESULT&&RS&&RS.room.status==='racing')
 const SB_URL='https://vljuhibzzwtcswirunfr.supabase.co', SB_KEY='sb_publishable_-eWaOokr2vEuoRXXklXGLA_7L7u9fgz';
 let sb=null, USER=null;
 try{ if(window.supabase) sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,detectSessionInUrl:true,flowType:'pkce'}}); }catch(e){ console.warn(e) }
+const GOOGLE_USER=()=>!!USER&&!USER.is_anonymous;   // con apodo (usuario anónimo) se juega el desafío, pero no hay cuenta de Google
 function paintUser(){
-  const m=USER&&USER.user_metadata||{}, name=USER?(m.full_name||m.name||USER.email):'Invitado';
+  const m=USER&&USER.user_metadata||{}, g=GOOGLE_USER(), name=g?(m.full_name||m.name||USER.email):'Invitado';
   $('pName').textContent=name;
-  $('pName').nextElementSibling.textContent=USER?`Conectado con Google (${USER.email}). Tu campeonato se guarda en tu cuenta.`:'Sin sesión: tu campeonato se guarda solo en este navegador.';
-  $('pLogin').lastChild.textContent=USER?'Cerrar sesión':(GOOGLE_ON?'Continuar con Google':'Continuar con Google (próximamente)');
-  $('pLogin').disabled=!USER&&!GOOGLE_ON; $('pLogin').style.opacity=$('pLogin').disabled?.5:1;
-  $('nProfile').textContent=USER?('Perfil · '+String(m.full_name||m.name||USER.email).split(/[ @]/)[0]):'Perfil';
+  $('pName').nextElementSibling.textContent=g?`Conectado con Google (${USER.email}). Tu campeonato se guarda en tu cuenta.`:USER?'Jugás con un apodo, sin cuenta: todo queda en este navegador. Con Google lo guardás en cualquier dispositivo.':'Sin sesión: tu campeonato se guarda solo en este navegador.';
+  $('pLogin').lastChild.textContent=g?'Cerrar sesión':(GOOGLE_ON?'Continuar con Google':'Continuar con Google (próximamente)');
+  $('pLogin').disabled=!g&&!GOOGLE_ON; $('pLogin').style.opacity=$('pLogin').disabled?.5:1;
+  $('nProfile').textContent=g?('Perfil · '+String(m.full_name||m.name||USER.email).split(/[ @]/)[0]):'Perfil';
 }
 function cloudRow(){ return {user_id:USER.id,campeonato:loadRaw(),stats:loadStats(),historial:loadHist(),trofeos:loadTrofeos(),updated_at:new Date().toISOString()} }
 async function syncUp(){
@@ -1622,11 +1642,18 @@ async function signIn(q){
   const {error}=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname+(typeof q==='string'?q:'?ver=perfil')}});
   if(error) toast('No se pudo iniciar sesión: '+error.message);
 }
+async function playAnon(){
+  if(!sb) return toast('No se pudo conectar. Revisa tu conexión y recarga.');
+  const b=$('dAnon'); if(b) b.disabled=true;
+  const {error}=await sb.auth.signInAnonymously();
+  if(error){ if(b) b.disabled=false; return toast(/anonymous/i.test(error.message)?'Jugar sin cuenta todavía no está disponible. Entrá con Google o jugá el amistoso.':'No se pudo entrar: '+error.message) }
+  // onAuthStateChange vuelve a cargar el desafío: ahí se pide el apodo
+}
 async function signOut(){
   await sb.auth.signOut(); USER=null; paintUser();
   toast('Sesión cerrada. Tu campeonato sigue guardado en tu cuenta.');
 }
-$('pLogin').onclick=()=>USER?signOut():signIn();
+$('pLogin').onclick=()=>GOOGLE_USER()?signOut():signIn();
 // Si Google todavía no está activado en Supabase, el botón avisa en vez de dar error.
 let GOOGLE_ON=false;
 fetch(SB_URL+'/auth/v1/settings',{headers:{apikey:SB_KEY}}).then(r=>r.json()).then(j=>{
@@ -1780,7 +1807,7 @@ if(sb){
     const u=session&&session.user||null, changed=(u&&u.id)!==(USER&&USER.id);
     USER=u; paintUser();
     if(changed) setTimeout(frLoad,0);
-    if(u&&changed){ ev('login_ok'); setTimeout(syncDown,0) }
+    if(u&&changed){ if(!u.is_anonymous) ev('login_ok'); setTimeout(syncDown,0) }
     if(changed&&$('s-daily').classList.contains('on')) setTimeout(showDaily,0);
   });
 }

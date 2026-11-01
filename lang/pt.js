@@ -263,7 +263,14 @@ export default {
     "🌐 Sala pública": "🌐 Sala pública",
     "Partida rápida": "Partida rápida",
     "🏁 Carrera": "🏁 Carreira",
-    "fechas": "etapas"
+    "fechas": "etapas",
+    "Cambio de estrategia": "Mudança de estratégia",
+    "Jugar con un apodo →": "Jogar com um apelido →",
+    "Entrar con Google": "Entrar com Google",
+    "Jugar amistoso (sin ranking)": "Jogar amistoso (sem ranking)",
+    "Con un apodo entrás al ranking sin registrarte. Con Google, además, tu racha te sigue en cualquier dispositivo.": "Com um apelido você entra no ranking sem se cadastrar. Com o Google, sua sequência também te acompanha em qualquer dispositivo.",
+    "Jugás con un apodo, sin cuenta: todo queda en este navegador. Con Google lo guardás en cualquier dispositivo.": "Você joga com um apelido, sem conta: tudo fica neste navegador. Com o Google você guarda em qualquer dispositivo.",
+    "Jugar sin cuenta todavía no está disponible. Entrá con Google o jugá el amistoso.": "Jogar sem conta ainda não está disponível. Entre com o Google ou jogue o amistoso."
   },
   p: {
     "👥 Amigos ({0})": "👥 Amigos ({0})",

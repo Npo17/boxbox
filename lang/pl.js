@@ -263,7 +263,14 @@ export default {
     "🌐 Sala pública": "🌐 Pokój publiczny",
     "Partida rápida": "Szybka gra",
     "🏁 Carrera": "🏁 Kariera",
-    "fechas": "rundy"
+    "fechas": "rundy",
+    "Cambio de estrategia": "Zmiana strategii",
+    "Jugar con un apodo →": "Graj z pseudonimem →",
+    "Entrar con Google": "Zaloguj się przez Google",
+    "Jugar amistoso (sin ranking)": "Gra towarzyska (bez rankingu)",
+    "Con un apodo entrás al ranking sin registrarte. Con Google, además, tu racha te sigue en cualquier dispositivo.": "Z pseudonimem trafiasz do rankingu bez rejestracji. Z Google twoja seria podąża za tobą na każdym urządzeniu.",
+    "Jugás con un apodo, sin cuenta: todo queda en este navegador. Con Google lo guardás en cualquier dispositivo.": "Grasz z pseudonimem, bez konta: wszystko zostaje w tej przeglądarce. Z Google zapiszesz to na każdym urządzeniu.",
+    "Jugar sin cuenta todavía no está disponible. Entrá con Google o jugá el amistoso.": "Gra bez konta nie jest jeszcze dostępna. Zaloguj się przez Google lub zagraj towarzysko."
   },
   p: {
     "👥 Amigos ({0})": "👥 Znajomi ({0})",

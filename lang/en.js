@@ -265,7 +265,14 @@ export default {
     "🌐 Sala pública": "🌐 Public room",
     "Partida rápida": "Quick game",
     "🏁 Carrera": "🏁 Career",
-    "fechas": "rounds"
+    "fechas": "rounds",
+    "Cambio de estrategia": "Strategy change",
+    "Jugar con un apodo →": "Play with a nickname →",
+    "Entrar con Google": "Sign in with Google",
+    "Jugar amistoso (sin ranking)": "Friendly game (no ranking)",
+    "Con un apodo entrás al ranking sin registrarte. Con Google, además, tu racha te sigue en cualquier dispositivo.": "With a nickname you join the ranking without signing up. With Google, your streak also follows you on any device.",
+    "Jugás con un apodo, sin cuenta: todo queda en este navegador. Con Google lo guardás en cualquier dispositivo.": "You play with a nickname, no account: everything stays in this browser. With Google you keep it on any device.",
+    "Jugar sin cuenta todavía no está disponible. Entrá con Google o jugá el amistoso.": "Playing without an account isn’t available yet. Sign in with Google or play the friendly game."
   },
   p: {
     "👥 Amigos ({0})": "👥 Friends ({0})",

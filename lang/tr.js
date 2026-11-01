@@ -263,7 +263,14 @@ export default {
     "🌐 Sala pública": "🌐 Herkese açık oda",
     "Partida rápida": "Hızlı oyun",
     "🏁 Carrera": "🏁 Kariyer",
-    "fechas": "yarış"
+    "fechas": "yarış",
+    "Cambio de estrategia": "Strateji değişikliği",
+    "Jugar con un apodo →": "Takma adla oyna →",
+    "Entrar con Google": "Google ile giriş yap",
+    "Jugar amistoso (sin ranking)": "Dostluk maçı (sıralamasız)",
+    "Con un apodo entrás al ranking sin registrarte. Con Google, además, tu racha te sigue en cualquier dispositivo.": "Takma adla kayıt olmadan sıralamaya girersin. Google ile serin her cihazda seninle olur.",
+    "Jugás con un apodo, sin cuenta: todo queda en este navegador. Con Google lo guardás en cualquier dispositivo.": "Takma adla, hesapsız oynuyorsun: her şey bu tarayıcıda kalır. Google ile her cihazda saklarsın.",
+    "Jugar sin cuenta todavía no está disponible. Entrá con Google o jugá el amistoso.": "Hesapsız oynamak henüz mevcut değil. Google ile giriş yap veya dostluk maçı oyna."
   },
   p: {
     "👥 Amigos ({0})": "👥 Arkadaşlar ({0})",

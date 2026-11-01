@@ -263,7 +263,14 @@ export default {
     "🌐 Sala pública": "🌐 Salle publique",
     "Partida rápida": "Partie rapide",
     "🏁 Carrera": "🏁 Carrière",
-    "fechas": "manches"
+    "fechas": "manches",
+    "Cambio de estrategia": "Changement de stratégie",
+    "Jugar con un apodo →": "Jouer avec un pseudo →",
+    "Entrar con Google": "Se connecter avec Google",
+    "Jugar amistoso (sin ranking)": "Partie amicale (sans classement)",
+    "Con un apodo entrás al ranking sin registrarte. Con Google, además, tu racha te sigue en cualquier dispositivo.": "Avec un pseudo, tu entres dans le classement sans t’inscrire. Avec Google, ta série te suit aussi sur tous tes appareils.",
+    "Jugás con un apodo, sin cuenta: todo queda en este navegador. Con Google lo guardás en cualquier dispositivo.": "Tu joues avec un pseudo, sans compte : tout reste dans ce navigateur. Avec Google, tu le gardes sur tous tes appareils.",
+    "Jugar sin cuenta todavía no está disponible. Entrá con Google o jugá el amistoso.": "Jouer sans compte n’est pas encore disponible. Connecte-toi avec Google ou joue la partie amicale."
   },
   p: {
     "👥 Amigos ({0})": "👥 Amis ({0})",

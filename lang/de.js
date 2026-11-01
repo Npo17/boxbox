@@ -263,7 +263,14 @@ export default {
     "🌐 Sala pública": "🌐 Öffentlicher Raum",
     "Partida rápida": "Schnelles Spiel",
     "🏁 Carrera": "🏁 Karriere",
-    "fechas": "Rennen"
+    "fechas": "Rennen",
+    "Cambio de estrategia": "Strategiewechsel",
+    "Jugar con un apodo →": "Mit Spitznamen spielen →",
+    "Entrar con Google": "Mit Google anmelden",
+    "Jugar amistoso (sin ranking)": "Freundschaftsspiel (ohne Rangliste)",
+    "Con un apodo entrás al ranking sin registrarte. Con Google, además, tu racha te sigue en cualquier dispositivo.": "Mit einem Spitznamen kommst du ohne Anmeldung in die Rangliste. Mit Google begleitet dich deine Serie auf jedem Gerät.",
+    "Jugás con un apodo, sin cuenta: todo queda en este navegador. Con Google lo guardás en cualquier dispositivo.": "Du spielst mit Spitznamen, ohne Konto: alles bleibt in diesem Browser. Mit Google behältst du es auf jedem Gerät.",
+    "Jugar sin cuenta todavía no está disponible. Entrá con Google o jugá el amistoso.": "Spielen ohne Konto ist noch nicht verfügbar. Melde dich mit Google an oder spiel das Freundschaftsspiel."
   },
   p: {
     "👥 Amigos ({0})": "👥 Freunde ({0})",
