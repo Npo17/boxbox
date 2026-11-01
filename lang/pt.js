@@ -245,7 +245,17 @@ export default {
     "Temporadas": "Temporadas",
     "Resultados del equipo": "Resultados da equipe",
     "Equipos": "Equipes",
-    "Sin datos de este jefe de equipo.": "Sem dados deste chefe de equipe."
+    "Sin datos de este jefe de equipo.": "Sem dados deste chefe de equipe.",
+    "¿Cómo fue tu experiencia?": "Como foi sua experiência?",
+    "¡Gracias por tu voto!": "Obrigado pelo seu voto!",
+    "Gracias por contarnos.": "Obrigado por nos contar.",
+    "Contanos qué mejorar": "Conte o que melhorar",
+    "Valorar tu experiencia": "Avaliar sua experiência",
+    "1 estrella": "1 estrela",
+    "2 estrellas": "2 estrelas",
+    "3 estrellas": "3 estrelas",
+    "4 estrellas": "4 estrelas",
+    "5 estrellas": "5 estrelas"
   },
   p: {
     "👥 Amigos ({0})": "👥 Amigos ({0})",

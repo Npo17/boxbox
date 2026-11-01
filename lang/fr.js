@@ -245,7 +245,17 @@ export default {
     "Temporadas": "Saisons",
     "Resultados del equipo": "Résultats de l’écurie",
     "Equipos": "Écuries",
-    "Sin datos de este jefe de equipo.": "Pas de données pour ce directeur d’écurie."
+    "Sin datos de este jefe de equipo.": "Pas de données pour ce directeur d’écurie.",
+    "¿Cómo fue tu experiencia?": "Comment s’est passée ton expérience ?",
+    "¡Gracias por tu voto!": "Merci pour ton vote !",
+    "Gracias por contarnos.": "Merci de nous le dire.",
+    "Contanos qué mejorar": "Dis-nous quoi améliorer",
+    "Valorar tu experiencia": "Noter ton expérience",
+    "1 estrella": "1 étoile",
+    "2 estrellas": "2 étoiles",
+    "3 estrellas": "3 étoiles",
+    "4 estrellas": "4 étoiles",
+    "5 estrellas": "5 étoiles"
   },
   p: {
     "👥 Amigos ({0})": "👥 Amis ({0})",

@@ -247,7 +247,17 @@ export default {
     "Temporadas": "Seasons",
     "Resultados del equipo": "Team results",
     "Equipos": "Teams",
-    "Sin datos de este jefe de equipo.": "No data for this team principal."
+    "Sin datos de este jefe de equipo.": "No data for this team principal.",
+    "¿Cómo fue tu experiencia?": "How was your experience?",
+    "¡Gracias por tu voto!": "Thanks for your vote!",
+    "Gracias por contarnos.": "Thanks for telling us.",
+    "Contanos qué mejorar": "Tell us what to improve",
+    "Valorar tu experiencia": "Rate your experience",
+    "1 estrella": "1 star",
+    "2 estrellas": "2 stars",
+    "3 estrellas": "3 stars",
+    "4 estrellas": "4 stars",
+    "5 estrellas": "5 stars"
   },
   p: {
     "👥 Amigos ({0})": "👥 Friends ({0})",

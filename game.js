@@ -83,7 +83,7 @@ $('rollBtn').onclick=async()=>{
 };
 renderSlots();
 
-function go(screen,step){document.documentElement.dataset.screen=screen;if(screen!=='s-home')document.documentElement.classList.add('ready');document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$(screen).classList.add('on');
+function go(screen,step){if(screen!=='s-result'&&typeof rateHide==='function'&&document.getElementById('rate'))rateHide();document.documentElement.dataset.screen=screen;if(screen!=='s-home')document.documentElement.classList.add('ready');document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$(screen).classList.add('on');
   ['st1','st2','st3','st4'].forEach((s,i)=>$(s).classList.toggle('on',i+1===step));window.scrollTo(0,0)}
 
 // ---------- Carrera: el motor (supabase/functions/_shared/engine.js) la calcula y acá se anima ----------
@@ -643,7 +643,29 @@ $('toResult').onclick=()=>{
   paintStory();
   go('s-result',4);
   if(MODE==='daily') paintDailyResult();
+  rateOffer();
 };
+
+// ---------- Valoración con 5 estrellas al terminar la carrera (no invasiva: una vez, se puede cerrar, no vuelve en 7 días) ----------
+const RATE_KEY='boxbox_valoracion'; let rateTimer=0;
+function rateState(){ try{ return JSON.parse(localStorage.getItem(RATE_KEY))||{} }catch(e){ return {} } }
+function rateSave(o){ try{ localStorage.setItem(RATE_KEY,JSON.stringify({...rateState(),...o})) }catch(e){} }
+function rateHide(){ clearTimeout(rateTimer); $('rate').classList.remove('on') }
+function rateOffer(){
+  const s=rateState(); if(s.voto||(s.cerrado&&Date.now()-s.cerrado<7*864e5)) return;
+  $('rateT').style.display=''; $('rateS').style.display=''; $('rateM').style.display='none'; $('rateB').style.display='none';
+  document.querySelectorAll('#rateS button').forEach(b=>b.classList.remove('lit'));
+  clearTimeout(rateTimer); rateTimer=setTimeout(()=>{ if($('s-result').classList.contains('on')) $('rate').classList.add('on') },2500);
+}
+document.querySelectorAll('#rateS button').forEach(b=>{
+  const n=+b.dataset.n, lit=k=>document.querySelectorAll('#rateS button').forEach(x=>x.classList.toggle('lit',+x.dataset.n<=k));
+  b.onmouseenter=()=>lit(n); b.onfocus=()=>lit(n); b.onmouseleave=()=>lit(0);
+  b.onclick=()=>{ ev('valoracion',{n,modo:MODE}); rateSave({voto:n}); lit(n);
+    $('rateT').style.display='none'; $('rateS').style.display='none'; $('rateM').style.display=''; $('rateM').textContent=n>=4?'¡Gracias por tu voto!':'Gracias por contarnos.'; $('rateB').style.display=n<=3?'':'none';
+    if(n>3) setTimeout(rateHide,2200) }
+});
+$('rateB').onclick=()=>{ rateHide(); ev('sugerencias_abre',{via:'valoracion'}); $('sType').selectedIndex=1; openM('mSuggest') };
+$('rateX').onclick=()=>{ rateSave({cerrado:Date.now()}); rateHide() };
 $('toChamp').onclick=()=>{
   const rows=Object.entries(loadChamp()).sort((a,b)=>b[1].pts-a[1].pts);
   $('champBody').innerHTML=rows.length?rows.map(([n,r],i)=>`<tr class="${n===picks.piloto.n?'hl':''}"><td class="n">${i+1}</td><td><b>${n}</b></td><td>${r.races}</td><td>${r.wins}</td><td style="color:var(--muted)">${LAST[n]||''}</td><td class="pts">${r.pts}</td></tr>`).join('')
@@ -1239,6 +1261,8 @@ const MET_ENVIAR=(!/^(localhost|127\.0\.0\.1)$/.test(location.hostname)||MET_TES
 function ev(nombre,datos){ try{ const d={...(datos||{})}; if(MET_TEST) d.test=1;
   const q=JSON.parse(localStorage.getItem('boxbox_ev')||'[]'); q.push({t:Date.now(),e:nombre,d,a:aid(),s:SESION}); localStorage.setItem('boxbox_ev',JSON.stringify(q.slice(-MET.max)));
   if(MET_ENVIAR) EQ.push({e:nombre,d,a:aid(),s:SESION}) }catch(e){} }
+let ERRN=0; addEventListener('error',e=>{ if(ERRN++<3) ev('error_js',{m:String(e.message||'').slice(0,40),l:(e.filename||'').split('/').pop().slice(0,20)+':'+(e.lineno||0)}) });
+addEventListener('unhandledrejection',e=>{ if(ERRN++<3) ev('error_js',{m:String((e.reason&&e.reason.message)||e.reason||'').slice(0,40),l:'promesa'}) });
 function vaciarEv(){ if(!MET_ENVIAR||!EQ.length) return; const lote=EQ.splice(0,40);
   try{ fetch(MET_URL,{method:'POST',body:JSON.stringify({ev:lote}),keepalive:true,mode:'no-cors'}).catch(()=>{}) }catch(e){} if(EQ.length) setTimeout(vaciarEv,300) }
 setInterval(vaciarEv,8000); setInterval(()=>{ if(!document.hidden) ev('latido') },30000);

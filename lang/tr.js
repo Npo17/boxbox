@@ -245,7 +245,17 @@ export default {
     "Temporadas": "Sezonlar",
     "Resultados del equipo": "Takım sonuçları",
     "Equipos": "Takımlar",
-    "Sin datos de este jefe de equipo.": "Bu takım patronu için veri yok."
+    "Sin datos de este jefe de equipo.": "Bu takım patronu için veri yok.",
+    "¿Cómo fue tu experiencia?": "Deneyimin nasıldı?",
+    "¡Gracias por tu voto!": "Oy verdiğin için teşekkürler!",
+    "Gracias por contarnos.": "Bize söylediğin için teşekkürler.",
+    "Contanos qué mejorar": "Neyi geliştirelim, söyle",
+    "Valorar tu experiencia": "Deneyimini puanla",
+    "1 estrella": "1 yıldız",
+    "2 estrellas": "2 yıldız",
+    "3 estrellas": "3 yıldız",
+    "4 estrellas": "4 yıldız",
+    "5 estrellas": "5 yıldız"
   },
   p: {
     "👥 Amigos ({0})": "👥 Arkadaşlar ({0})",

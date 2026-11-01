@@ -245,7 +245,17 @@ export default {
     "Temporadas": "Sezony",
     "Resultados del equipo": "Wyniki zespołu",
     "Equipos": "Zespoły",
-    "Sin datos de este jefe de equipo.": "Brak danych o tym szefie zespołu."
+    "Sin datos de este jefe de equipo.": "Brak danych o tym szefie zespołu.",
+    "¿Cómo fue tu experiencia?": "Jak oceniasz swoje wrażenia?",
+    "¡Gracias por tu voto!": "Dzięki za głos!",
+    "Gracias por contarnos.": "Dzięki za opinię.",
+    "Contanos qué mejorar": "Napisz, co poprawić",
+    "Valorar tu experiencia": "Oceń swoje wrażenia",
+    "1 estrella": "1 gwiazdka",
+    "2 estrellas": "2 gwiazdki",
+    "3 estrellas": "3 gwiazdki",
+    "4 estrellas": "4 gwiazdki",
+    "5 estrellas": "5 gwiazdek"
   },
   p: {
     "👥 Amigos ({0})": "👥 Znajomi ({0})",

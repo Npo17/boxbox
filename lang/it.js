@@ -245,7 +245,17 @@ export default {
     "Temporadas": "Stagioni",
     "Resultados del equipo": "Risultati del team",
     "Equipos": "Team",
-    "Sin datos de este jefe de equipo.": "Nessun dato per questo team principal."
+    "Sin datos de este jefe de equipo.": "Nessun dato per questo team principal.",
+    "¿Cómo fue tu experiencia?": "Com’è stata la tua esperienza?",
+    "¡Gracias por tu voto!": "Grazie per il voto!",
+    "Gracias por contarnos.": "Grazie per averci risposto.",
+    "Contanos qué mejorar": "Dicci cosa migliorare",
+    "Valorar tu experiencia": "Valuta la tua esperienza",
+    "1 estrella": "1 stella",
+    "2 estrellas": "2 stelle",
+    "3 estrellas": "3 stelle",
+    "4 estrellas": "4 stelle",
+    "5 estrellas": "5 stelle"
   },
   p: {
     "👥 Amigos ({0})": "👥 Amici ({0})",
