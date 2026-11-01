@@ -9,8 +9,11 @@ if (!process.argv.includes('--solo-calentar')) {   // con --solo-calentar no hac
 }
 const html = await (await fetch(SITE + '/?w=' + Date.now())).text();
 const rutas = new Set(['/', '/game.js', '/supabase/functions/_shared/engine.js', '/supabase/functions/_shared/temporadas.json', ...[...html.matchAll(/(?:src|href)="(\/?[^"#:]+\.(?:js|css|json|webp|png|svg))(\?[^"]*)?"/g)].map((m) => '/' + m[1].replace(/^\//, '') + (m[2] || ''))]);
-for (const l of ['en', 'pt', 'fr', 'it', 'de', 'pl', 'tr']) rutas.add(`/lang/${l}.js`);
-for (const d of ['pilotos', 'fotos', 'coches', 'fotos-coches', 'jefes']) rutas.add(`/data/${d}.json`);
+// el juego pide el motor, los idiomas y los datos con la versión actual (?v=…): esos son los que hay que dejar listos
+const v = (/game\.js\?v=([0-9a-f]+)/.exec(html) || [])[1], q = v ? '?v=' + v : '';
+for (const x of ['/supabase/functions/_shared/engine.js', '/supabase/functions/_shared/temporadas.json']) rutas.add(x + q);
+for (const l of ['en', 'pt', 'fr', 'it', 'de', 'pl', 'tr']) rutas.add(`/lang/${l}.js${q}`);
+for (const d of ['pilotos', 'fotos', 'coches', 'fotos-coches', 'jefes']) rutas.add(`/data/${d}.json${q}`);
 let ok = 0, mal = [];
 await Promise.all([...rutas].map(async (r) => { for (let i = 0; i < 3; i++) { const x = await fetch(SITE + r).catch(() => null); if (x && x.ok) { await x.arrayBuffer(); ok++; return; } } mal.push(r); }));
 console.log(`calentados ${ok}/${rutas.size}` + (mal.length ? ' · sin respuesta: ' + mal.join(', ') : ''));
