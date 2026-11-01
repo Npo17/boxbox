@@ -1310,6 +1310,17 @@ addEventListener('unhandledrejection',e=>{ if(!/(game|tracks|engine)\.js/.test(S
 function vaciarEv(){ if(!MET_ENVIAR||!EQ.length) return; const lote=EQ.splice(0,40);
   try{ fetch(MET_URL,{method:'POST',body:JSON.stringify({ev:lote}),keepalive:true,mode:'no-cors'}).catch(()=>{}) }catch(e){} if(EQ.length) setTimeout(vaciarEv,300) }
 setInterval(vaciarEv,8000); setInterval(()=>{ if(!document.hidden) ev('latido') },30000);
+// Velocidad real de cada visita, para el panel: LCP (cuándo aparece lo principal), CLS (saltos de pantalla, ×1000), INP (la respuesta más lenta
+// a un toque) y TTFB (cuánto tardó en llegar la página). Se manda una sola vez: al salir de la página o, si sigue abierta, al minuto.
+(function(){ try{
+  const m={lcp:0,cls:0,inp:0}; let sent=false;
+  new PerformanceObserver(l=>{ for(const e of l.getEntries()) m.lcp=Math.round(e.startTime) }).observe({type:'largest-contentful-paint',buffered:true});
+  new PerformanceObserver(l=>{ for(const e of l.getEntries()) if(!e.hadRecentInput) m.cls+=e.value }).observe({type:'layout-shift',buffered:true});
+  try{ new PerformanceObserver(l=>{ for(const e of l.getEntries()) if(e.interactionId) m.inp=Math.max(m.inp,Math.round(e.duration)) }).observe({type:'event',buffered:true,durationThreshold:40}) }catch(e){}
+  const send=()=>{ if(sent||!m.lcp) return; sent=true; const nav=performance.getEntriesByType('navigation')[0];
+    ev('rendimiento',{lcp:m.lcp,cls:Math.round(m.cls*1000),inp:m.inp,ttfb:nav?Math.round(nav.responseStart):0,movil:innerWidth<=700}); vaciarEv() };
+  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden') send() }); addEventListener('pagehide',send); setTimeout(send,60000);
+}catch(e){} })();
 addEventListener('pagehide',vaciarEv); document.addEventListener('visibilitychange',()=>{ if(document.hidden) vaciarEv() });
 (function(){
   const u=new URLSearchParams(location.search); let ref=''; try{ ref=document.referrer?new URL(document.referrer).hostname:'' }catch(e){}
