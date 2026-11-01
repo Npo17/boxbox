@@ -255,7 +255,15 @@ export default {
     "2 estrellas": "2 yıldız",
     "3 estrellas": "3 yıldız",
     "4 estrellas": "4 yıldız",
-    "5 estrellas": "5 yıldız"
+    "5 estrellas": "5 yıldız",
+    "🌐 Sala pública: aparece en la lista y cualquiera puede unirse": "🌐 Herkese açık oda: listede görünür, herkes katılabilir",
+    "Salas públicas abiertas": "Açık herkese açık odalar",
+    "Actualizar": "Yenile",
+    "No hay salas públicas abiertas ahora. ¡Crea la primera!": "Şu an açık herkese açık oda yok. İlkini sen oluştur!",
+    "🌐 Sala pública": "🌐 Herkese açık oda",
+    "Partida rápida": "Hızlı oyun",
+    "🏁 Carrera": "🏁 Kariyer",
+    "fechas": "yarış"
   },
   p: {
     "👥 Amigos ({0})": "👥 Arkadaşlar ({0})",

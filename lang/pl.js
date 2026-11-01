@@ -255,7 +255,15 @@ export default {
     "2 estrellas": "2 gwiazdki",
     "3 estrellas": "3 gwiazdki",
     "4 estrellas": "4 gwiazdki",
-    "5 estrellas": "5 gwiazdek"
+    "5 estrellas": "5 gwiazdek",
+    "🌐 Sala pública: aparece en la lista y cualquiera puede unirse": "🌐 Pokój publiczny: widać go na liście i każdy może dołączyć",
+    "Salas públicas abiertas": "Otwarte pokoje publiczne",
+    "Actualizar": "Odśwież",
+    "No hay salas públicas abiertas ahora. ¡Crea la primera!": "Teraz nie ma otwartych pokoi publicznych. Utwórz pierwszy!",
+    "🌐 Sala pública": "🌐 Pokój publiczny",
+    "Partida rápida": "Szybka gra",
+    "🏁 Carrera": "🏁 Kariera",
+    "fechas": "rundy"
   },
   p: {
     "👥 Amigos ({0})": "👥 Znajomi ({0})",

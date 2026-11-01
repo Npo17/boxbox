@@ -781,7 +781,7 @@ $('carCal').onclick=()=>openCalBuilder(CAR&&CAR.cal,cal=>{ CAR.cal=cal; CAR.i=0;
 $('fCareer').onchange=()=>{ $('fCalRow').style.display=$('fCareer').checked?'flex':'none' };
 const calTxt=cal=>cal?`Calendario a medida (${cal.length} fechas)`:'Temporada completa (23 fechas)';
 $('fCalBtn').onclick=()=>openCalBuilder(CUSTOM_CAL,cal=>{ CUSTOM_CAL=cal; $('fCalTxt').textContent=calTxt(cal) });
-$('carFriends').onclick=()=>{ $('fCareer').checked=true; $('fCalRow').style.display='flex'; $('fErr').textContent=''; openM('mFriends') };   // sala de carrera con amigos (o unirse con un código)
+$('carFriends').onclick=()=>{ $('fCareer').checked=true; $('fCalRow').style.display='flex'; $('fErr').textContent=''; openM('mFriends'); pubStart() };   // sala de carrera con amigos (o unirse con un código)
 
 // ---------- IDIOMA ----------
 // El juego está escrito en español (idioma por defecto). Cada idioma es un diccionario en lang/xx.js:
@@ -857,7 +857,7 @@ try{ const sv=localStorage.getItem('boxbox_idioma'); if(sv&&sv!=='es') setLang(s
 const today=new Date(), DAYKEY=today.getFullYear()*10000+(today.getMonth()+1)*100+today.getDate();
 $('hPlay').onclick=()=>startGame('solo');
 $('hDaily').onclick=$('nDaily').onclick=()=>showDaily();
-$('hFriends').onclick=()=>{ $('fCareer').checked=false; openM('mFriends') };
+$('hFriends').onclick=()=>{ $('fCareer').checked=false; openM('mFriends'); pubStart() };
 $('hChamp').onclick=$('nChamp').onclick=()=>showChampPage();
 $('nProfile').onclick=()=>showProfile();
 $('logo').onclick=()=>{location.href=location.pathname};   // al inicio, sin ?sala ni otros parámetros
@@ -972,7 +972,7 @@ async function frToken(){ try{ const {data}=await sb.auth.getSession(); return d
 async function createRoom(){
   const name=myName(); if(!name){$('fErr').textContent='Escribe tu nombre.';return}
   $('fCreate').disabled=true; $('fErr').textContent='';
-  try{ const j=await api('create',{name,modo:$('fCareer').checked?'carrera':'normal',...($('fCareer').checked&&CUSTOM_CAL?{calendario:CUSTOM_CAL}:{}),token:await frToken()}); CUSTOM_CAL=null; $('fCalTxt').textContent=calTxt(null); ROOM={code:j.room.code,pid:j.pid,secret:j.secret}; ev('sala_creada',{carrera:j.room.modo==='carrera'}); enterRoom(j); }
+  try{ const j=await api('create',{name,publica:$('fPublic').checked,modo:$('fCareer').checked?'carrera':'normal',...($('fCareer').checked&&CUSTOM_CAL?{calendario:CUSTOM_CAL}:{}),token:await frToken()}); CUSTOM_CAL=null; $('fCalTxt').textContent=calTxt(null); ROOM={code:j.room.code,pid:j.pid,secret:j.secret}; ev('sala_creada',{carrera:j.room.modo==='carrera',publica:!!j.room.publica}); enterRoom(j); }
   catch(e){ $('fErr').textContent=e.message } finally{ $('fCreate').disabled=false }
 }
 async function joinRoom(){
@@ -980,10 +980,22 @@ async function joinRoom(){
   if(!name){$('fErr').textContent='Escribe tu nombre.';return}
   if(!code){$('fErr').textContent='Escribe el código de la sala.';return}
   $('fJoin').disabled=true; $('fErr').textContent='';
-  try{ const j=await api('join',{code,name,token:await frToken()}); ROOM={code:j.room.code,pid:j.pid,secret:j.secret}; ev('sala_unida'); enterRoom(j); }
+  try{ const j=await api('join',{code,name,token:await frToken()}); ROOM={code:j.room.code,pid:j.pid,secret:j.secret}; ev('sala_unida',{publica:!!j.room.publica,lista:LISTA_PUB}); LISTA_PUB=false; enterRoom(j); }
   catch(e){ $('fErr').textContent=e.message } finally{ $('fJoin').disabled=false }
 }
 $('fCreate').onclick=createRoom; $('fJoin').onclick=joinRoom;
+// ---- salas públicas: lista para unirse con un toque ----
+let pubT=0, LISTA_PUB=false;
+async function pubLoad(){
+  const box=$('pubList'); if(!box||!$('mFriends').classList.contains('open')){ clearInterval(pubT); pubT=0; return }
+  try{
+    const j=await api('listar');
+    box.innerHTML=j.salas.length?j.salas.map(r=>`<div class="pubrow"><div class="pi"><b>${esc(r.anfitrion)}</b><small>${r.modo==='carrera'?'<span>🏁 Carrera</span> · <span>'+r.fechas+'</span> <span>fechas</span>':'<span>Partida rápida</span>'} · <span>${r.jugadores}</span>/<span>${r.max}</span> 👤</small></div><button class="btn" data-pub="${esc(r.code)}"><span>Unirme</span></button></div>`).join(''):'No hay salas públicas abiertas ahora. ¡Crea la primera!';
+  }catch(e){ box.textContent='' }
+}
+function pubStart(){ pubLoad(); clearInterval(pubT); pubT=setInterval(pubLoad,6000) }
+$('pubRefresh').onclick=pubLoad;
+$('pubList').onclick=e=>{ const b=e.target.closest('[data-pub]'); if(!b) return; $('fCode').value=b.dataset.pub; LISTA_PUB=true; joinRoom() };
 $('fCode').onkeydown=e=>{if(e.key==='Enter')joinRoom()};
 
 function enterRoom(state){
@@ -1033,6 +1045,7 @@ function chatClose(){
 function chatPush(m){ CH_MSGS.push(m); if(CH_MSGS.length>100) CH_MSGS.shift(); if(!CH_OPEN&&!m.sys&&!m.mine) CH_UNREAD++; chatPaint() }
 function chatRecv(p){
   if(!p||typeof p.t!=='string'||!p.pid||!ROOM||p.pid===ROOM.pid||CH_MUTE.has(p.pid)) return;
+  if(RS&&RS.room&&RS.room.publica&&!p.r) return;   // sala pública: sin mensajes libres, solo reacciones
   const pl=RS&&RS.players.find(x=>x.pid===p.pid); if(!pl) return;      // solo gente que está en la sala; el nombre sale de la sala, no del mensaje
   const now=Date.now(), r=(CH_RATE[p.pid]||[]).filter(x=>now-x<5000); r.push(now); CH_RATE[p.pid]=r; if(r.length>5) return;
   const t=p.t.slice(0,200).trim(); if(!t) return;
@@ -1040,6 +1053,7 @@ function chatRecv(p){
 }
 function chatSend(t,react){
   t=String(t||'').trim().slice(0,200); if(!t||!CH) return false;
+  if(!react&&RS&&RS.room&&RS.room.publica) return false;   // sala pública: solo reacciones
   if(!CH_OK){ toast('Conectando el chat…'); return false }
   const now=Date.now(); if(now-CH_LAST<1200){ toast('Más despacio…'); return false } CH_LAST=now;
   CH.send({type:'broadcast',event:'msg',payload:{pid:ROOM.pid,t,r:react?1:0}}).catch(()=>{});
@@ -1054,6 +1068,7 @@ function chatDiff(s){      // avisos de quién entra o sale
 function chatPaint(){
   const show=!!(ROOM&&CH); $('chBtn').style.display=show?'flex':'none';
   $('chBadge').style.display=CH_UNREAD?'':'none'; $('chBadge').textContent=CH_UNREAD>9?'9+':CH_UNREAD;
+  const soloReac=!!(RS&&RS.room&&RS.room.publica); $('chIn').parentElement.style.display=soloReac?'none':'flex';
   if(!show){ $('chBox').style.display='none'; return }
   $('chBox').style.display=CH_OPEN?'flex':'none'; if(!CH_OPEN) return;
   const box=$('chMsgs'), atEnd=box.scrollTop+box.clientHeight>=box.scrollHeight-40;
@@ -1080,7 +1095,7 @@ $('chMuted').onclick=e=>{ const b=e.target.closest('[data-chun]'); if(b){ CH_MUT
 function renderLobby(s){
   $('st0').style.display='none';
   if(!$('s-lobby').classList.contains('on')) go('s-lobby',0);
-  $('lCode').textContent=s.room.code; $('lCode2').textContent=s.room.code; $('lCount').textContent=s.players.length;
+  $('lCode').textContent=s.room.code; $('lCode2').textContent=s.room.code; $('lPub').style.display=s.room.publica?'':'none'; $('lCount').textContent=s.players.length;
   $('lPlayers').innerHTML=s.players.map((p,i)=>`<div class="trow ${p.pid===ROOM.pid?'me':''}"><span class="p">${i+1}</span><span class="c" style="background:${p.color}"></span><span>${esc(p.name)}</span><span class="g">${p.uid&&USER&&p.uid!==USER.id?`<button class="btn ghost" data-uid="${p.uid}" title="Ver perfil" style="padding:2px 8px;font-size:12px"><span>👤</span></button> `:''}${p.pid===s.room.host?'anfitrión':''}</span></div>`).join('');
   renderLobbyInv();
   const host=s.room.host===ROOM.pid, r=s.room, post=r.status==='racing';     // post: modo carrera, la carrera ya se corrió y se espera la siguiente fecha

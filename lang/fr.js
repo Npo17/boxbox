@@ -255,7 +255,15 @@ export default {
     "2 estrellas": "2 étoiles",
     "3 estrellas": "3 étoiles",
     "4 estrellas": "4 étoiles",
-    "5 estrellas": "5 étoiles"
+    "5 estrellas": "5 étoiles",
+    "🌐 Sala pública: aparece en la lista y cualquiera puede unirse": "🌐 Salle publique : visible dans la liste, tout le monde peut rejoindre",
+    "Salas públicas abiertas": "Salles publiques ouvertes",
+    "Actualizar": "Actualiser",
+    "No hay salas públicas abiertas ahora. ¡Crea la primera!": "Aucune salle publique ouverte pour le moment. Crée la première !",
+    "🌐 Sala pública": "🌐 Salle publique",
+    "Partida rápida": "Partie rapide",
+    "🏁 Carrera": "🏁 Carrière",
+    "fechas": "manches"
   },
   p: {
     "👥 Amigos ({0})": "👥 Amis ({0})",

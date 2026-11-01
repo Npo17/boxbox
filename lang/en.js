@@ -257,7 +257,15 @@ export default {
     "2 estrellas": "2 stars",
     "3 estrellas": "3 stars",
     "4 estrellas": "4 stars",
-    "5 estrellas": "5 stars"
+    "5 estrellas": "5 stars",
+    "🌐 Sala pública: aparece en la lista y cualquiera puede unirse": "🌐 Public room: shown in the list, anyone can join",
+    "Salas públicas abiertas": "Open public rooms",
+    "Actualizar": "Refresh",
+    "No hay salas públicas abiertas ahora. ¡Crea la primera!": "No public rooms open right now. Create the first one!",
+    "🌐 Sala pública": "🌐 Public room",
+    "Partida rápida": "Quick game",
+    "🏁 Carrera": "🏁 Career",
+    "fechas": "rounds"
   },
   p: {
     "👥 Amigos ({0})": "👥 Friends ({0})",

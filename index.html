@@ -26,8 +26,8 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <!-- Arranque rápido: conexiones y descargas en paralelo con el HTML -->
 <link rel="preconnect" href="https://vljuhibzzwtcswirunfr.supabase.co" crossorigin>
-<link rel="preload" href="supabase/functions/_shared/temporadas.json?v=434131f1" as="fetch" crossorigin fetchpriority="low">
-<link rel="modulepreload" href="supabase/functions/_shared/engine.js?v=434131f1" fetchpriority="low">
+<link rel="preload" href="supabase/functions/_shared/temporadas.json?v=8c3c47e1" as="fetch" crossorigin fetchpriority="low">
+<link rel="modulepreload" href="supabase/functions/_shared/engine.js?v=8c3c47e1" fetchpriority="low">
 <!-- Boceto de diseño, no es el juego final. Datos de ejemplo inventados. Sin marcas, logos ni fotos: todo dibujado en SVG. -->
 <!-- Fuente propia (Titillium Web) en vez de Google Fonts: sin precarga a propósito (precargarla retrasaba el primer dibujo en conexiones lentas) -->
 <style>
@@ -385,6 +385,9 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
 #rate .rm{font-size:13px;color:var(--muted);margin:2px 0 0}
 #rate .rb{margin-top:8px;font-size:13px;padding:8px 12px;min-height:40px}
 @media (max-width:700px){#rate{left:12px;right:12px;width:auto;bottom:12px}#rate .stars{justify-content:space-between}}
+.pubrow{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line);flex-wrap:wrap}
+.pubrow .pi{flex:1;min-width:150px;color:var(--text);font-size:14px}.pubrow .pi small{display:block;color:var(--muted);font-size:12px}
+.pubrow .btn{padding:6px 14px;font-size:13px;min-height:40px}
 </style>
 <!-- Cloudflare Web Analytics -->
 <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "d245324330e0486a935c50dcc161c5ef"}'></script>
@@ -455,7 +458,7 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
 
 <!-- ============ SALA DE ESPERA (con amigos) ============ -->
 <section class="screen" id="s-lobby">
-  <h1>Sala <em id="lCode">—</em></h1>
+  <h1>Sala <em id="lCode">—</em> <small id="lPub" class="note" style="display:none;font-size:13px;letter-spacing:0">🌐 Sala pública</small></h1>
   <p class="sub">Pásale el código o el link a tus amigos. Cuando estén todos, quien creó la sala larga y tienen 3 minutos para armar.</p>
   <div class="panel" id="lCareer" style="display:none;margin-bottom:14px"></div>
   <div class="grid">
@@ -781,7 +784,10 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
   <input id="fName" maxlength="16" placeholder="Tu nombre (lo ven tus amigos)">
   <label class="note" style="display:flex;gap:8px;align-items:center;margin:2px 0 8px"><input type="checkbox" id="fCareer" style="width:auto;margin:0"> 🏁 Modo carrera 2026: con sprints y tabla de puntos (calendario completo o a medida)</label>
   <div id="fCalRow" style="display:none;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 10px"><button class="btn ghost" id="fCalBtn" style="padding:6px 12px;font-size:13px"><span>📅 Calendario a medida…</span></button><span class="note" id="fCalTxt" style="margin:0">Temporada completa (23 fechas)</span></div>
+  <label class="note" style="display:flex;gap:8px;align-items:center;margin:2px 0 10px"><input type="checkbox" id="fPublic" style="width:auto;margin:0"> 🌐 Sala pública: aparece en la lista y cualquiera puede unirse</label>
   <button class="btn cta" id="fCreate"><span>Crear sala</span></button>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin:16px 0 6px"><h3 style="margin:0;font-size:13px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase">Salas públicas abiertas</h3><button class="link" id="pubRefresh">Actualizar</button></div>
+  <div id="pubList" class="note" style="margin:0 0 6px">…</div>
   <div class="note" style="text-align:center;margin:14px 0 2px">o únete con un código</div>
   <input id="fCode" maxlength="20" placeholder="Código (ej. MONZA-7Q4)" style="text-transform:uppercase">
   <button class="btn ghost cta" id="fJoin"><span>Unirme</span></button>
@@ -812,7 +818,7 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
   <div class="stars" id="rateS"><button type="button" data-n="1" aria-label="1 estrella">★</button><button type="button" data-n="2" aria-label="2 estrellas">★</button><button type="button" data-n="3" aria-label="3 estrellas">★</button><button type="button" data-n="4" aria-label="4 estrellas">★</button><button type="button" data-n="5" aria-label="5 estrellas">★</button></div>
   <p class="rm" id="rateM" style="display:none"></p><button class="btn ghost rb" id="rateB" style="display:none">Contanos qué mejorar</button></div>
 <script src="vendor/supabase.min.js" defer></script>
-<script src="tracks.js?v=434131f1" defer></script>
-<script src="game.js?v=434131f1" defer></script>
+<script src="tracks.js?v=8c3c47e1" defer></script>
+<script src="game.js?v=8c3c47e1" defer></script>
 </body>
 </html>

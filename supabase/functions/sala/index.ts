@@ -31,6 +31,8 @@ const EST_CLOSE_MS = 4 * 1000;      // las estrategias de gomas se pueden elegir
 const EST_REVEAL_MS = 3 * 1000;     // y se muestran a todos 3 s antes de largar
 const SC_WINDOW_MS = 9 * 1000;      // plazo para decidir qué hacer con el safety car, desde que sale en la carrera
 const ROOM_TTL_MS = 24 * 60 * 60 * 1000;
+const PUBLIC_LOBBY_MS = 30 * 60 * 1000;   // una sala pública sale de la lista si pasan 30 min sin largar
+const MAX_PUBLIC_LOBBIES = 40;            // tope de salas públicas esperando jugadores a la vez
 // Modo carrera: eventos de la sala en orden (temporada completa: 6 sprints + 23 GP; o el calendario a medida que eligió el anfitrión al crearla).
 const eventosOf = (room: Record<string, any>) => eventosDe(room.calendario ?? null);
 const COLORS = ["#ff3b30", "#2fd27a", "#4fc3f7", "#ffd23f", "#b26bff", "#ff9800", "#f06292", "#26a69a",
@@ -253,7 +255,7 @@ async function stateFor(room: Record<string, any>, me: Record<string, any> | nul
       vel_log: showEst ? velLive(velLog) : undefined,
       race_seed: racing ? room.race_seed : null,
       dice_seed: racing ? room.dice_seed : null,
-      modo: room.modo ?? "normal", ronda: room.ronda ?? 0, total: eventosOf(room).length, fechas: room.modo === "carrera" ? fechasDe(room.calendario ?? null) : undefined,
+      modo: room.modo ?? "normal", publica: !!room.publica, ronda: room.ronda ?? 0, total: eventosOf(room).length, fechas: room.modo === "carrera" ? fechasDe(room.calendario ?? null) : undefined,
       calendario: room.modo === "carrera" ? (room.calendario ?? null) : undefined,
       evento: room.modo === "carrera" ? (eventosOf(room)[room.ronda] ?? null) : null,
       puntos: room.modo === "carrera" ? (room.puntos ?? {}) : undefined,
@@ -280,6 +282,19 @@ async function handle(body: Record<string, any>) {
   const action = String(body.action ?? "");
   const code = String(body.code ?? "").toUpperCase().trim();
 
+  // Lista de salas públicas que esperan jugadores (sin datos personales: solo el nombre elegido del anfitrión).
+  if (action === "listar") {
+    const desde = new Date(Date.now() - PUBLIC_LOBBY_MS).toISOString();
+    const { data: salas } = await db.from("salas").select("code,host,modo,calendario,created_at").eq("publica", true).eq("status", "lobby").gte("created_at", desde).order("created_at", { ascending: false }).limit(30);
+    const codes = (salas ?? []).map((r: any) => r.code);
+    const { data: js } = codes.length ? await db.from("jugadores").select("sala,pid,name").in("sala", codes) : { data: [] };
+    const lista = (salas ?? []).map((r: any) => {
+      const ps = (js ?? []).filter((j: any) => j.sala === r.code);
+      return { code: r.code, anfitrion: ps.find((j: any) => j.pid === r.host)?.name ?? "?", modo: r.modo ?? "normal", jugadores: ps.length, max: MAX_PLAYERS, fechas: r.modo === "carrera" ? eventosOf(r).length : 0, hace: Math.round((Date.now() - Date.parse(r.created_at)) / 1000) };
+    }).filter((r: any) => r.jugadores > 0 && r.jugadores < MAX_PLAYERS);
+    return { salas: lista };
+  }
+
   if (action === "create") {
     // limpieza perezosa de salas viejas
     await db.from("salas").delete().lt("created_at", new Date(Date.now() - ROOM_TTL_MS).toISOString());
@@ -288,12 +303,17 @@ async function handle(body: Record<string, any>) {
     // Calendario a medida (solo salas de carrera): se elige al crear y no se cambia después.
     const cal = body.modo === "carrera" && body.calendario != null ? validarCalendario(body.calendario) : null;
     if (body.modo === "carrera" && body.calendario != null && !cal) throw new Fail("El calendario elegido no es válido (de 3 a 23 fechas, sin repetir pistas).", 400);
+    const publica = body.publica === true;
+    if (publica) {
+      const { count } = await db.from("salas").select("code", { count: "exact", head: true }).eq("publica", true).eq("status", "lobby").gte("created_at", new Date(Date.now() - PUBLIC_LOBBY_MS).toISOString());
+      if ((count ?? 0) >= MAX_PUBLIC_LOBBIES) throw new Fail("Hay muchas salas públicas abiertas ahora. Únete a una de la lista.", 429);
+    }
     for (let t = 0; t < 5 && !newCode; t++) {
       const c = `${WORDS[randU32() % WORDS.length]}-${randStr(3)}`;
       const { error } = await db.from("salas").insert({
         code: c, host: "pendiente", dice_seed, race_seed,
         dice_hash: await sha256Hex(dice_seed), race_hash: await sha256Hex(race_seed),
-        modo: body.modo === "carrera" ? "carrera" : "normal",
+        modo: body.modo === "carrera" ? "carrera" : "normal", publica,
         ...(cal ? { calendario: cal } : {}),
       });
       if (!error) newCode = c;
