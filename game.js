@@ -84,7 +84,7 @@ $('rollBtn').onclick=async()=>{
 };
 renderSlots();
 
-function go(screen,step){if(screen!=='s-result'&&typeof rateHide==='function'&&document.getElementById('rate'))rateHide();document.documentElement.dataset.screen=screen;if(screen!=='s-home')document.documentElement.classList.add('ready');document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$(screen).classList.add('on');
+function go(screen,step){document.documentElement.classList.remove('ruta');if(screen!=='s-result'&&typeof rateHide==='function'&&document.getElementById('rate'))rateHide();document.documentElement.dataset.screen=screen;if(screen!=='s-home')document.documentElement.classList.add('ready');document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$(screen).classList.add('on');
   ['st1','st2','st3','st4'].forEach((s,i)=>$(s).classList.toggle('on',i+1===step));window.scrollTo(0,0);
   if(screen!=='s-build'&&typeof fichaSync==='function'){ try{ fichaSync() }catch(e){} }}   // las fichas laterales siempre muestran lo que realmente elegiste (nunca una vista previa que quedó pegada)
 
@@ -561,13 +561,15 @@ function msg(e){
   else if(e.k==='green'){cls='ok';who='🟢 Dirección de carrera'}
   else if(e.k==='rain'){cls='inc';who='🌧️ Dirección de carrera'}
   else if(e.k==='forecast'){cls='sc';who='⛈️ Pronóstico'}
-  else if(e.k==='radio'){who=e.who==='eng'?`📻 Ingeniero → ${picks.piloto.n}`:`📻 ${picks.piloto.n}`;txt=`"${e.txt}"`}
-  else if(e.k==='pit'){who=`📻 Estratega → ${picks.piloto.n}`}
+  else if(e.k==='radio'){who=e.who==='eng'?`📻 Ingeniero → ${miPiloto()}`:`📻 ${miPiloto()}`;txt=`"${e.txt}"`}
+  else if(e.k==='pit'){who=`📻 Estratega → ${miPiloto()}`}
   else {cls='inc';who='⚠ Dirección de carrera'}
   radioAdd(`<div class="msg ${cls}"><b>${who} · V${e.lap}</b>${esc(txt)}</div>`);
 }
 // Los mensajes nuevos entran arriba y bajan a los anteriores con transform (no con el flujo de la página),
 // así la pantalla no da saltos mientras corre la carrera.
+// Nombre de tu piloto para la radio. Si saliste de la carrera a mitad (y ya empezaste otra partida), la animación vieja puede mandar un último mensaje: no debe romper.
+function miPiloto(){ if(picks&&picks.piloto) return picks.piloto.n; const c=RACE&&RACE.cars&&RACE.cars.find(x=>x.me); return c?(c.driver||c.name):'tu piloto' }
 function radioAdd(html){
   const box=$('radio'); box.insertAdjacentHTML('afterbegin',html);
   while(box.children.length>(innerWidth<=700?3:5)) box.lastChild.remove();
@@ -1365,6 +1367,10 @@ async function shareImageBuild(){
 // Arma la imagen del resultado y la muestra en lugar del texto
 async function paintShare(){
   const seq=++SHSEQ; SHIMG=null;
+  // el lugar de la imagen queda reservado desde el principio (antes se veía el texto y después saltaba a la imagen)
+  $('shareImg').removeAttribute('src'); $('shareImg').style.display=''; $('share').style.display='none';
+  await new Promise(r=>setTimeout(r,60));   // primero se dibuja la pantalla del resultado; la imagen se arma después (el botón responde al instante)
+  if(seq!==SHSEQ) return;
   try{ const b=await shareImageBuild(); if(seq!==SHSEQ||!b) return;
     SHIMG=new File([b],'boxbox-resultado.png',{type:'image/png'});
     const old=$('shareImg').src; $('shareImg').src=URL.createObjectURL(b); if(old&&old.startsWith('blob:')) URL.revokeObjectURL(old);
