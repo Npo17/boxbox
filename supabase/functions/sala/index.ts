@@ -138,7 +138,7 @@ async function newPlayer(code: string, name: string, color: string, userId: stri
 // Velocidad de la animación: el anfitrión la elige antes de largar (entrada con at = 0) y puede cambiarla en vivo (entradas con la hora
 // del servidor en que empiezan a valer, siempre unos segundos en el futuro para que todos las reciban antes). Se guarda en las tiradas del anfitrión.
 type VelEntry = { at: number; v: number };
-const VEL_LEAD_MS = 1500;   // antes 3000: el anfitrión notaba el retraso
+const VEL_LEAD_MS = 0;   // el cambio vale ya: el anfitrión lo ve al instante y los demás se ponen al día al recibirlo (antes 3 s de espera)
 const velLogOf = (rolls: any[] | undefined): VelEntry[] => { const v = (rolls ?? []).find((r: any) => r.k === "vel")?.v; return Array.isArray(v) ? v : typeof v === "number" ? [{ at: 0, v }] : []; };
 const velInit = (log: VelEntry[]) => log.find((e) => e.at === 0)?.v ?? RACE_SPEED_DEFAULT;
 const velLive = (log: VelEntry[]) => log.filter((e) => e.at > 0).sort((a, b) => a.at - b.at);

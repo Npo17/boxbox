@@ -312,6 +312,7 @@ let SPD=(()=>{ try{ const v=+localStorage.getItem('boxbox_vel'); return SPEEDS.i
 let ROOMVEL={init:SPD_DEF,log:[]}, SPDSEL=null, velPoll=null;   // sala: velocidad inicial y cambios en vivo [{at (hora del servidor), v}]
 const spdTxt=v=>String(v).replace('.',',')+'×';
 // velocidad vigente ahora, y segundos de carrera (a 1×) transcurridos desde startLocal con esa línea de tiempo
+function setRoomVel(nv){ const b0=VELSTART?baseSince(VELSTART):0; ROOMVEL=nv; if(VELSTART) VELADJ+=baseSince(VELSTART)-b0 }
 function curSpd(){ if(MODE!=='room') return SPD; let v=ROOMVEL.init; const now=Date.now(); for(const e of ROOMVEL.log) if(e.at-OFF<=now) v=e.v; return v }
 function baseSince(startLocal){
   let t=startLocal, v=ROOMVEL.init, b=0; const now=Date.now();
@@ -320,15 +321,19 @@ function baseSince(startLocal){
 }
 const shownSpd=()=>MODE!=='room'?SPD:SPDSEL!=null?SPDSEL:(ROOMVEL.log.length?ROOMVEL.log[ROOMVEL.log.length-1].v:ROOMVEL.init);
 function paintSpd(){ const s=shownSpd(); [['spdR','spdV'],['spdQR','spdQV']].forEach(([r,v])=>{ $(r).value=SPEEDS.indexOf(s); $(v).textContent=spdTxt(s) }) }
-let spdSend=null;
+let spdSend=null, VELPEND=false, VELADJ=0, VELSTART=0;   // VELADJ: segundos de carrera (a 1×) que faltan o sobran porque un cambio llegó después de empezar a valer   // VELPEND: hay un cambio del anfitrión en camino (la consulta periódica no lo pisa)
 function onSpd(e){
   const v=SPEEDS[+e.target.value];
   if(MODE==='room'){
-    SPDSEL=v; paintSpd(); clearTimeout(spdSend);
+    SPDSEL=v; clearTimeout(spdSend); VELPEND=true;
+    // el anfitrión la ve cambiar al instante (sin esperar al servidor); los demás la reciben en alrededor de 1 s
+    const live=RS&&RS.room.race_start&&Date.now()>=srvToLocal(RS.room.race_start)-4000;
+    setRoomVel(live?{init:ROOMVEL.init,log:[...ROOMVEL.log.filter(x=>x.at-OFF<=Date.now()),{at:Date.now()+OFF,v}]}:{init:v,log:[]});
+    paintSpd();
     spdSend=setTimeout(()=>api('velocidad',{value:v}).then(r=>{
-      ROOMVEL=r.at?{init:ROOMVEL.init,log:[...ROOMVEL.log.filter(x=>x.at-OFF<=Date.now()&&x.at<r.at),{at:r.at,v:r.v}]}:{init:r.v,log:[]};   // los cambios que todavía no empezaron se reemplazan
+      setRoomVel(r.at?{init:ROOMVEL.init,log:[...ROOMVEL.log.filter(x=>x.at<r.at&&!(x.v===r.v&&Math.abs(x.at-r.at)<3000)),{at:r.at,v:r.v}]}:{init:r.v,log:[]});   // los cambios que todavía no empezaron se reemplazan
       if(SPDSEL===v) SPDSEL=null; paintSpd();
-    }).catch(err=>{ SPDSEL=null; paintSpd(); toast(err.message) }),150);
+    }).catch(err=>{ SPDSEL=null; paintSpd(); toast(err.message) }).finally(()=>{ VELPEND=false }),120);
   } else { SPD=v; paintSpd(); try{ localStorage.setItem('boxbox_vel',String(v)) }catch(err){} }
 }
 $('spdR').oninput=onSpd; $('spdQR').oninput=onSpd;
@@ -338,7 +343,7 @@ function spdSetup(){
   if(room){ ROOMVEL={init:SPD_DEF,log:[]}; SPDSEL=null }
   else try{ const v=+localStorage.getItem('boxbox_vel'); SPD=SPEEDS.includes(v)?v:SPD_DEF }catch(e){ SPD=SPD_DEF }
   $('spdR').disabled=room&&!host; $('spdNote').style.display=room?'inline':'none';
-  $('spdNote').textContent=host?'Se aplica a todos en 2 s':'La elige el anfitrión';
+  $('spdNote').textContent=host?'Se aplica a todos':'La elige el anfitrión';
   $('spdQ').style.display=host?'flex':'none'; paintSpd();
 }
 paintSpd();
@@ -414,7 +419,7 @@ function paintRain(on){
 function startRace(syncAt,interactive){
   const tp=$('tp'), L=tp.getTotalLength(), els={};
   clearInterval(velPoll);
-  if(interactive==='room') velPoll=setInterval(async()=>{ try{ const r=await api('vel'); if(SPEEDS.includes(r.vel)) ROOMVEL={init:r.vel,log:r.log||[]} }catch(e){} },1000);   // cada 1 s: los cambios del anfitrión valen 1,5 s después y tienen que llegar antes
+  if(interactive==='room') velPoll=setInterval(async()=>{ try{ if(VELPEND) return; const r=await api('vel'); if(SPEEDS.includes(r.vel)&&!VELPEND) setRoomVel({init:r.vel,log:r.log||[]}) }catch(e){} },1000);   // cada 1 s: los cambios del anfitrión valen 1,5 s después y tienen que llegar antes
   paintRain(!!RACE.rain);
   $('cars').innerHTML=''; $('radio').innerHTML=''; $('radio').style.height=''; $('scBanner').style.display='none'; $('toResult').style.display='none';
   RACE.cars.forEach(c=>{c.me=c.key===MEKEY});
@@ -516,12 +521,12 @@ function startRace(syncAt,interactive){
   };
 
   function run(lateMs){
-    playT=(MODE==='room'?baseSince(syncAt):lateMs/1000*SPD)*scale; last=performance.now();
+    playT=(MODE==='room'?baseSince(syncAt):lateMs/1000*SPD)*scale; last=performance.now(); VELSTART=MODE==='room'?syncAt:0; VELADJ=0;
     let spdN=0;
     const tick=()=>{
       if(paused){setTimeout(tick,100);return}
       const now=performance.now(), sc0=RACE.sc, slow=sc0&&playT>=sc0.T&&playT<sc0.endT?0.5:1;   // con safety car, cámara lenta para ver las paradas
-      playT=Math.min(endT,playT+(now-last)/1000*scale*slow*curSpd()); last=now;
+      playT=Math.min(endT,playT+(now-last)/1000*scale*slow*curSpd()+VELADJ*scale); last=now; VELADJ=0;   // VELADJ: ponerse al día con un cambio de velocidad que llegó tarde
       if(MODE==='room'&&++spdN%15===0) paintSpd();
       while(evI<events.length && events[evI].T<=playT) msg(events[evI++]);
       draw(playT);

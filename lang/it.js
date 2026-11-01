@@ -216,7 +216,7 @@ export default {
     "Ahora no se puede cambiar la velocidad.": "Ora non si può cambiare la velocità.",
     "Se acabó el tiempo para cambiar la velocidad.": "Il tempo per cambiare la velocità è finito.",
     "Velocidad inválida.": "Velocità non valida.",
-    "Se aplica a todos en 2 s": "Vale per tutti tra 2 s",
+    "Se aplica a todos": "Vale per tutti",
     "La carrera ya terminó.": "La gara è già finita.",
     "Resultado copiado: pegalo donde quieras.": "Risultato copiato: incollalo dove vuoi.",
     "No se pudo copiar el resultado.": "Impossibile copiare il risultato.",

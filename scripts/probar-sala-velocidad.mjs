@@ -20,15 +20,19 @@ ok(s.room.vel === undefined, 'antes de largar nadie ve la velocidad elegida');
 const rs = Date.parse(s.room.race_start) - s.now + Date.now();
 await sleep(Math.max(0, rs - 3000 + 600 - Date.now()));
 for (const who of [A, B]) { const t = await call({ action: 'state', ...who }); ok(t.room.vel === 0.5, 'a 3 s de largar todos ven la velocidad del anfitrión (0,5×)'); }
-// en vivo: el anfitrión puede cambiarla; vale unos 3 s después y todos consultan la misma línea de tiempo
+// en vivo: el anfitrión puede cambiarla; vale 1,5 s después, un cambio rápido reemplaza al que todavía no empezó y todos consultan la misma línea de tiempo
 await sleep(Math.max(0, rs + 500 - Date.now()));
 const c1 = await call({ action: 'velocidad', ...A, value: 2 });
-ok(c1.at > Date.now() + 1500 && c1.at < Date.now() + 4000, 'en vivo: el cambio vale unos 3 s después');
-const c2 = await call({ action: 'velocidad', ...A, value: 1 });
-ok(c2.at >= c1.at + 500, 'los cambios en vivo quedan ordenados en el tiempo');
+ok(c1.at - c1.now >= 1400 && c1.at - c1.now <= 1600, 'en vivo: el cambio vale 1,5 s después');
+const c2 = await call({ action: 'velocidad', ...A, value: 1 });   // cambio de idea antes de que valga el 2×: no debe pasar por 2×
+ok(c2.at - c2.now >= 1400 && c2.at - c2.now <= 1600, 'el segundo cambio también vale 1,5 s después');
 await falla({ action: 'velocidad', ...B, value: 2 }, 403, 'un invitado tampoco puede cambiarla en vivo');
 for (const [n, who] of [['anfitrión', A], ['invitado', B]]) {
   const v = await call({ action: 'vel', ...who });
-  ok(v.vel === 0.5 && v.log.length === 2 && v.log[0].v === 2 && v.log[1].v === 1, 'el ' + n + ' ve la misma línea de tiempo (inicial 0,5×, luego 2× y 1×)');
+  ok(v.vel === 0.5 && v.log.length === 1 && v.log[0].v === 1, 'el ' + n + ' ve 0,5× y después directo 1× (el 2× pendiente se reemplazó, sin rebote)');
 }
+await sleep(2500);
+const c3 = await call({ action: 'velocidad', ...A, value: 0.25 });
+const v3 = await call({ action: 'vel', ...B });
+ok(v3.log.length === 2 && v3.log[0].v === 1 && v3.log[1].v === 0.25 && c3.at > v3.log[0].at, 'un cambio después de que el anterior ya valió se agrega en orden (1× y luego 0,25×)');
 console.log('sala de prueba:', code);
