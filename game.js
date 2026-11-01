@@ -1432,7 +1432,9 @@ function startGame(mode){
 // --- pantalla del desafío ---
 async function showDaily(){
   MODE='solo'; BLIND=false; $('st0').style.display='none'; go('s-daily',0);
-  $('dActions').innerHTML='<div class="note" style="text-align:center">Cargando…</div>';
+  // mientras carga, el lugar ocupa lo mismo que la última vez (si no, al llegar los botones la pantalla saltaba)
+  let dh=0; try{ dh=+localStorage.getItem('boxbox_dact_h')||0 }catch(e){}
+  $('dActions').innerHTML='<div class="note" style="text-align:center;min-height:'+(dh||(innerWidth<=700?182:150))+'px">Cargando…</div>';
   loadRank(dRankDay);                                         // el ranking no depende de tu estado: se pide a la vez
   try{ DST=await dApi('estado'); }catch(e){ DST=null; toast(e.message); }   // sin esperar a que cargue el motor de carrera
   renderDaily(); startDTimer();
@@ -1451,6 +1453,7 @@ function renderDaily(){
   else if(played) h=`<button class="btn cta" disabled><span>Ya jugaste hoy</span></button><div class="dres">Tu resultado: <b>${fmtPos(E0.result)}</b> · ${E0.result.dnf?'':fmtRace(E0.result.tiempo)+' · '}<b>#${E0.rank}</b> de ${st.total}</div><button class="btn ghost cta" id="dFriend"><span>Jugar amistoso →</span></button><div class="note" style="text-align:center">no cuenta para el ranking ni para la racha</div>`;
   else h=`<button class="btn cta" id="dPlay"><span>${E0&&E0.nPicks?'Continuar el desafío →':'Jugar el desafío →'}</span></button><div class="note" style="text-align:center">Tienes una sola partida por día.</div>`;
   $('dActions').innerHTML=h;
+  try{ localStorage.setItem('boxbox_dact_h',String(Math.round($('dActions').getBoundingClientRect().height))) }catch(e){}
   const on=(id,fn)=>{const e=$(id); if(e) e.onclick=fn};
   on('dRetry',showDaily); on('dLogin',()=>signIn('?desafio')); on('dFriend',startFriendly); on('dPlay',startDaily); on('dNickSave',saveNick);
   $('dShare').style.display=played?'block':'none';
