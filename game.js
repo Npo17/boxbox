@@ -477,7 +477,7 @@ function startRace(syncAt,interactive){
         DECISIONS=d; RACE=newRace(d); RACE.cars.forEach(c=>{c.me=c.key===MEKEY}); cars=RACE.cars; events=RACE.events;
         evI=events.filter(e=>e.T<=playT).length; endT=winnerEnd()+6;
       }catch(e){}
-      paused=false; last=performance.now();
+      paused=false; last=performance.now()-(dl?Math.max(0,Math.min(3000,Date.now()-dl)):0);   // todos retoman como si fuera justo al cierre del plazo, aunque la respuesta del servidor llegue con distinta demora
     };
     if(!dl||Date.now()>=dl){ await apply(); return }                    // sin plazo abierto (llegaste tarde o no hay nada que decidir)
     if(me.dnf&&me.dnf<=sc.lap){ setTimeout(apply,Math.max(0,dl-Date.now())+300+Math.random()*600); return }       // abandonaste antes: no decidís, pero seguís la carrera con las decisiones de los demás
@@ -525,7 +525,7 @@ function startRace(syncAt,interactive){
     let spdN=0;
     const tick=()=>{
       if(paused){setTimeout(tick,100);return}
-      const now=performance.now(), sc0=RACE.sc, slow=sc0&&playT>=sc0.T&&playT<sc0.endT?0.5:1;   // con safety car, cámara lenta para ver las paradas
+      const now=performance.now(), slow=1;   // sin cámara lenta en el safety car: la carrera respeta siempre la velocidad elegida (antes iba a la mitad y parecía trabada)
       playT=Math.min(endT,playT+(now-last)/1000*scale*slow*curSpd()+VELADJ*scale); last=now; VELADJ=0;   // VELADJ: ponerse al día con un cambio de velocidad que llegó tarde
       if(MODE==='room'&&++spdN%15===0) paintSpd();
       while(evI<events.length && events[evI].T<=playT) msg(events[evI++]);
