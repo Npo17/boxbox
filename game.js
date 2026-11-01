@@ -1458,7 +1458,7 @@ async function showDaily(){
   MODE='solo'; BLIND=false; $('st0').style.display='none'; go('s-daily',0);
   // mientras carga, el lugar ocupa lo mismo que la última vez (si no, al llegar los botones la pantalla saltaba)
   let dh=0; try{ dh=+localStorage.getItem('boxbox_dact_h')||0 }catch(e){}
-  $('dActions').innerHTML='<div class="note" style="text-align:center;min-height:'+(dh||(innerWidth<=700?182:150))+'px">Cargando…</div>';
+  $('dActions').innerHTML='<div class="note" style="text-align:center;min-height:'+(dh||250)+'px">Cargando…</div>';
   loadRank(dRankDay);                                         // el ranking no depende de tu estado: se pide a la vez
   try{ DST=await dApi('estado'); }catch(e){ DST=null; toast(e.message); }   // sin esperar a que cargue el motor de carrera
   renderDaily(); startDTimer();
