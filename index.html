@@ -286,6 +286,21 @@ tr.hl td{background:rgba(255,59,48,.14)}
   #radioPanel .radio{height:215px}
   .modal.sheet{align-items:flex-end;padding:0}
   .modal.sheet .box{max-width:none;border-radius:16px 16px 0 0;max-height:86vh;padding:16px 14px 24px}
+  /* menú de arriba chico (con más especificidad: las reglas generales de .nb van después y lo pisaban) */
+  header nav.top{width:100%;gap:5px;flex-wrap:wrap}
+  header .nb{padding:6px 9px;font-size:11px;letter-spacing:.2px}
+  /* portada: "Jugar ahora" a la vista sin bajar, la explicación justo debajo */
+  #s-home .hero{padding-top:0;gap:16px}
+  #s-home .hero>div:first-child{display:flex;flex-direction:column}
+  #s-home .eyebrow{display:none}
+  #s-home .mega{font-size:64px;letter-spacing:-2px;margin:2px 0 6px;order:0}
+  #s-home .hero h2{font-size:22px;margin:0 0 4px;order:1}
+  #s-home .cta-row{margin-top:10px;order:4}
+  #s-home .cta-row:has(#hPlay){order:2;margin-top:8px}
+  #s-home .cta-row:has(#hPlay) .btn{flex:1;justify-content:center;min-height:48px;white-space:nowrap;padding:12px 8px;font-size:14px;letter-spacing:.5px}
+  #s-home .cta-row:has(#hPlay) #hPlay{flex:1.25}
+  #s-home .hero p{font-size:14px;margin:12px 0 0;order:3}
+  #s-home .count{order:5}
 }
 /* ---- Tema claro (Ajustes) ---- */
 :root{--card:#191b23;--deep:#0f1015;--glow:#2a1416}
