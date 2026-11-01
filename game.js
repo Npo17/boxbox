@@ -57,6 +57,7 @@ function renderTabs(){
 }
 function renderList(){
   if(!year) return;
+  fichaSync();   // al aparecer una lista nueva se borra cualquier vista previa que haya quedado
   const {shown,total}=offer[cat];
   $('list').innerHTML=`<div class="note" style="margin:0 0 4px">${shown.length} de ${total} disponibles en esta tirada</div>`+
     shown.map((it,i)=>`<div class="pick" data-i="${i}"><div class="who"><b>${it[0]}</b><small>${it[1]||year}</small></div><div class="rt ${BLIND?'r0':rc(it[2])}">${BLIND?'?':it[2]}</div></div>`).join('');
@@ -84,7 +85,8 @@ $('rollBtn').onclick=async()=>{
 renderSlots();
 
 function go(screen,step){if(screen!=='s-result'&&typeof rateHide==='function'&&document.getElementById('rate'))rateHide();document.documentElement.dataset.screen=screen;if(screen!=='s-home')document.documentElement.classList.add('ready');document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$(screen).classList.add('on');
-  ['st1','st2','st3','st4'].forEach((s,i)=>$(s).classList.toggle('on',i+1===step));window.scrollTo(0,0)}
+  ['st1','st2','st3','st4'].forEach((s,i)=>$(s).classList.toggle('on',i+1===step));window.scrollTo(0,0);
+  if(screen!=='s-build'&&typeof fichaSync==='function'){ try{ fichaSync() }catch(e){} }}   // las fichas laterales siempre muestran lo que realmente elegiste (nunca una vista previa que quedó pegada)
 
 // ---------- Carrera: el motor (supabase/functions/_shared/engine.js) la calcula y acá se anima ----------
 let RACE=null, MEKEY='h:me', SEED='', HUMANS=[], DECISIONS={}, PIT=null;
@@ -1276,8 +1278,9 @@ const MET_ENVIAR=(!/^(localhost|127\.0\.0\.1)$/.test(location.hostname)||MET_TES
 function ev(nombre,datos){ try{ const d={...(datos||{})}; if(MET_TEST) d.test=1;
   const q=JSON.parse(localStorage.getItem('boxbox_ev')||'[]'); q.push({t:Date.now(),e:nombre,d,a:aid(),s:SESION}); localStorage.setItem('boxbox_ev',JSON.stringify(q.slice(-MET.max)));
   if(MET_ENVIAR) EQ.push({e:nombre,d,a:aid(),s:SESION}) }catch(e){} }
-let ERRN=0; addEventListener('error',e=>{ if(ERRN++<3) ev('error_js',{m:String(e.message||'').slice(0,40),l:(e.filename||'').split('/').pop().slice(0,20)+':'+(e.lineno||0)}) });
-addEventListener('unhandledrejection',e=>{ if(ERRN++<3) ev('error_js',{m:String((e.reason&&e.reason.message)||e.reason||'').slice(0,40),l:'promesa'}) });
+let ERRN=0; addEventListener('error',e=>{ if(!/(game|tracks|engine)\.js|\/lang\//.test(e.filename||'')) return;   // solo errores de nuestro código (los navegadores de Instagram/Facebook inyectan scripts propios que fallan)
+  if(ERRN++<3) ev('error_js',{m:String(e.message||'').slice(0,40),l:(e.filename||'').split('/').pop().slice(0,20)+':'+(e.lineno||0)}) });
+addEventListener('unhandledrejection',e=>{ if(!/(game|tracks|engine)\.js/.test(String((e.reason&&e.reason.stack)||''))) return; if(ERRN++<3) ev('error_js',{m:String((e.reason&&e.reason.message)||e.reason||'').slice(0,40),l:'promesa'}) });
 function vaciarEv(){ if(!MET_ENVIAR||!EQ.length) return; const lote=EQ.splice(0,40);
   try{ fetch(MET_URL,{method:'POST',body:JSON.stringify({ev:lote}),keepalive:true,mode:'no-cors'}).catch(()=>{}) }catch(e){} if(EQ.length) setTimeout(vaciarEv,300) }
 setInterval(vaciarEv,8000); setInterval(()=>{ if(!document.hidden) ev('latido') },30000);
