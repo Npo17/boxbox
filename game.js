@@ -1072,6 +1072,7 @@ function logrosCarrera(me){
     // historial reciente: las últimas 20 carreras
     const r=loadRecientes(); r.unshift({t:Date.now(),m:MODE,gp,p:me.pos,d:me.dnf?1:0,pi:c.piloto||'',y:c.anioPiloto||0,s:c.sprint?1:0});
     try{ localStorage.setItem(REC_KEY,JSON.stringify(r.slice(0,20))) }catch(e){}
+    if(typeof USER!=='undefined'&&USER) setTimeout(syncUp,1500);   // el historial también queda en la cuenta (todos los modos)
     logrosRevisar(L,c);
   }catch(e){ console.warn(e) }
 }
