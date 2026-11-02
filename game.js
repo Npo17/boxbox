@@ -1314,7 +1314,9 @@ setInterval(vaciarEv,8000); setInterval(()=>{ if(!document.hidden) ev('latido') 
 // a un toque) y TTFB (cuánto tardó en llegar la página). Se manda una sola vez: al salir de la página o, si sigue abierta, al minuto.
 (function(){ try{
   const m={lcp:0,cls:0,inp:0}; let sent=false;
-  new PerformanceObserver(l=>{ for(const e of l.getEntries()) m.lcp=Math.round(e.startTime) }).observe({type:'largest-contentful-paint',buffered:true});
+  // si la pestaña se abrió en segundo plano (o se ocultó antes de dibujar), el LCP mide el tiempo que estuvo escondida, no la velocidad: se descarta
+  let oculta=document.visibilityState==="hidden"?0:Infinity; document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="hidden") oculta=Math.min(oculta,performance.now()) },true);
+  new PerformanceObserver(l=>{ for(const e of l.getEntries()) if(e.startTime<oculta) m.lcp=Math.round(e.startTime) }).observe({type:'largest-contentful-paint',buffered:true});
   new PerformanceObserver(l=>{ for(const e of l.getEntries()) if(!e.hadRecentInput) m.cls+=e.value }).observe({type:'layout-shift',buffered:true});
   try{ new PerformanceObserver(l=>{ for(const e of l.getEntries()) if(e.interactionId) m.inp=Math.max(m.inp,Math.round(e.duration)) }).observe({type:'event',buffered:true,durationThreshold:40}) }catch(e){}
   const send=()=>{ if(sent||!m.lcp) return; sent=true; const nav=performance.getEntriesByType('navigation')[0];
