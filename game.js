@@ -1086,7 +1086,18 @@ function logrosJuntar(a,b){ a=a||{}; b=b||{}; const o={...a};
   o.campWin=max(a.campWin,b.campWin); o.pilWin=max(a.pilWin,b.pilWin); o.archivo=max(a.archivo,b.archivo); o.dia=max(a.dia,b.dia);
   o.dias=[...new Set([...(a.dias||[]),...(b.dias||[])])].sort().slice(-60); o.mejorDias=Math.max(a.mejorDias||0,b.mejorDias||0); return o }
 const MODO_TXT={solo:'Carrera rápida',career:'Modo carrera',room:'Con amigos',daily:'Desafío del día',friendly:'Amistoso'};
+// Lo jugado antes de que existieran los logros: se toma de las estadísticas del perfil, los trofeos y el desafío del día.
+let logrosDiaPedido=false;
+function logrosPrevios(){
+  const L=loadLogros(), s=loadStats(); L.n=L.n||{};
+  L.n.carreras=Math.max(N(L,'carreras'),s.races||0); L.n.victorias=Math.max(N(L,'victorias'),s.wins||0); L.n.podios=Math.max(N(L,'podios'),s.podiums||0);
+  if(loadTrofeos().length) L.n.salas=Math.max(N(L,'salas'),1);
+  saveLogros(L); logrosRevisar(L,null);
+  if(!logrosDiaPedido&&typeof USER!=='undefined'&&USER){ logrosDiaPedido=true;
+    dApi('semana').then(j=>{ if(j&&j.jugados!=null){ logrosDiario(j); if($('s-profile').classList.contains('on')) paintLogros() } }).catch(()=>{}) }
+}
 function paintLogros(){
+  logrosPrevios();
   const L=loadLogros(), got=L.got||{}, n=LOGROS.filter(x=>got[x[0]]).length, grupos=[...new Set(LOGROS.map(x=>x[1]))];
   $('pLogN').textContent=`${n}/${LOGROS.length}`;
   $('pLogros').innerHTML=grupos.map((g,gi)=>{ const it=LOGROS.filter(x=>x[1]===g), k=it.filter(x=>got[x[0]]).length;
