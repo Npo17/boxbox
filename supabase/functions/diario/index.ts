@@ -33,13 +33,14 @@ async function hmacHex(msg: string) {
 const diceSecret = (day: string) => hmacHex("dados|" + day);
 const raceSecret = (day: string) => hmacHex("carrera|" + day);
 
-async function userFrom(req: Request): Promise<{ id: string } | null> {
+type Usuario = { id: string; email: string | null; anon: boolean };
+async function userFrom(req: Request): Promise<Usuario | null> {
   const m = (req.headers.get("authorization") ?? "").match(/^Bearer (.+)$/i);
   if (!m) return null;
   const { data, error } = await db.auth.getUser(m[1]);
-  return error || !data.user ? null : { id: data.user.id };
+  return error || !data.user ? null : { id: data.user.id, email: data.user.email ?? null, anon: !!(data.user as any).is_anonymous };
 }
-const need = (u: { id: string } | null) => { if (!u) throw new Fail("Inicia sesión con Google para jugar el desafío.", 401, "login"); return u; };
+const need = (u: Usuario | null): Usuario => { if (!u) throw new Fail("Inicia sesión con Google para jugar el desafío.", 401, "login"); return u; };
 
 // ---------- datos ----------
 async function getEntry(uid: string, day: string) {
@@ -84,12 +85,12 @@ async function finalizar(uid: string, day: string, entry: any, decision?: string
   return data ?? await getEntry(uid, day);
 }
 
-async function fullState(user: { id: string } | null, day: string) {
-  const out: any = { day, now: Date.now(), nextAt: E.nextResetMs(), logged: !!user, nickname: null, entry: null, streak: 0, total: 0 };
+async function fullState(user: Usuario | null, day: string) {
+  const out: any = { day, now: Date.now(), nextAt: E.nextResetMs(), logged: !!user, nickname: null, entry: null, streak: 0, total: 0, aviso: null };
   if (!user) { out.total = await totalOf(day); return out; }
-  // Las cuatro lecturas no dependen entre sí: en paralelo (antes eran una tras otra).
-  const [total, nickname, found, streak] = await Promise.all([totalOf(day), getNick(user.id), getEntry(user.id, day), streakOf(user.id, day)]);
-  out.total = total; out.nickname = nickname; out.streak = streak;
+  // Las lecturas no dependen entre sí: en paralelo (antes eran una tras otra).
+  const [total, nickname, found, streak, aviso] = await Promise.all([totalOf(day), getNick(user.id), getEntry(user.id, day), streakOf(user.id, day), avisoDe(user)]);
+  out.total = total; out.nickname = nickname; out.streak = streak; out.aviso = aviso;
   let entry = found;
   // si recargó con la carrera a medias, se cierra sin su decisión del safety car
   if (entry && entry.status === "corriendo") {
@@ -105,6 +106,18 @@ async function fullState(user: { id: string } | null, day: string) {
     }
   }
   return out;
+}
+
+// ---------- archivo, tu semana y aviso por mail ----------
+const PRIMER_DIA = "2026-10-29";                       // el día que arrancó el desafío
+const DIA_RE = /^\d{4}-\d{2}-\d{2}$/;
+const daysBack = (d: string, n: number) => new Date(Date.parse(d + "T00:00:00Z") - n * 86400000).toISOString().slice(0, 10);
+const trackOf = async (day: string) => TRACKS[Math.floor(E.rngFor(String(await raceSecret(day)), "circuito")() * TRACKS.length)].gp;
+// null = no puede pedirlo (sin cuenta de Google); true/false = si lo tiene activado
+async function avisoDe(user: Usuario) {
+  if (user.anon || !user.email) return null;
+  const { data } = await db.from("avisos").select("activo").eq("user_id", user.id).maybeSingle();
+  return !!data?.activo;
 }
 
 // ---------- acciones ----------
@@ -133,6 +146,69 @@ async function handle(req: Request, body: Record<string, any>) {
       }
     }
     return { day: d, total: await totalOf(d), list, mine };
+  }
+
+  // Desafíos anteriores: todos los días desde que arrancó (sin hoy), con cuántos jugaron, el circuito y tu resultado.
+  if (action === "archivo") {
+    const { data: cuentas } = await db.rpc("diario_archivo");
+    const total = new Map((cuentas ?? []).map((r: any) => [String(r.day), Number(r.total)]));
+    const mios = new Map<string, any>();
+    if (user) {
+      const { data } = await db.from("desafios").select("day,pos,dnf,laps").eq("user_id", user.id).eq("status", "listo").lt("day", day).gte("day", PRIMER_DIA);
+      for (const r of data ?? []) mios.set(String(r.day), { pos: r.pos, dnf: r.dnf, laps: r.laps });
+    }
+    const dias: any[] = [];
+    for (let d = daysBack(day, 1); d >= PRIMER_DIA && dias.length < 400; d = daysBack(d, 1))
+      dias.push({ day: d, gp: await trackOf(d), total: total.get(d) ?? 0, mine: mios.get(d) ?? null });
+    return { dias };
+  }
+
+  // La mano de un día que ya cerró, para jugarlo como amistoso (fuera del ranking). La de hoy nunca se entrega.
+  if (action === "mano") {
+    const d = String(body.dia ?? "");
+    if (!DIA_RE.test(d) || d < PRIMER_DIA || d >= day) throw new Fail("Ese desafío no está en el archivo.");
+    const dice = await diceSecret(d);
+    return { day: d, rolls: [0, 1, 2, 3, 4].map((i) => E.dailyRoll(DATA, dice, i)), raceSeed: await raceSecret(d) };
+  }
+
+  // Desafío del archivo jugado como amistoso: en qué puesto habría quedado ese día (no se guarda nada).
+  if (action === "comparar") {
+    const d = String(body.dia ?? ""), orden = Number(body.orden);
+    if (!DIA_RE.test(d) || d < PRIMER_DIA || d >= day || !Number.isFinite(orden)) throw new Fail("Datos inválidos.");
+    const { count } = await db.from("desafios").select("user_id", { count: "exact", head: true }).eq("day", d).eq("status", "listo").lt("orden", orden);
+    return { rank: (count ?? 0) + 1, total: await totalOf(d) };
+  }
+
+  // Tu semana: tus desafíos de los últimos 7 días con el puesto en el ranking, y los totales de siempre (para los logros).
+  if (action === "semana") {
+    const u = need(user);
+    const { data } = await db.from("desafios").select("day,pos,dnf,laps,tiempo,orden,created_at").eq("user_id", u.id).eq("status", "listo")
+      .order("day", { ascending: false }).limit(400);
+    const rows = data ?? [], desde = daysBack(day, 6);
+    // el puesto de cada día (los últimos 60, para no hacer cientos de consultas)
+    const conRank = await Promise.all(rows.slice(0, 60).map(async (r: any) => {
+      const d = String(r.day);
+      const [rank, total] = await Promise.all([rankOf(d, r), d >= desde ? totalOf(d) : Promise.resolve(0)]);
+      return { day: d, pos: r.pos, dnf: r.dnf, laps: r.laps, tiempo: r.tiempo == null ? null : Number(r.tiempo), rank, total };
+    }));
+    const semana = conRank.filter((r) => r.day >= desde);
+    for (const r of semana) (r as any).gp = await trackOf(r.day);
+    // mejor racha de siempre
+    const dias = rows.map((r: any) => String(r.day)).sort();
+    let mejor = 0, run = 0, prev = "";
+    for (const d of dias) { run = prev && daysBack(d, 1) === prev ? run + 1 : 1; mejor = Math.max(mejor, run); prev = d; }
+    return { semana, jugados: rows.length, ganados: conRank.filter((r) => r.rank === 1).length, podios: conRank.filter((r) => r.rank <= 3).length,
+      racha: await streakOf(u.id, day), mejorRacha: mejor };
+  }
+
+  // Aviso por mail cuando sale el desafío (solo cuentas de Google).
+  if (action === "aviso") {
+    const u = need(user);
+    if (u.anon || !u.email) throw new Fail("Para recibir el aviso por mail, entra con Google.", 400, "google");
+    const activo = !!body.activo;
+    const { error } = await db.from("avisos").upsert({ user_id: u.id, email: u.email, activo, updated_at: new Date().toISOString() });
+    if (error) throw new Fail("No se pudo guardar el aviso", 500);
+    return { aviso: activo };
   }
 
   if (action === "apodo") {

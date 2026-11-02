@@ -608,10 +608,11 @@ function finish(){
   radioAdd(`<div class="msg" style="border-color:#fff"><b>🏁 Bandera a cuadros</b>${me.dnf?'Abandonaste en la vuelta '+me.dnf:'Terminaste P'+me.pos}.</div>`);
   $('toResult').style.display='block';
   if(MODE==='career') careerRecord(me);
-  else if(MODE==='friendly'||MODE==='daily'){ /* no suma al campeonato: el amistoso no cuenta y el diario se registra en el servidor */ if(MODE==='daily') dailyFinish(); }
+  else if(MODE==='friendly'||MODE==='daily'){ /* no suma al campeonato: el amistoso no cuenta y el diario se registra en el servidor */ if(MODE==='daily') dailyFinish(); else if(FRIENDLY.dia) archivoComparar(); }
   else { saveRace(me); saveStats(me.pos,me.dnf); }
   // La carrera de la sala terminó: no volver a ella al recargar (el resultado sigue en pantalla).
   if(MODE==='room'&&!(RS&&RS.room.modo==='carrera')){ try{localStorage.removeItem(ROOM_KEY)}catch(e){} }    // en modo carrera la sala sigue
+  logrosCarrera(me);
 }
 
 // ---------- Por qué terminaste así ----------
@@ -670,7 +671,7 @@ $('toResult').onclick=()=>{
   $('toChamp').style.display=special?'none':'';
   paintStory();
   go('s-result',4);
-  if(MODE==='daily') paintDailyResult();
+  if(MODE==='daily') paintDailyResult(); else if(MODE==='friendly'&&FRIENDLY.dia) paintArchivoRes();
   rateOffer();
 };
 
@@ -950,7 +951,152 @@ function showProfile(){$('st0').style.display='none';const s=loadStats();
   const h=loadHist();$('pHist').innerHTML=h.length?h.map((x,i)=>`<div class="opt"><span><b>Campeonato ${h.length-i}</b><br><small>${x.fecha} · ${x.carreras} carreras</small></span><small style="text-align:right">${x.podio.join('<br>')}</small></div>`).join(''):'Todavía no cerraste ningún campeonato.';
   const tr=loadTrofeos();
   $('pTrof').innerHTML=tr.length?tr.map(x=>`<div class="opt"><span><b>🏆 Campeón de pilotos ${x.anio}</b><br><small>${x.fecha} · sala ${esc(x.sala)}</small></span><small style="text-align:right">${x.pts} pts · ${x.fechas||23} fechas${x.final?'':' (campeón matemático)'}</small></div>`).join(''):'Todavía no ganaste ningún trofeo. Ganá el campeonato de pilotos en una sala de carrera con amigos.';
-  go('s-profile',0)}
+  paintLogros(); go('s-profile',0)}
+// ---------- LOGROS E HISTORIAL RECIENTE ----------
+// Todo se guarda en este navegador (boxbox_logros / boxbox_recientes) y, con cuenta de Google, también en la cuenta.
+// Después de cada carrera se actualizan los contadores y se revisa qué logros nuevos se ganaron.
+const LOG_KEY='boxbox_logros', REC_KEY='boxbox_recientes';
+const CAMPEONES={'N. Farina':[1950],'J. M. Fangio':[1951,1954,1955,1956,1957],'A. Ascari':[1952,1953],'M. Hawthorn':[1958],'J. Brabham':[1959,1960,1966],
+  'P. Hill':[1961],'G. Hill':[1962,1968],'J. Clark':[1963,1965],'J. Surtees':[1964],'D. Hulme':[1967],'J. Stewart':[1969,1971,1973],'J. Rindt':[1970],
+  'E. Fittipaldi':[1972,1974],'N. Lauda':[1975,1977,1984],'J. Hunt':[1976],'M. Andretti':[1978],'J. Scheckter':[1979],'A. Jones':[1980],'N. Piquet':[1981,1983,1987],
+  'K. Rosberg':[1982],'A. Prost':[1985,1986,1989,1993],'A. Senna':[1988,1990,1991],'N. Mansell':[1992],'M. Schumacher':[1994,1995,2000,2001,2002,2003,2004],
+  'D. Hill':[1996],'J. Villeneuve':[1997],'M. Häkkinen':[1998,1999],'F. Alonso':[2005,2006],'K. Räikkönen':[2007],'L. Hamilton':[2008,2014,2015,2017,2018,2019,2020],
+  'J. Button':[2009],'S. Vettel':[2010,2011,2012,2013],'N. Rosberg':[2016],'M. Verstappen':[2021,2022,2023,2024],'L. Norris':[2025]};
+const gpWin=(L,gp)=>!!(L.gpWin||{})[gp], conPiloto=(L,n)=>!!(L.campWin||{})[n]||!!(L.pilWin||{})[n];
+const N=(L,k)=>(L.n||{})[k]||0, cuenta=o=>Object.keys(o||{}).length;
+// [id, grupo, nombre, descripción, se cumple (L = lo acumulado, c = la carrera que acaba de terminar o null)]
+const LOGROS=[
+  ['primera','Progresión','Luz verde','Corriste tu primera carrera',L=>N(L,'carreras')>=1],
+  ['victoria','Progresión','Primera victoria','Ganaste tu primera carrera',L=>N(L,'victorias')>=1],
+  ['podio','Progresión','Champán','Subiste al podio por primera vez',L=>N(L,'podios')>=1],
+  ['car50','Progresión','Veterano','Corriste 50 carreras',L=>N(L,'carreras')>=50],
+  ['car200','Progresión','Leyenda viva','Corriste 200 carreras',L=>N(L,'carreras')>=200],
+  ['win10','Progresión','Ganador en serie','Ganaste 10 carreras',L=>N(L,'victorias')>=10],
+  ['win50','Progresión','Dominador','Ganaste 50 carreras',L=>N(L,'victorias')>=50],
+  ['dias7','Progresión','Semana de fuego','Jugaste 7 días seguidos',L=>(L.mejorDias||0)>=7],
+  ['dias30','Progresión','Mes de fuego','Jugaste 30 días seguidos',L=>(L.mejorDias||0)>=30],
+
+  ['d1','Desafío del día','Novato del desafío','Jugaste el desafío del día por primera vez',L=>(L.dia||{}).jugados>=1],
+  ['d10','Desafío del día','Habitual','Jugaste 10 desafíos del día',L=>(L.dia||{}).jugados>=10],
+  ['d50','Desafío del día','Adicto al desafío','Jugaste 50 desafíos del día',L=>(L.dia||{}).jugados>=50],
+  ['dpod','Desafío del día','Podio del día','Terminaste entre los 3 primeros del ranking del día',L=>(L.dia||{}).podios>=1],
+  ['dwin','Desafío del día','Campeón del día','Terminaste primero en el ranking del día',L=>(L.dia||{}).ganados>=1],
+  ['dwin10','Desafío del día','Maestro del desafío','Terminaste primero en el ranking del día 10 veces',L=>(L.dia||{}).ganados>=10],
+  ['dr7','Desafío del día','Maratonista','Jugaste el desafío del día 7 días seguidos',L=>(L.dia||{}).mejorRacha>=7],
+  ['dr30','Desafío del día','Inquebrantable','Jugaste el desafío del día 30 días seguidos',L=>(L.dia||{}).mejorRacha>=30],
+  ['arch','Desafío del día','Viajero del tiempo','Jugaste un desafío anterior del archivo',L=>cuenta(L.archivo)>=1],
+  ['arch10','Desafío del día','Historiador','Jugaste 10 desafíos distintos del archivo',L=>cuenta(L.archivo)>=10],
+
+  ['pole','En la pista','Pole y victoria','Largaste primero y ganaste',(L,c)=>c&&c.gana&&c.grid===1],
+  ['remonta','En la pista','Remontada','Ganaste largando 10º o más atrás',(L,c)=>c&&c.gana&&c.grid>=10],
+  ['fondo','En la pista','Desde el fondo','Ganaste largando último',(L,c)=>c&&c.gana&&c.grid===c.autos],
+  ['lluvia','En la pista','Rey de la lluvia','Ganaste una carrera con lluvia',(L,c)=>c&&c.gana&&c.lluvia],
+  ['sc','En la pista','Bajo control','Ganaste una carrera con safety car',(L,c)=>c&&c.gana&&c.sc],
+  ['sprint','En la pista','Sprinter','Ganaste una sprint',(L,c)=>c&&c.gana&&c.sprint],
+  ['sinpit','En la pista','Sin pasar por boxes','Ganaste un Gran Premio sin parar en boxes',(L,c)=>c&&c.gana&&!c.sprint&&c.stops===0],
+  ['paradas','En la pista','Estratega loco','Ganaste con 3 o más paradas',(L,c)=>c&&c.gana&&c.stops>=3],
+  ['p10','En la pista','Un punto es un punto','Terminaste 10º',(L,c)=>c&&!c.dnf&&c.pos===10],
+  ['humo','En la pista','Humo blanco','Abandonaste una carrera',(L,c)=>c&&c.dnf],
+
+  ['monaco','Circuitos','Rey de Mónaco','Ganaste en Mónaco',L=>gpWin(L,'Mónaco')],
+  ['monza','Circuitos','Templo de la velocidad','Ganaste en Monza',L=>gpWin(L,'Italia')],
+  ['silver','Circuitos','Cuna de la Fórmula 1','Ganaste en Silverstone',L=>gpWin(L,'Gran Bretaña')],
+  ['spa','Circuitos','Eau Rouge','Ganaste en Spa-Francorchamps',L=>gpWin(L,'Bélgica')],
+  ['suzuka','Circuitos','El ocho de Suzuka','Ganaste en Suzuka',L=>gpWin(L,'Japón')],
+  ['interlagos','Circuitos','Interlagos','Ganaste en São Paulo',L=>gpWin(L,'Brasil (São Paulo)')],
+  ['gira10','Circuitos','Gira mundial','Ganaste en 10 circuitos distintos',L=>cuenta(L.gpWin)>=10],
+  ['gira24','Circuitos','Dueño del calendario','Ganaste en los 24 circuitos',L=>cuenta(L.gpWin)>=24],
+
+  ['mismo','Armado del auto','Era dorada','Las 5 piezas de la misma temporada',(L,c)=>c&&c.anios.every(y=>y===c.anios[0])],
+  ['viaje','Armado del auto','Viaje en el tiempo','50 años o más entre la pieza más vieja y la más nueva',(L,c)=>c&&Math.max(...c.anios)-Math.min(...c.anios)>=50],
+  ['nosta','Armado del auto','Nostálgico','Las 5 piezas de 1970 o antes',(L,c)=>c&&c.anios.every(y=>y<=1970)],
+  ['moder','Armado del auto','Modernito','Las 5 piezas de 2010 en adelante',(L,c)=>c&&c.anios.every(y=>y>=2010)],
+  ['gloria','Armado del auto','Año de gloria','Corriste con un campeón del mundo en la temporada de su título',(L,c)=>c&&(CAMPEONES[c.piloto]||[]).includes(c.anioPiloto)],
+  ['fangio','Armado del auto','El Maestro','Ganaste con Juan Manuel Fangio',L=>conPiloto(L,'J. M. Fangio')],
+  ['senna','Armado del auto','Magia','Ganaste con Ayrton Senna',L=>conPiloto(L,'A. Senna')],
+  ['schumi','Armado del auto','Kaiser','Ganaste con Michael Schumacher',L=>conPiloto(L,'M. Schumacher')],
+  ['hamilton','Armado del auto','Siete coronas','Ganaste con Lewis Hamilton',L=>conPiloto(L,'L. Hamilton')],
+  ['colapinto','Armado del auto','Orgullo argentino','Ganaste con Franco Colapinto',L=>conPiloto(L,'F. Colapinto')],
+  ['club','Armado del auto','Club de campeones','Ganaste con 10 campeones del mundo distintos',L=>cuenta(L.campWin)>=10],
+
+  ['pil20','Colección','Coleccionista','Corriste con 20 pilotos distintos',L=>cuenta(L.pil)>=20],
+  ['pil100','Colección','Curador','Corriste con 100 pilotos distintos',L=>cuenta(L.pil)>=100],
+  ['anios30','Colección','Historia viva','Usaste piezas de 30 temporadas distintas',L=>cuenta(L.anios)>=30],
+  ['decadas','Colección','Máquina del tiempo','Usaste piezas de todas las décadas, de los 50 a los 2020',L=>[1950,1960,1970,1980,1990,2000,2010,2020].every(d=>Object.keys(L.anios||{}).some(y=>Math.floor(y/10)*10===d))],
+  ['fan','Colección','Fanático','Corriste 20 veces con el mismo piloto',L=>Math.max(0,...Object.values(L.pil||{}))>=20],
+
+  ['sala','Con amigos','En boxes con amigos','Corriste una carrera en una sala',L=>N(L,'salas')>=1],
+  ['verdugo','Con amigos','Verdugo','Le ganaste a otro jugador en una sala',(L,c)=>c&&c.modo==='room'&&c.gana&&c.humanos>=2],
+  ['reysala','Con amigos','Rey de la sala','Ganaste en una sala con 3 o más jugadores',(L,c)=>c&&c.modo==='room'&&c.gana&&c.humanos>=3],
+  ['anfi','Con amigos','Anfitrión campeón','Creaste la sala y ganaste la carrera',(L,c)=>c&&c.modo==='room'&&c.gana&&c.host&&c.humanos>=2],
+  ['trofeo','Con amigos','Campeón de pilotos','Ganaste un campeonato de pilotos en una sala',()=>loadTrofeos().length>=1],
+
+  ['debut','Modo carrera','Debut 2026','Corriste tu primer Gran Premio en el modo carrera',L=>N(L,'carrera')>=1],
+  ['carwin','Modo carrera','Victoria en 2026','Ganaste un Gran Premio en el modo carrera',L=>N(L,'carreraWin')>=1],
+];
+function loadLogros(){ try{ return JSON.parse(localStorage.getItem(LOG_KEY))||{} }catch(e){ return {} } }
+function saveLogros(L){ try{ localStorage.setItem(LOG_KEY,JSON.stringify(L)) }catch(e){} }
+function loadRecientes(){ try{ return JSON.parse(localStorage.getItem(REC_KEY))||[] }catch(e){ return [] } }
+const hoyAR=()=>E0day(Date.now()+(typeof DOFF==='number'?DOFF:0));
+function E0day(ms){ return new Date(ms-3*3600*1000).toISOString().slice(0,10) }   // el día en Argentina (igual que el desafío)
+// Revisa qué logros se cumplen ahora; avisa los nuevos.
+function logrosRevisar(L,c){
+  L.got=L.got||{}; const nuevos=[];
+  for(const [id,,nombre,,ok] of LOGROS){ if(L.got[id]) continue; let si=false; try{ si=!!ok(L,c) }catch(e){} if(si){ L.got[id]=Date.now(); nuevos.push(nombre) } }
+  if(nuevos.length){ saveLogros(L); nuevos.forEach(n=>ev('logro',{n:n.slice(0,40)}));
+    setTimeout(()=>toast(nuevos.length===1?'🏅 Logro desbloqueado: '+nuevos[0]:`🏅 ${nuevos.length} logros desbloqueados: ${nuevos.join(', ')}`),1200);
+    if(typeof USER!=='undefined'&&USER&&!USER.is_anonymous) syncUp(); }
+  return nuevos;
+}
+// Llamado al terminar cada carrera (todos los modos).
+function logrosCarrera(me){
+  try{
+    const L=loadLogros(); L.n=L.n||{}; L.pil=L.pil||{}; L.anios=L.anios||{}; L.gpWin=L.gpWin||{}; L.campWin=L.campWin||{}; L.pilWin=L.pilWin||{};
+    const P=picks||{}, anios=E.SLOTS.map(k=>P[k]&&+P[k].y).filter(Boolean), gp=RACE&&RACE.track?RACE.track.gp:'';
+    const c={modo:MODE,pos:me.pos,dnf:!!me.dnf,grid:me.grid,stops:me.stops||0,gana:!me.dnf&&me.pos===1,autos:RACE?RACE.cars.length:20,
+      lluvia:!!(RACE&&(RACE.rain||(RACE.storm&&RACE.storm.arrives))),sc:!!(RACE&&RACE.sc),sprint:!!(RACE&&RACE.sprint),anios,
+      piloto:P.piloto&&P.piloto.n,anioPiloto:P.piloto&&+P.piloto.y,humanos:(HUMANS||[]).length,
+      host:MODE==='room'&&!!(RS&&ROOM&&RS.room.host===ROOM.pid)};
+    const inc=k=>L.n[k]=(L.n[k]||0)+1;
+    inc('carreras'); if(c.gana) inc('victorias'); if(!c.dnf&&c.pos<=3) inc('podios');
+    if(MODE==='room') inc('salas'); if(MODE==='career'){ inc('carrera'); if(c.gana) inc('carreraWin') }
+    if(c.piloto) L.pil[c.piloto]=(L.pil[c.piloto]||0)+1;
+    for(const y of anios) L.anios[y]=1;
+    if(c.gana){ if(gp) L.gpWin[gp]=1; if(c.piloto){ L.pilWin[c.piloto]=1; if(CAMPEONES[c.piloto]) L.campWin[c.piloto]=1 } }
+    if(MODE==='friendly'&&FRIENDLY&&FRIENDLY.dia){ L.archivo=L.archivo||{}; L.archivo[FRIENDLY.dia]=1 }
+    // días seguidos jugando (cualquier modo)
+    const hoy=hoyAR(); L.dias=[...new Set([...(L.dias||[]),hoy])].sort().slice(-60);
+    let run=1, best=1; for(let i=1;i<L.dias.length;i++){ run=(Date.parse(L.dias[i])-Date.parse(L.dias[i-1])===864e5)?run+1:1; best=Math.max(best,run) }
+    L.mejorDias=Math.max(L.mejorDias||0,best);
+    saveLogros(L);
+    // historial reciente: las últimas 20 carreras
+    const r=loadRecientes(); r.unshift({t:Date.now(),m:MODE,gp,p:me.pos,d:me.dnf?1:0,pi:c.piloto||'',y:c.anioPiloto||0,s:c.sprint?1:0});
+    try{ localStorage.setItem(REC_KEY,JSON.stringify(r.slice(0,20))) }catch(e){}
+    logrosRevisar(L,c);
+  }catch(e){ console.warn(e) }
+}
+// Lo que dice el servidor del desafío del día (jugados, ganados, racha) también da logros.
+function logrosDiario(s){ const L=loadLogros(); const a=L.dia||{};
+  L.dia={jugados:Math.max(a.jugados||0,s.jugados||0),ganados:Math.max(a.ganados||0,s.ganados||0),podios:Math.max(a.podios||0,s.podios||0),mejorRacha:Math.max(a.mejorRacha||0,s.mejorRacha||0,s.racha||0)};
+  saveLogros(L); logrosRevisar(L,null) }
+// Juntar lo de la cuenta con lo de este navegador (nunca se pierde nada).
+function logrosJuntar(a,b){ a=a||{}; b=b||{}; const o={...a};
+  const max=(x,y)=>{ const r={...(x||{})}; for(const k in y||{}) r[k]=Math.max(r[k]||0,y[k]); return r };
+  o.got={...(b.got||{}),...(a.got||{})}; o.n=max(a.n,b.n); o.pil=max(a.pil,b.pil); o.anios=max(a.anios,b.anios); o.gpWin=max(a.gpWin,b.gpWin);
+  o.campWin=max(a.campWin,b.campWin); o.pilWin=max(a.pilWin,b.pilWin); o.archivo=max(a.archivo,b.archivo); o.dia=max(a.dia,b.dia);
+  o.dias=[...new Set([...(a.dias||[]),...(b.dias||[])])].sort().slice(-60); o.mejorDias=Math.max(a.mejorDias||0,b.mejorDias||0); return o }
+const MODO_TXT={solo:'Carrera rápida',career:'Modo carrera',room:'Con amigos',daily:'Desafío del día',friendly:'Amistoso'};
+function paintLogros(){
+  const L=loadLogros(), got=L.got||{}, n=LOGROS.filter(x=>got[x[0]]).length, grupos=[...new Set(LOGROS.map(x=>x[1]))];
+  $('pLogN').textContent=`${n}/${LOGROS.length}`;
+  $('pLogros').innerHTML=grupos.map((g,gi)=>{ const it=LOGROS.filter(x=>x[1]===g), k=it.filter(x=>got[x[0]]).length;
+    return `<details class="lgrp"><summary><span>${g}</span><b>${k}/${it.length}</b></summary>${it.map(([id,,nom,desc])=>
+      `<div class="lg${got[id]?' ok':''}"><span class="li">${got[id]?'🏅':'🔒'}</span><span><b>${nom}</b><small>${desc}</small></span></div>`).join('')}</details>` }).join('');
+  const r=loadRecientes();
+  $('pRec').innerHTML=r.length?r.map(x=>{ const d=new Date(x.t), f=d.toLocaleDateString(LOCALES[LANG]||'es',{day:'2-digit',month:'2-digit'});
+    return `<div class="rec"><span class="rf">${f}</span><span class="rm">${MODO_TXT[x.m]||x.m}${x.s?' · Sprint':''}<small>${esc(x.gp||'')}${x.pi?' · '+esc(x.pi):''}</small></span><b class="${x.d?'':x.p===1?'g':x.p<=3?'s':''}">${x.d?'DNF':'P'+x.p}${!x.d&&x.p===1?' ★':''}</b></div>` }).join('')
+    :'Todavía no corriste ninguna carrera. Tus últimas 20 aparecen aquí.';
+}
 (function(){const n=champRaces();$('hCount').textContent=n?`Carreras en tu campeonato actual: ${n}`:'Tu campeonato arranca en 0'})();
 // "Otra tirada": vuelve a jugar el mismo modo sin pasar por el inicio
 try{const m=sessionStorage.getItem('boxbox_auto');if(m){sessionStorage.removeItem('boxbox_auto');startGame(m)}}catch(e){}
@@ -1474,7 +1620,7 @@ async function showDaily(){
   $('dActions').innerHTML='<div class="note" style="text-align:center;min-height:'+(dh||250)+'px">Cargando…</div>';
   loadRank(dRankDay);                                         // el ranking no depende de tu estado: se pide a la vez
   try{ DST=await dApi('estado'); }catch(e){ DST=null; toast(e.message); }   // sin esperar a que cargue el motor de carrera
-  renderDaily(); startDTimer();
+  renderDaily(); startDTimer(); dailyExtras();
 }
 function renderDaily(){
   const d=new Date(Date.now()+DOFF), st=DST;
@@ -1577,6 +1723,61 @@ function paintDailyResult(){
   const b=$('dSeeRank'); if(b) b.onclick=()=>{BLIND=false;showDaily()};
 }
 
+// --- tu semana, aviso por mail, desafíos anteriores y juego limpio ---
+const fDia=(d,o)=>new Date(d+'T12:00:00Z').toLocaleDateString(LOCALES[LANG]||'es',o||{weekday:'short',day:'numeric',month:'numeric',timeZone:'UTC'});
+function dailyExtras(){
+  const st=DST;
+  // Tu semana (con sesión)
+  $('dWeek').style.display='none';
+  if(st&&st.logged&&st.nickname) dApi('semana').then(j=>{
+    logrosDiario(j);
+    const n=j.semana.length; if(!j.jugados) return;
+    $('dWeekBtn').textContent=n?`${n} ${n===1?'desafío jugado':'desafíos jugados'} esta semana — mira el resumen →`:'Esta semana todavía no jugaste — ¡empieza hoy!';
+    $('dWeekList').innerHTML=j.semana.map(r=>`<div class="wk"><span>${fDia(r.day)}</span><span>${esc(r.gp||'')}<small>${r.dnf?'Abandono · V'+r.laps:'P'+r.pos+' · '+fmtRace(r.tiempo)}</small></span><b>#${r.rank} <small style="display:inline">de ${r.total}</small></b></div>`).join('')
+      +`<div class="note" style="margin-top:8px">Desafíos jugados: <b>${j.jugados}</b> · Primeros puestos: <b>${j.ganados}</b> · Podios: <b>${j.podios}</b> · Mejor racha: <b>${j.mejorRacha}</b></div>`;
+    $('dWeekList').style.display='none'; $('dWeek').style.display=''; $('dWeekBtn').onclick=()=>{ const l=$('dWeekList'); l.style.display=l.style.display==='none'?'':'none' };
+  }).catch(()=>{});
+  // Aviso por mail (solo con Google: null = no se puede)
+  const av=st&&st.aviso; $('dAviso').style.display=(st&&st.logged&&av!==null&&av!==undefined)?'':'none';
+  $('dAvisoChk').checked=!!av;
+  $('dAvisoChk').onchange=async e=>{ const on=e.target.checked; e.target.disabled=true;
+    try{ await dApi('aviso',{activo:on}); DST.aviso=on; ev('aviso_mail',{on:on?1:0}); toast(on?'Listo: te avisamos por mail cuando salga el desafío.':'Listo: no te mandamos más avisos.') }
+    catch(err){ e.target.checked=!on; toast(err.message) } e.target.disabled=false };
+  // Desafíos anteriores: cuántos hay en el archivo (desde el 29/10 hasta ayer); la lista se pide al abrir
+  const hoy=st?st.day:hoyAR(), n=Math.max(0,Math.round((Date.parse(hoy)-Date.parse('2026-10-29'))/864e5));
+  $('dOld').style.display=n?'':'none';
+  $('dOldSub').textContent=`${n} ${n===1?'desafío':'desafíos'} en el archivo · Amistoso, fuera del ranking`;
+  $('dOld').ontoggle=()=>{ if($('dOld').open&&!$('dOldList').dataset.ok) loadArchivo() };
+  // Juego limpio: hasta que lo cierres
+  let visto=false; try{ visto=localStorage.getItem('boxbox_limpio')==='1' }catch(e){}
+  $('dLimpio').style.display=visto?'none':''; $('dLimpioX').onclick=()=>{ $('dLimpio').style.display='none'; try{ localStorage.setItem('boxbox_limpio','1') }catch(e){} };
+}
+async function loadArchivo(){
+  const box=$('dOldList'); box.innerHTML='<div class="note" style="text-align:center">Cargando…</div>';
+  try{ const j=await dApi('archivo'); box.dataset.ok='1';
+    const jugados=loadLogros().archivo||{};
+    box.innerHTML=j.dias.map(d=>`<div class="arow"><span><b>${fDia(d.day)} · ${esc(d.gp)}</b><small>${d.total} ${d.total===1?'jugó':'jugaron'}${d.mine?' · Tu resultado: '+(d.mine.dnf?'DNF':'P'+d.mine.pos):''}${jugados[d.day]?' · ✓ rejugado':''}</small></span><button class="btn ghost" data-dia="${d.day}"><span>Jugar →</span></button></div>`).join('')||'<div class="note">Todavía no hay desafíos anteriores.</div>';
+    box.querySelectorAll('[data-dia]').forEach(b=>b.onclick=()=>startArchivo(b.dataset.dia));
+  }catch(e){ box.innerHTML=`<div class="note" style="text-align:center">${esc(e.message)}</div>` }
+}
+async function startArchivo(dia){
+  try{ await READY; const j=await dApi('mano',{dia}); ev('archivo',{dia});
+    FRIENDLY={rolls:j.rolls,seed:j.raceSeed,dia,res:null}; startGame('friendly');
+    $('buildTitle').innerHTML='Desafío del <em>'+fDia(dia,{day:'numeric',month:'numeric',timeZone:'UTC'})+'</em>';
+  }catch(e){ toast(e.message) }
+}
+// Al terminar un desafío del archivo: en qué puesto habrías quedado ese día
+async function archivoComparar(){
+  try{ const s=E.summary(RACE,'me'); FRIENDLY.res=await dApi('comparar',{dia:FRIENDLY.dia,orden:s.orden}) }catch(e){ FRIENDLY.res={error:1} }
+  paintArchivoRes();
+}
+function paintArchivoRes(){
+  if(MODE!=='friendly'||!FRIENDLY.dia||!$('s-result').classList.contains('on')) return;
+  const r=FRIENDLY.res, box=$('dailyRes'); box.style.display='block';
+  box.innerHTML=!r?'<div class="note" style="text-align:center">Comparando con el ranking de ese día…</div>':r.error?'':
+    `<div class="dres">Ese día habrías quedado <b>#${r.rank}</b> de ${r.total+1}</div><div class="note" style="text-align:center">Amistoso: no cuenta para el ranking ni para la racha.</div>`;
+}
+
 // --- amistoso: la misma mano, sin registrar nada ---
 async function startFriendly(){
   await READY;
@@ -1622,7 +1823,7 @@ function paintUser(){
   $('pLogin').disabled=!g&&!GOOGLE_ON; $('pLogin').style.opacity=$('pLogin').disabled?.5:1;
   $('nProfile').textContent=g?('Perfil · '+String(m.full_name||m.name||USER.email).split(/[ @]/)[0]):'Perfil';
 }
-function cloudRow(){ return {user_id:USER.id,campeonato:loadRaw(),stats:loadStats(),historial:loadHist(),trofeos:loadTrofeos(),updated_at:new Date().toISOString()} }
+function cloudRow(){ return {user_id:USER.id,campeonato:loadRaw(),stats:{...loadStats(),logros:loadLogros(),recientes:loadRecientes()},historial:loadHist(),trofeos:loadTrofeos(),updated_at:new Date().toISOString()} }
 async function syncUp(){
   if(!sb||!USER) return;
   // Los trofeos nunca se pisan: antes de guardar se suman los que ya tiene la cuenta.
@@ -1640,10 +1841,11 @@ async function syncDown(){
   if(!cloudHas){ if(localHas){ await syncUp(); toast('Listo: tu campeonato quedó guardado en tu cuenta.'); } else await syncUp(); }
   else {
     // La cuenta manda: es lo que se ve en todos tus dispositivos.
-    try{ localStorage.setItem(KEY,JSON.stringify(data.campeonato||{})); localStorage.setItem('boxbox_stats',JSON.stringify(data.stats||{races:0,wins:0,podiums:0,best:null})); localStorage.setItem('boxbox_historial',JSON.stringify(data.historial||[])); }catch(e){}
+    try{ localStorage.setItem(KEY,JSON.stringify(data.campeonato||{})); const {logros:lg,recientes:rc,...st}=data.stats||{}; localStorage.setItem('boxbox_stats',JSON.stringify(st.races!=null?st:{races:0,wins:0,podiums:0,best:null}));
+      var masLogros=Object.keys(loadLogros().got||{}).some(k=>!((lg||{}).got||{})[k]); saveLogros(logrosJuntar(loadLogros(),lg)); const rr=[...loadRecientes(),...(rc||[])].filter((x,i,a)=>a.findIndex(y=>y.t===x.t)===i).sort((a,b)=>b.t-a.t).slice(0,20); localStorage.setItem(REC_KEY,JSON.stringify(rr)); localStorage.setItem('boxbox_historial',JSON.stringify(data.historial||[])); }catch(e){}
     let faltan=false;
     try{ const t=[...(data.trofeos||[])]; for(const x of loadTrofeos()) if(!t.some(y=>y.sala===x.sala)){ t.push(x); faltan=true } localStorage.setItem('boxbox_trofeos',JSON.stringify(t.slice(0,50))) }catch(e){}
-    if(faltan) await syncUp();   // trofeos que este navegador tenía y la cuenta no: subirlos para que los vean tus amigos
+    if(faltan||masLogros) await syncUp();   // trofeos que este navegador tenía y la cuenta no: subirlos para que los vean tus amigos
     toast('Campeonato cargado desde tu cuenta.');
   }
   if($('s-profile').classList.contains('on')) showProfile();

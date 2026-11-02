@@ -27,8 +27,8 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <!-- Arranque rápido: conexiones y descargas en paralelo con el HTML -->
 <link rel="preconnect" href="https://vljuhibzzwtcswirunfr.supabase.co" crossorigin>
-<link rel="preload" href="supabase/functions/_shared/temporadas.json?v=16d4cdf8" as="fetch" crossorigin fetchpriority="low">
-<link rel="modulepreload" href="supabase/functions/_shared/engine.js?v=16d4cdf8" fetchpriority="low">
+<link rel="preload" href="supabase/functions/_shared/temporadas.json?v=f0f1a4cd" as="fetch" crossorigin fetchpriority="low">
+<link rel="modulepreload" href="supabase/functions/_shared/engine.js?v=f0f1a4cd" fetchpriority="low">
 <!-- Boceto de diseño, no es el juego final. Datos de ejemplo inventados. Sin marcas, logos ni fotos: todo dibujado en SVG. -->
 <!-- Fuente propia (Titillium Web) en vez de Google Fonts: sin precarga a propósito (precargarla retrasaba el primer dibujo en conexiones lentas) -->
 <style>
@@ -376,6 +376,20 @@ textarea,select,input{width:100%;font:inherit;background:var(--card);color:var(-
 #scBanner{display:none;background:var(--yellow);color:#1a1300;font-weight:900;text-align:center;letter-spacing:4px;padding:6px;border-radius:6px;margin-bottom:8px;animation:blink 1s infinite}
 @keyframes blink{50%{opacity:.55}}
 .dcol{max-width:520px;margin:0 auto;display:grid;gap:16px}
+.lgrp{border-bottom:1px solid var(--line)}.lgrp summary{cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:10px 2px;font-weight:900;text-transform:uppercase;font-size:14px;letter-spacing:1px;list-style:none}
+.lgrp summary::-webkit-details-marker{display:none}.lgrp summary b{color:var(--muted);font-size:13px}.lgrp summary span::before{content:'▸ ';color:var(--muted)}.lgrp[open] summary span::before{content:'▾ '}
+.lg{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:center;padding:7px 2px;opacity:.45}.lg.ok{opacity:1}.lg b{display:block;font-size:15px}.lg small{color:var(--muted);font-size:13px}.lg .li{font-size:18px;text-align:center}
+.rec{display:grid;grid-template-columns:52px 1fr auto;gap:8px;align-items:center;padding:8px 2px;border-bottom:1px solid var(--line)}
+.rec .rf{color:var(--muted);font-variant-numeric:tabular-nums;font-size:13px}.rec .rm{font-weight:700}.rec small{display:block;color:var(--muted);font-weight:400;font-size:12px}
+.rec b{font-weight:900;font-style:italic}.rec b.g{color:var(--yellow)}.rec b.s{color:var(--green)}
+.dcard2 .eyebrow{font-size:11px;letter-spacing:3px}.dcard2 h2{margin:2px 0 4px;font-style:italic;text-transform:uppercase;font-size:24px}
+.dold summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:10px}.dold summary::-webkit-details-marker{display:none}
+.dold summary::after{content:'▾';color:var(--muted)}.dold[open] summary::after{content:'▴'}
+.arow{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:10px 2px;border-bottom:1px solid var(--line)}.arow small{display:block;color:var(--muted);font-size:12px}
+.arow .btn{padding:6px 12px;font-size:13px}.wk{display:grid;grid-template-columns:92px 1fr auto;gap:8px;padding:8px 2px;border-bottom:1px solid var(--line);align-items:center}.wk small{color:var(--muted);display:block;font-size:12px}
+.wkbtn{cursor:pointer;background:none;border:0;padding:0;font:inherit;color:var(--yellow);font-weight:900;font-size:17px;text-align:left}
+.tgl{display:flex;justify-content:space-between;align-items:center;gap:12px;cursor:pointer}.tgl input{appearance:none;-webkit-appearance:none;width:48px;height:28px;border-radius:14px;background:var(--line);position:relative;flex:none;cursor:pointer;transition:background .2s;margin:0}.tgl input::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform .2s}.tgl input:checked{background:var(--green)}.tgl input:checked::after{transform:translateX(20px)}.tgl input:disabled{opacity:.6}
+.limpio{border-color:var(--yellow)}.limpio ul{margin:8px 0;padding-left:20px}.limpio li{margin:4px 0}.limpio .x{position:absolute;top:10px;right:12px;background:none;border:0;color:var(--muted);font-size:20px;cursor:pointer}
 .dcard{text-align:center;padding:22px 18px}
 .dcard .cta{width:100%;margin-top:12px}
 .dcard input{text-align:center;margin-top:10px}
@@ -524,6 +538,30 @@ html.ruta main,html.ruta footer{visibility:hidden}
       <div class="note" id="dRankMe" style="text-align:center"></div>
       <button class="btn cta" id="dShare" style="display:none"><span>Compartir mi puesto →</span></button>
     </div>
+    <div class="panel dcard2" id="dWeek" style="display:none">
+      <div class="eyebrow">Tu semana</div>
+      <button class="wkbtn" id="dWeekBtn"></button>
+      <div id="dWeekList" style="display:none;margin-top:8px"></div>
+    </div>
+    <div class="panel dcard2" id="dAviso" style="display:none">
+      <label class="tgl"><span><span class="eyebrow">Aviso por mail</span><br><b>¿Quieres que te avisemos cuando salga el desafío?</b><small class="note" id="dAvisoNote" style="display:block;margin:2px 0 0">Te mandamos un mail todos los días a las 00:00, apenas sale el desafío. Lo desactivas cuando quieras.</small></span><input type="checkbox" id="dAvisoChk"></label>
+    </div>
+    <details class="panel dcard2 dold" id="dOld">
+      <summary><span><span class="eyebrow">Desafíos anteriores</span><h2>Vuelve en el tiempo</h2><span class="note" id="dOldSub" style="margin:0">Amistoso, fuera del ranking</span></span></summary>
+      <div id="dOldList" style="margin-top:8px"></div>
+    </details>
+    <div class="panel dcard2 limpio" id="dLimpio" style="display:none">
+      <button class="x" id="dLimpioX" aria-label="Cerrar">×</button>
+      <div class="eyebrow">Juego limpio</div>
+      <b style="font-size:17px">Así cuidamos el desafío del día</b>
+      <ul class="note" style="margin-top:8px">
+        <li>No ves las medias de las piezas: la mano es la misma para todos y se revela de a una tirada.</li>
+        <li>El circuito y la carrera se conocen recién cuando tu auto está completo: no se puede probar antes.</li>
+        <li>El resultado oficial lo calcula el servidor, no tu navegador.</li>
+        <li>Una sola partida por cuenta y por día.</li>
+      </ul>
+      <div class="note">¿Viste algo raro? Cuéntanos desde <b>Sugerencias</b>.</div>
+    </div>
   </div>
 </section>
 
@@ -551,6 +589,16 @@ html.ruta main,html.ruta footer{visibility:hidden}
         <button class="btn ghost" id="pReset"><span>Resetear</span></button>
       </div>
       <div class="note"><b>Arrancar nuevo:</b> guarda el actual en "campeonatos anteriores" y arranca en 0. <b>Resetear:</b> lo borra y arranca en 0.</div>
+    </div>
+  </div>
+  <div class="grid" style="margin-top:16px">
+    <div class="panel">
+      <h3 style="display:flex;justify-content:space-between">Logros <span id="pLogN" style="color:var(--yellow)"></span></h3>
+      <div id="pLogros"></div>
+    </div>
+    <div class="panel">
+      <h3>Historial reciente</h3>
+      <div id="pRec" class="note"></div>
     </div>
   </div>
 </section>
@@ -846,7 +894,7 @@ html.ruta main,html.ruta footer{visibility:hidden}
   <div class="stars" id="rateS"><button type="button" data-n="1" aria-label="1 estrella">★</button><button type="button" data-n="2" aria-label="2 estrellas">★</button><button type="button" data-n="3" aria-label="3 estrellas">★</button><button type="button" data-n="4" aria-label="4 estrellas">★</button><button type="button" data-n="5" aria-label="5 estrellas">★</button></div>
   <p class="rm" id="rateM" style="display:none"></p><button class="btn ghost rb" id="rateB" style="display:none">Contanos qué mejorar</button></div>
 <script src="vendor/supabase.min.js" defer></script>
-<script src="tracks.js?v=16d4cdf8" defer></script>
-<script src="game.js?v=16d4cdf8" defer></script>
+<script src="tracks.js?v=f0f1a4cd" defer></script>
+<script src="game.js?v=f0f1a4cd" defer></script>
 </body>
 </html>

@@ -9,7 +9,7 @@ const ALLOWED_ORIGINS = ["https://boxf1box.com", "https://www.boxf1box.com", "ht
 const NOMBRES = new Set([
   "visita", "latido", "inicio", "carrera_fin", "compartir", "sala_creada", "sala_unida", "amigo_pedido", "idioma", "fondo", "intervalo",
   "apoyo_abre", "apoyo_mp", "apoyo_kofi", "apoyo_cafecito", "red_click", "login_click", "login_ok", "sugerencias_abre", "sugerencias_envia",
-  "desafio_abre", "desafio_juega", "perfil_abre", "amigos_abre", "chat_abre", "valoracion", "error_js", "rendimiento",
+  "desafio_abre", "desafio_juega", "perfil_abre", "amigos_abre", "chat_abre", "valoracion", "error_js", "rendimiento", "logro", "archivo", "aviso_mail",
 ]);
 const ID_RE = /^[a-z0-9]{4,24}$/;
 const MAX_LOTE = 40, MAX_POR_MIN = 120;
