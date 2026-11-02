@@ -1040,9 +1040,9 @@ function loadRecientes(){ try{ return JSON.parse(localStorage.getItem(REC_KEY))|
 const hoyAR=()=>E0day(Date.now()+(typeof DOFF==='number'?DOFF:0));
 function E0day(ms){ return new Date(ms-3*3600*1000).toISOString().slice(0,10) }   // el día en Argentina (igual que el desafío)
 // Revisa qué logros se cumplen ahora; avisa los nuevos.
-function logrosRevisar(L,c){
+function logrosRevisar(L,c,viejas){
   L.got=L.got||{}; const nuevos=[];
-  for(const [id,,nombre,,ok] of LOGROS){ if(L.got[id]) continue; let si=false; try{ si=!!ok(L,c) }catch(e){} if(si){ L.got[id]=Date.now(); nuevos.push(nombre) } }
+  for(const cc of [c,...(viejas||[])]) for(const [id,,nombre,,ok] of LOGROS){ if(L.got[id]) continue; let si=false; try{ si=!!ok(L,cc) }catch(e){} if(si){ L.got[id]=Date.now(); nuevos.push(nombre) } }
   if(nuevos.length){ saveLogros(L); nuevos.forEach(n=>ev('logro',{n:n.slice(0,40)}));
     setTimeout(()=>toast(nuevos.length===1?'🏅 Logro desbloqueado: '+nuevos[0]:`🏅 ${nuevos.length} logros desbloqueados: ${nuevos.join(', ')}`),1200);
     if(typeof USER!=='undefined'&&USER&&!USER.is_anonymous) syncUp(); }
@@ -1076,9 +1076,26 @@ function logrosCarrera(me){
   }catch(e){ console.warn(e) }
 }
 // Lo que dice el servidor del desafío del día (jugados, ganados, racha) también da logros.
+const LOG_INICIO=Date.parse("2026-11-02T23:01:11Z");   // desde acá cada carrera se cuenta sola
 function logrosDiario(s){ const L=loadLogros(); const a=L.dia||{};
   L.dia={jugados:Math.max(a.jugados||0,s.jugados||0),ganados:Math.max(a.ganados||0,s.ganados||0),podios:Math.max(a.podios||0,s.podios||0),mejorRacha:Math.max(a.mejorRacha||0,s.mejorRacha||0,s.racha||0)};
-  saveLogros(L); logrosRevisar(L,null) }
+  const viejas=[]; L.n=L.n||{}; L.pil=L.pil||{}; L.anios=L.anios||{}; L.gpWin=L.gpWin||{}; L.pilWin=L.pilWin||{}; L.campWin=L.campWin||{}; L.viejas=L.viejas||{};
+  const old=(s.hist||[]).filter(x=>x&&x.t<LOG_INICIO);
+  for(const x of old){
+    const c={modo:"daily",pos:x.pos,dnf:!!x.dnf,grid:x.grid||0,stops:x.stops||0,gana:!x.dnf&&x.pos===1,autos:0,lluvia:false,sc:false,sprint:false,
+      anios:x.anios||[],piloto:x.pi,anioPiloto:x.y,humanos:1,host:false};
+    viejas.push(c);
+    if(L.viejas[x.day]) continue; L.viejas[x.day]=1;        // cada desafío viejo se suma una sola vez
+    const inc=k=>L.n[k]=(L.n[k]||0)+1; inc("carreras"); if(c.gana) inc("victorias"); if(!c.dnf&&c.pos<=3) inc("podios");
+    if(c.piloto) L.pil[c.piloto]=(L.pil[c.piloto]||0)+1;
+    for(const y of c.anios) L.anios[y]=1;
+    if(c.gana){ if(x.gp) L.gpWin[x.gp]=1; if(c.piloto){ L.pilWin[c.piloto]=1; if(CAMPEONES[c.piloto]) L.campWin[c.piloto]=1 } }
+  }
+  // historial reciente: los desafíos viejos que falten
+  const r=loadRecientes(), ya=new Set(r.filter(z=>z.m==="daily").map(z=>z.dia||new Date(z.t).toISOString().slice(0,10)));
+  for(const x of old) if(!ya.has(x.day)) r.push({t:x.t,m:"daily",gp:x.gp,p:x.pos,d:x.dnf?1:0,pi:x.pi||"",y:x.y||0,s:0,dia:x.day});
+  r.sort((p,q)=>q.t-p.t); try{ localStorage.setItem(REC_KEY,JSON.stringify(r.slice(0,20))) }catch(e){}
+  saveLogros(L); logrosRevisar(L,null,viejas) }
 // Juntar lo de la cuenta con lo de este navegador (nunca se pierde nada).
 function logrosJuntar(a,b){ a=a||{}; b=b||{}; const o={...a};
   const max=(x,y)=>{ const r={...(x||{})}; for(const k in y||{}) r[k]=Math.max(r[k]||0,y[k]); return r };
@@ -1092,6 +1109,8 @@ function logrosPrevios(){
   const L=loadLogros(), s=loadStats(); L.n=L.n||{};
   L.n.carreras=Math.max(N(L,'carreras'),s.races||0); L.n.victorias=Math.max(N(L,'victorias'),s.wins||0); L.n.podios=Math.max(N(L,'podios'),s.podiums||0);
   if(loadTrofeos().length) L.n.salas=Math.max(N(L,'salas'),1);
+  L.pil=L.pil||{}; L.pilWin=L.pilWin||{}; L.campWin=L.campWin||{};
+  for(const [n,r] of Object.entries(loadChamp())){ L.pil[n]=Math.max(L.pil[n]||0,r.races||0); if(r.wins>0){ L.pilWin[n]=1; if(CAMPEONES[n]) L.campWin[n]=1 } }
   saveLogros(L); logrosRevisar(L,null);
   if(!logrosDiaPedido&&typeof USER!=='undefined'&&USER){ logrosDiaPedido=true;
     dApi('semana').then(j=>{ if(j&&j.jugados!=null){ logrosDiario(j); if($('s-profile').classList.contains('on')) paintLogros() } }).catch(()=>{}) }

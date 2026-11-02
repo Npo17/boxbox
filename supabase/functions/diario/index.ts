@@ -182,7 +182,7 @@ async function handle(req: Request, body: Record<string, any>) {
   // Tu semana: tus desafíos de los últimos 7 días con el puesto en el ranking, y los totales de siempre (para los logros).
   if (action === "semana") {
     const u = need(user);
-    const { data } = await db.from("desafios").select("day,pos,dnf,laps,tiempo,orden,created_at").eq("user_id", u.id).eq("status", "listo")
+    const { data } = await db.from("desafios").select("day,pos,dnf,laps,grid,stops,picks,tiempo,orden,created_at,updated_at").eq("user_id", u.id).eq("status", "listo")
       .order("day", { ascending: false }).limit(400);
     const rows = data ?? [], desde = daysBack(day, 6);
     // el puesto de cada día (los últimos 60, para no hacer cientos de consultas)
@@ -197,7 +197,14 @@ async function handle(req: Request, body: Record<string, any>) {
     const dias = rows.map((r: any) => String(r.day)).sort();
     let mejor = 0, run = 0, prev = "";
     for (const d of dias) { run = prev && daysBack(d, 1) === prev ? run + 1 : 1; mejor = Math.max(mejor, run); prev = d; }
-    return { semana, jugados: rows.length, ganados: conRank.filter((r) => r.rank === 1).length, podios: conRank.filter((r) => r.rank <= 3).length,
+    // los desafíos jugados antes de que existieran los logros (para recuperarlos y llenar el historial)
+    const hist: any[] = [];
+    for (const r of rows.slice(0, 60)) {
+      const p = (r as any).picks ?? {};
+      hist.push({ day: String(r.day), t: Date.parse((r as any).updated_at ?? (r as any).created_at), pos: r.pos, dnf: !!r.dnf, grid: (r as any).grid, stops: (r as any).stops,
+        gp: await trackOf(String(r.day)), pi: p.piloto?.n ?? "", y: +(p.piloto?.y ?? 0), anios: SLOTS.map((s) => +(p[s]?.y ?? 0)).filter(Boolean) });
+    }
+    return { semana, hist, jugados: rows.length, ganados: conRank.filter((r) => r.rank === 1).length, podios: conRank.filter((r) => r.rank <= 3).length,
       racha: await streakOf(u.id, day), mejorRacha: mejor };
   }
 
