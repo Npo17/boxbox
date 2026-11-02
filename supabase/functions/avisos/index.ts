@@ -24,15 +24,15 @@ function mail(token: string) {
   const baja = `${FN_URL}?baja=${token}`;
   return {
     subject: "🏁 Ya está el desafío del día",
-    html: `<div style="background:#0b1a14;padding:28px 16px;font-family:Arial,Helvetica,sans-serif">
-  <div style="max-width:480px;margin:0 auto;background:#111;border:2px solid #ffb31a;border-radius:14px;padding:24px;color:#f3efe2">
+    html: `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#0b1a14"><tr><td align="center" style="padding:28px 16px;font-family:Arial,Helvetica,sans-serif">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:480px"><tr><td style="background:#111;border:2px solid #ffb31a;border-radius:14px;padding:24px;color:#f3efe2;text-align:left">
     <div style="letter-spacing:3px;font-size:11px;color:#7fa08f;text-transform:uppercase">Desafío del día</div>
-    <h1 style="font-size:26px;margin:6px 0 10px;text-transform:uppercase">Hay mano nueva</h1>
+    <h1 style="font-size:26px;margin:6px 0 10px;text-transform:uppercase;color:#f3efe2">Hay mano nueva</h1>
     <p style="color:#c9d6cf;margin:0 0 18px">La misma mano para todos, sin ver las medias. Arma tu auto, corre y mira dónde quedas en el ranking. Si jugaste ayer, no cortes la racha.</p>
     <a href="${SITE}/?desafio" style="display:inline-block;background:#ffb31a;color:#111;font-weight:700;text-decoration:none;padding:12px 20px;border-radius:10px">Jugar el desafío →</a>
-  </div>
-  <p style="max-width:480px;margin:14px auto 0;font-size:12px;color:#7fa08f;text-align:center">Te llega porque lo activaste en BoxBox. <a href="${baja}" style="color:#7fa08f">No quiero más avisos</a></p>
-</div>`,
+  </td></tr>
+  <tr><td align="center" style="padding-top:14px;font-size:12px;color:#7fa08f">Te llega porque lo activaste en BoxBox. <a href="${baja}" style="color:#7fa08f">No quiero más avisos</a></td></tr></table>
+</td></tr></table>`,
     text: `Ya está el desafío del día de BoxBox. Jugalo en ${SITE}/?desafio\n\nNo quiero más avisos: ${baja}`,
     headers: { "List-Unsubscribe": `<${baja}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" },
   };
