@@ -109,6 +109,7 @@ async function fullState(user: Usuario | null, day: string) {
 }
 
 // ---------- archivo, tu semana y aviso por mail ----------
+const ADMIN_EMAIL = "nicolaspozzi00@gmail.com";
 const PRIMER_DIA = "2026-10-29";                       // el día que arrancó el desafío
 const DIA_RE = /^\d{4}-\d{2}-\d{2}$/;
 const daysBack = (d: string, n: number) => new Date(Date.parse(d + "T00:00:00Z") - n * 86400000).toISOString().slice(0, 10);
@@ -161,6 +162,14 @@ async function handle(req: Request, body: Record<string, any>) {
     for (let d = daysBack(day, 1); d >= PRIMER_DIA && dias.length < 400; d = daysBack(d, 1))
       dias.push({ day: d, gp: await trackOf(d), total: total.get(d) ?? 0, mine: mios.get(d) ?? null });
     return { dias };
+  }
+
+  // Modo admin (solo la cuenta del dueño, para probar): la mano entera de hoy y la carrera, para calcular la mejor jugada.
+  if (action === "admin_mano") {
+    const u = need(user);
+    if ((u.email ?? "").toLowerCase() !== ADMIN_EMAIL) throw new Fail("No autorizado.", 403);
+    const dice = await diceSecret(day);
+    return { day, rolls: [0, 1, 2, 3, 4].map((i) => E.dailyRoll(DATA, dice, i)), raceSeed: await raceSecret(day) };
   }
 
   // La mano de un día que ya cerró, para jugarlo como amistoso (fuera del ranking). La de hoy nunca se entrega.

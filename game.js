@@ -71,6 +71,7 @@ function renderList(){
     $('list').innerHTML=`<div class="empty">✅ ${it[0]} (${y}) a tu auto. ${Object.keys(picks).length<5?'Tira otra vez.':'¡Auto completo!'}</div>`;
     $('tabs').innerHTML=''; renderSlots();
   });
+  admHint();
 }
 $('rollBtn').onclick=async()=>{
   if(MODE==='room'){roomRoll();return}
@@ -86,6 +87,7 @@ renderSlots();
 
 function go(screen,step){document.documentElement.classList.remove('ruta');if(screen!=='s-result'&&typeof rateHide==='function'&&document.getElementById('rate'))rateHide();document.documentElement.dataset.screen=screen;if(screen!=='s-home')document.documentElement.classList.add('ready');document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$(screen).classList.add('on');
   ['st1','st2','st3','st4'].forEach((s,i)=>$(s).classList.toggle('on',i+1===step));window.scrollTo(0,0);
+  if(!/^s-(build|quali|race)$/.test(screen)) admBox('');
   if(screen!=='s-build'&&typeof fichaSync==='function'){ try{ fichaSync() }catch(e){} }}   // las fichas laterales siempre muestran lo que realmente elegiste (nunca una vista previa que quedó pegada)
 
 // ---------- Carrera: el motor (supabase/functions/_shared/engine.js) la calcula y acá se anima ----------
@@ -381,6 +383,7 @@ function renderStrat(){
     :`<div>${{low:'🧠 Tu estratega prevé poco desgaste de gomas en este circuito.',normal:'🧠 Tu estratega prevé un desgaste normal de gomas en este circuito.',high:'🧠 Tu estratega prevé mucho desgaste de gomas en este circuito.'}[S.hint]}</div>`)
     +`<div>Recomienda: <b>${STRAT_INFO[rec.id][0]}</b></div>`;
   $('stratList').innerHTML=S.opts.map(o=>`<button type="button" class="scard${sel===o.id?' on':''}" data-id="${o.id}"><div class="top"><span class="nm">${STRAT_INFO[o.id][0]}</span>${o.id===S.rec?'<span class="rec">⭐ Recomendada</span>':''}</div>${stintBar(o.stints,RACE.laps)}<div class="seq">${o.stints.map(s=>`<span><i style="background:${TY[s.c].c}"></i>${TY[s.c].n}</span>`).join('<span>→</span>')}</div><div class="sd">${STRAT_INFO[o.id][1]}</div></button>`).join('');
+  admEstrategia();
   $('stratNote').textContent=BLIND?'El aviso del estratega puede fallar: con menos media se equivoca más.':'El aviso del estratega acierta más cuanto mayor es su media. Con menos media también se equivoca más en las vueltas de parada.';
 }
 function stratChoose(id){
@@ -505,7 +508,7 @@ function startRace(syncAt,interactive){
     $('scInfo').innerHTML=lastStop?`Ya hiciste tu parada en la vuelta ${lastStop}. Tus gomas tienen <b>${sc.lap-lastStop}</b> vueltas: otra parada es opcional.`
       :`Todavía no hiciste tu parada obligatoria. Tus gomas tienen <b>${sc.lap}</b> vueltas.`;
     window.__resolveSC=(dec)=>{ $('mSC').classList.remove('open'); api('decide',{choice:dec}).then(()=>toast('Decisión enviada: '+(dec==='pit'?'entras a boxes':'sigues en pista'))).catch(e=>toast(e.message)) };
-    openM('mSC');
+    openM('mSC'); admSC();
     setTimeout(apply,Math.max(0,dl-Date.now())+300+Math.random()*600);   // al cerrarse el plazo, con las decisiones de todos
   }
   function askSC(){
@@ -515,14 +518,14 @@ function startRace(syncAt,interactive){
     $('scTxt').textContent=`${sc.by} ${sc.why==='choque'?'chocó':'rompió el motor'} y salió el safety car. Con el pelotón lento, entrar a boxes cuesta mucho menos.`;
     $('scInfo').innerHTML=lastStop?`Ya hiciste tu parada en la vuelta ${lastStop}. Tus gomas tienen <b>${sc.lap-lastStop}</b> vueltas: otra parada es opcional.`
       :`Todavía no hiciste tu parada obligatoria. Tus gomas tienen <b>${sc.lap}</b> vueltas.`;
-    openM('mSC');
+    openM('mSC'); admSC();
   }
   // pronóstico de tormenta: entrar por gomas de lluvia o seguir con slicks (la lluvia puede no llegar)
   function askRain(){
     const st=RACE.storm;
     $('rainTxt').textContent=`Se anuncian lluvias o tormentas en las próximas vueltas: hay un ${st.p}% de probabilidad de que llegue de verdad.`;
     $('rainInfo').innerHTML=`Si entrás ahora cambiás a gomas de lluvia (cuenta como tu parada obligatoria). Si llueve, ganás muchísimo; si la lluvia no llega, perdés tiempo con gomas de lluvia en pista seca y tenés que volver a boxes. Si te quedás con slicks y llueve, perdés muchísimo hasta que cambies.`;
-    openM('mRAIN');
+    openM('mRAIN'); admLluvia();
   }
   window.__resolveRain=(dec)=>{
     $('mRAIN').classList.remove('open');
@@ -811,6 +814,104 @@ $('fCareer').onchange=()=>{ $('fCalRow').style.display=$('fCareer').checked?'fle
 const calTxt=cal=>cal?`Calendario a medida (${cal.length} fechas)`:'Temporada completa (23 fechas)';
 $('fCalBtn').onclick=()=>openCalBuilder(CUSTOM_CAL,cal=>{ CUSTOM_CAL=cal; $('fCalTxt').textContent=calTxt(cal) });
 $('carFriends').onclick=()=>{ $('fCareer').checked=true; $('fCalRow').style.display='flex'; $('fErr').textContent=''; openM('mFriends'); pubStart() };   // sala de carrera con amigos (o unirse con un código)
+
+// ---------- MODO ADMIN (solo la cuenta del dueño, para probar) ----------
+// Muestra en un recuadro la mejor opción: qué pieza elegir en cada tirada, qué estrategia de gomas, qué hacer con el safety car y con la lluvia.
+// Se calcula con el mismo motor del juego. En el desafío del día el servidor le pasa la mano entera y la carrera (solo a esta cuenta).
+const ADMIN_EMAIL='nicolaspozzi00@gmail.com';
+const esAdmin=()=>{ try{ return !!USER&&USER.email===ADMIN_EMAIL }catch(e){ return false } };
+let ADM_MANO=null, ADM_PEDIDA='', ADM_PLAN=null, ADM_N=0;
+const ADM_PROM={};
+function admProm(k){ if(ADM_PROM[k]==null){ let s=0,n=0; for(const y in DATA) for(const x of DATA[y][k]||[]){ s+=x[2]; n++ } ADM_PROM[k]=n?s/n:75 } return ADM_PROM[k] }
+function admMedia(k,n,y){ const x=((DATA[y]||{})[k]||[]).find(z=>z[0]===n); return x?x[2]:0 }
+// las casillas elegidas con su media real (en los modos a ciegas el juego guarda la media en 0)
+function admPicks(){ const o={}; for(const [k,p] of Object.entries(picks||{})) if(p) o[k]={n:p.n,y:p.y,r:p.r||admMedia(k,p.n,p.y)}; return o }
+function admBox(html){
+  let b=$('admBox'); if(!html&&!b) return;
+  if(!b){ b=document.createElement('div'); b.id='admBox'; b.setAttribute('translate','no');
+    b.style.cssText='position:fixed;left:12px;bottom:12px;z-index:9999;max-width:min(360px,calc(100vw - 24px));background:#0d0f13;border:2px solid #ffb31a;border-radius:10px;padding:10px 12px;font:13px/1.4 system-ui,sans-serif;color:#f3efe2;box-shadow:0 6px 24px #0008';
+    document.body.appendChild(b) }
+  b.style.display=html?'block':'none'; b.innerHTML=html?`<div style="font-weight:800;color:#ffb31a;margin-bottom:4px">🔧 Admin</div>${html}`:'';
+}
+const admPuesto=s=>s.dnf?40+(20-Math.min(20,s.laps||0)):s.pos+(s.time||0)/1e7;
+function admCorrer(pk,seed,dec){
+  const full={}; for(const [k] of SLOTS) full[k]=pk[k]||{n:'?',y:2000,r:admProm(k)};
+  const race=E.runRace({DATA,tracks:TRACKS,seed,humans:[E.humanFromPicks('me','#ff3b30',full)],laps:LAPS,decisions:dec||{},...raceOpts()});
+  return E.summary(race,'me');
+}
+const admTxt=s=>s.dnf?'abandona':'P'+s.pos;
+const admProm2=a=>a.reduce((x,y)=>x+y,0)/a.length;
+// La mano entera es conocida (desafío del día, o un día del archivo): se busca la mejor forma de repartir las tiradas que faltan.
+function admPlan(rolls,seed,desde){
+  const fijo=admPicks(), libres=SLOTS.map(([k])=>k).filter(k=>!fijo[k]), quedan=rolls.slice(desde);
+  const perms=a=>a.length<=1?[a]:a.flatMap((x,i)=>perms([...a.slice(0,i),...a.slice(i+1)]).map(p=>[x,...p]));
+  let mejor=null;
+  for(const orden of perms(libres)){
+    if(orden.some((k,i)=>!quedan[i]||!quedan[i].offer[k].shown.length)) continue;
+    const ops=orden.map((k,i)=>quedan[i].offer[k].shown.map((x,j)=>({j,n:x[0],y:quedan[i].year,r:admMedia(k,x[0],quedan[i].year)})).sort((a,b)=>b.r-a.r).slice(0,2));
+    const idx=orden.map(()=>0);
+    for(;;){
+      const pk={...fijo}; orden.forEach((k,i)=>pk[k]=ops[i][idx[i]]);
+      const s=admCorrer(pk,seed), v=admPuesto(s);
+      if(!mejor||v<mejor.v) mejor={v,s,orden:[...orden],elec:orden.map((k,i)=>ops[i][idx[i]])};
+      let q=orden.length-1; while(q>=0&&++idx[q]>=ops[q].length) idx[q--]=0; if(q<0) break;
+    }
+  }
+  return mejor;
+}
+async function admHint(){
+  if(!esAdmin()||!year||!offer){ return }
+  const hechas=Object.keys(picks||{}).filter(k=>picks[k]).length, clave=[MODE,year,hechas,rerolls,SLOTS.map(([k])=>(offer[k]&&offer[k].shown||[]).map(x=>x[0]).join()).join("|")].join("/");
+  if(clave===admHint.clave){ admMarcar(); return } admHint.clave=clave;
+  const n=++ADM_N;
+  // ¿se conoce la mano entera?
+  let rolls=null, seed=null;
+  if(MODE==='daily'){
+    const dia=E.dayKey(Date.now()+DOFF);
+    if(!ADM_MANO||ADM_MANO.day!==dia){ if(ADM_PEDIDA!==dia){ ADM_PEDIDA=dia; admBox('Calculando la mejor jugada…'); try{ ADM_MANO=await dApi('admin_mano') }catch(e){ admBox('No pude pedir la mano: '+esc(e.message)); return } } else return }
+    rolls=ADM_MANO.rolls; seed=ADM_MANO.raceSeed;
+  } else if(MODE==='friendly'&&FRIENDLY&&FRIENDLY.rolls){ rolls=FRIENDLY.rolls; seed=FRIENDLY.seed }
+  if(n!==ADM_N) return;
+  if(rolls){
+    admBox('Calculando la mejor jugada…'); await new Promise(r=>setTimeout(r,30));
+    const m=admPlan(rolls,seed,hechas); if(n!==ADM_N) return;
+    if(!m){ admBox('No encontré una jugada posible.'); return }
+    const k=m.orden[0], e=m.elec[0], L=Object.fromEntries(SLOTS);
+    ADM_PLAN={k,j:e.j};
+    admBox(`Esta tirada: <b>${L[k]} · ${esc(e.n)}</b> (${e.r})<br>Con la mejor jugada terminás <b>${admTxt(m.s)}</b>.`+
+      `<div style="color:#9fb3a8;margin-top:4px">${m.orden.map((kk,i)=>`Tirada ${hechas+i+1}: ${L[kk]} · ${esc(m.elec[i].n)} (${m.elec[i].r})`).join('<br>')}</div>`);
+    admMarcar(); return;
+  }
+  // Mano desconocida: cada opción de esta tirada se prueba en varias carreras, con lo que falta del auto en una media normal.
+  admBox('Calculando…'); await new Promise(r=>setTimeout(r,30)); if(n!==ADM_N) return;
+  const fijo=admPicks(), semillas=Array.from({length:12},(_,i)=>'adm'+i+'-'+hechas), L=Object.fromEntries(SLOTS), ops=[];
+  for(const [k] of SLOTS){ if(fijo[k]||!offer[k]) continue;
+    offer[k].shown.forEach((x,j)=>{ const p={n:x[0],y:year,r:BLIND?admMedia(k,x[0],year):x[2]}, pk={...fijo,[k]:p};
+      const res=semillas.map(s=>admCorrer(pk,s)); ops.push({k,j,p,v:admProm2(res.map(admPuesto)),pos:admProm2(res.map(s=>s.dnf?20:s.pos))}) }) }
+  if(n!==ADM_N) return;
+  ops.sort((a,b)=>a.v-b.v); if(!ops.length){ admBox(''); return }
+  ADM_PLAN={k:ops[0].k,j:ops[0].j};
+  admBox(`Mejor en esta tirada: <b>${L[ops[0].k]} · ${esc(ops[0].p.n)}</b> (${ops[0].p.r})`+
+    `<div style="color:#9fb3a8;margin-top:4px">${ops.slice(0,4).map(o=>`${L[o.k]} · ${esc(o.p.n)} (${o.p.r}) → puesto medio ${o.pos.toFixed(1)}`).join('<br>')}</div>`+
+    `<div style="color:#7fa08f;font-size:11px;margin-top:4px">Las próximas tiradas no se conocen: se prueba en 12 carreras.</div>`);
+  admMarcar();
+}
+// resalta la pieza recomendada en la lista
+function admMarcar(){
+  if(!esAdmin()||!ADM_PLAN) return;
+  document.querySelectorAll('.tab').forEach(t=>t.style.boxShadow=t.dataset.k===ADM_PLAN.k?'inset 0 -3px 0 #ffb31a':'');
+  if(cat===ADM_PLAN.k) document.querySelectorAll('.pick').forEach(el=>el.style.outline=+el.dataset.i===ADM_PLAN.j?'2px solid #ffb31a':'');
+}
+// estrategia de gomas, safety car y lluvia: se prueba cada opción con la carrera real
+function admDecision(titulo,opciones){
+  if(!esAdmin()||!RACE) return;
+  const res=opciones.map(([txt,dec])=>{ const r=newRace({...DECISIONS,...dec}); return {txt,s:E.summary(r,MEKEY.slice(2))} });
+  res.sort((a,b)=>admPuesto(a.s)-admPuesto(b.s));
+  admBox(`${titulo}: <b>${esc(res[0].txt)}</b> → ${admTxt(res[0].s)}<div style="color:#9fb3a8;margin-top:4px">${res.slice(1).map(r=>`${esc(r.txt)} → ${admTxt(r.s)}`).join('<br>')}</div>`);
+}
+function admEstrategia(){ if(!esAdmin()||!STRAT) return; admDecision('Mejor estrategia',STRAT.opts.map(o=>[STRAT_INFO[o.id][0],{['s:'+myId()]:o.id}])) }
+function admSC(){ admDecision('Safety car',[['Entrar a boxes',{[myId()]:'pit'}],['Seguir en pista',{[myId()]:'stay'}]]) }
+function admLluvia(){ admDecision('Lluvia',[['Entrar por gomas de lluvia',{['r:'+myId()]:'pit'}],['Seguir con slicks',{['r:'+myId()]:'stay'}]]) }
 
 // ---------- IDIOMA ----------
 // El juego está escrito en español (idioma por defecto). Cada idioma es un diccionario en lang/xx.js:
