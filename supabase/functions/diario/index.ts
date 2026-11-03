@@ -109,8 +109,6 @@ async function fullState(user: Usuario | null, day: string) {
 }
 
 // ---------- archivo, tu semana y aviso por mail ----------
-const ADM_H = "345878e635d6be2b421e7764c79dbe9730d089dfda1647ed99f048c75b14750c";   // huella (sha-256) del mail de la cuenta habilitada para la ayuda de pruebas
-const huella = async (x: string) => [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(x)))].map((b) => b.toString(16).padStart(2, "0")).join("");
 const PRIMER_DIA = "2026-10-29";                       // el día que arrancó el desafío
 const DIA_RE = /^\d{4}-\d{2}-\d{2}$/;
 const daysBack = (d: string, n: number) => new Date(Date.parse(d + "T00:00:00Z") - n * 86400000).toISOString().slice(0, 10);
@@ -163,14 +161,6 @@ async function handle(req: Request, body: Record<string, any>) {
     for (let d = daysBack(day, 1); d >= PRIMER_DIA && dias.length < 400; d = daysBack(d, 1))
       dias.push({ day: d, gp: await trackOf(d), total: total.get(d) ?? 0, mine: mios.get(d) ?? null });
     return { dias };
-  }
-
-  // Ayuda de pruebas (una sola cuenta): la mano entera de hoy y la carrera.
-  if (action === "admin_mano") {
-    const u = need(user);
-    if (!u.email || (await huella(u.email.toLowerCase())) !== ADM_H) throw new Fail("No autorizado.", 403);
-    const dice = await diceSecret(day);
-    return { day, rolls: [0, 1, 2, 3, 4].map((i) => E.dailyRoll(DATA, dice, i)), raceSeed: await raceSecret(day) };
   }
 
   // La mano de un día que ya cerró, para jugarlo como amistoso (fuera del ranking). La de hoy nunca se entrega.

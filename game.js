@@ -71,7 +71,6 @@ function renderList(){
     $('list').innerHTML=`<div class="empty">✅ ${it[0]} (${y}) a tu auto. ${Object.keys(picks).length<5?'Tira otra vez.':'¡Auto completo!'}</div>`;
     $('tabs').innerHTML=''; renderSlots();
   });
-  admHint();
 }
 $('rollBtn').onclick=async()=>{
   if(MODE==='room'){roomRoll();return}
@@ -87,7 +86,6 @@ renderSlots();
 
 function go(screen,step){document.documentElement.classList.remove('ruta');if(screen!=='s-result'&&typeof rateHide==='function'&&document.getElementById('rate'))rateHide();document.documentElement.dataset.screen=screen;if(screen!=='s-home')document.documentElement.classList.add('ready');document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$(screen).classList.add('on');
   ['st1','st2','st3','st4'].forEach((s,i)=>$(s).classList.toggle('on',i+1===step));window.scrollTo(0,0);
-  if(!/^s-(build|quali|race)$/.test(screen)) admBox('');
   if(screen!=='s-build'&&typeof fichaSync==='function'){ try{ fichaSync() }catch(e){} }}   // las fichas laterales siempre muestran lo que realmente elegiste (nunca una vista previa que quedó pegada)
 
 // ---------- Carrera: el motor (supabase/functions/_shared/engine.js) la calcula y acá se anima ----------
@@ -383,7 +381,6 @@ function renderStrat(){
     :`<div>${{low:'🧠 Tu estratega prevé poco desgaste de gomas en este circuito.',normal:'🧠 Tu estratega prevé un desgaste normal de gomas en este circuito.',high:'🧠 Tu estratega prevé mucho desgaste de gomas en este circuito.'}[S.hint]}</div>`)
     +`<div>Recomienda: <b>${STRAT_INFO[rec.id][0]}</b></div>`;
   $('stratList').innerHTML=S.opts.map(o=>`<button type="button" class="scard${sel===o.id?' on':''}" data-id="${o.id}"><div class="top"><span class="nm">${STRAT_INFO[o.id][0]}</span>${o.id===S.rec?'<span class="rec">⭐ Recomendada</span>':''}</div>${stintBar(o.stints,RACE.laps)}<div class="seq">${o.stints.map(s=>`<span><i style="background:${TY[s.c].c}"></i>${TY[s.c].n}</span>`).join('<span>→</span>')}</div><div class="sd">${STRAT_INFO[o.id][1]}</div></button>`).join('');
-  admEstrategia();
   $('stratNote').textContent=BLIND?'El aviso del estratega puede fallar: con menos media se equivoca más.':'El aviso del estratega acierta más cuanto mayor es su media. Con menos media también se equivoca más en las vueltas de parada.';
 }
 function stratChoose(id){
@@ -508,7 +505,7 @@ function startRace(syncAt,interactive){
     $('scInfo').innerHTML=lastStop?`Ya hiciste tu parada en la vuelta ${lastStop}. Tus gomas tienen <b>${sc.lap-lastStop}</b> vueltas: otra parada es opcional.`
       :`Todavía no hiciste tu parada obligatoria. Tus gomas tienen <b>${sc.lap}</b> vueltas.`;
     window.__resolveSC=(dec)=>{ $('mSC').classList.remove('open'); api('decide',{choice:dec}).then(()=>toast('Decisión enviada: '+(dec==='pit'?'entras a boxes':'sigues en pista'))).catch(e=>toast(e.message)) };
-    openM('mSC'); admSC();
+    openM('mSC');
     setTimeout(apply,Math.max(0,dl-Date.now())+300+Math.random()*600);   // al cerrarse el plazo, con las decisiones de todos
   }
   function askSC(){
@@ -518,14 +515,14 @@ function startRace(syncAt,interactive){
     $('scTxt').textContent=`${sc.by} ${sc.why==='choque'?'chocó':'rompió el motor'} y salió el safety car. Con el pelotón lento, entrar a boxes cuesta mucho menos.`;
     $('scInfo').innerHTML=lastStop?`Ya hiciste tu parada en la vuelta ${lastStop}. Tus gomas tienen <b>${sc.lap-lastStop}</b> vueltas: otra parada es opcional.`
       :`Todavía no hiciste tu parada obligatoria. Tus gomas tienen <b>${sc.lap}</b> vueltas.`;
-    openM('mSC'); admSC();
+    openM('mSC');
   }
   // pronóstico de tormenta: entrar por gomas de lluvia o seguir con slicks (la lluvia puede no llegar)
   function askRain(){
     const st=RACE.storm;
     $('rainTxt').textContent=`Se anuncian lluvias o tormentas en las próximas vueltas: hay un ${st.p}% de probabilidad de que llegue de verdad.`;
     $('rainInfo').innerHTML=`Si entrás ahora cambiás a gomas de lluvia (cuenta como tu parada obligatoria). Si llueve, ganás muchísimo; si la lluvia no llega, perdés tiempo con gomas de lluvia en pista seca y tenés que volver a boxes. Si te quedás con slicks y llueve, perdés muchísimo hasta que cambies.`;
-    openM('mRAIN'); admLluvia();
+    openM('mRAIN');
   }
   window.__resolveRain=(dec)=>{
     $('mRAIN').classList.remove('open');
@@ -814,121 +811,6 @@ $('fCareer').onchange=()=>{ $('fCalRow').style.display=$('fCareer').checked?'fle
 const calTxt=cal=>cal?`Calendario a medida (${cal.length} fechas)`:'Temporada completa (23 fechas)';
 $('fCalBtn').onclick=()=>openCalBuilder(CUSTOM_CAL,cal=>{ CUSTOM_CAL=cal; $('fCalTxt').textContent=calTxt(cal) });
 $('carFriends').onclick=()=>{ $('fCareer').checked=true; $('fCalRow').style.display='flex'; $('fErr').textContent=''; openM('mFriends'); pubStart() };   // sala de carrera con amigos (o unirse con un código)
-
-// ---------- AYUDA DE PRUEBAS (una sola cuenta) ----------
-// Muestra en un recuadro la mejor opción: qué pieza elegir en cada tirada, qué estrategia de gomas, qué hacer con el safety car y con la lluvia.
-// Se calcula con el mismo motor del juego. En el desafío del día el servidor le pasa la mano entera y la carrera (solo a esta cuenta).
-const ADM_H="345878e635d6be2b421e7764c79dbe9730d089dfda1647ed99f048c75b14750c";   // huella (sha-256) del mail de la cuenta habilitada
-let ADM_E=null, ADM_P=Promise.resolve(false), ADM_OK=false;
-function admCheck(){ let e=""; try{ e=(USER&&USER.email||"").toLowerCase() }catch(_){}
-  if(e!==ADM_E){ ADM_E=e; ADM_OK=false; ADM_P=e&&crypto.subtle?crypto.subtle.digest("SHA-256",new TextEncoder().encode(e)).then(b=>ADM_OK=[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")===ADM_H).catch(()=>false):Promise.resolve(false) }
-  return ADM_P }
-const esAdmin=()=>{ admCheck(); return ADM_OK };
-let ADM_MANO=null, ADM_PEDIDA='', ADM_PLAN=null, ADM_N=0;
-const ADM_PROM={};
-function admProm(k){ if(ADM_PROM[k]==null){ let s=0,n=0; const ys=Object.keys(DATA); for(let i=0;i<300;i++){ const y=ys[Math.floor(Math.random()*ys.length)], sh=E.makeOffer(DATA,Math.random,y)[k].shown; if(sh.length){ s+=Math.max(...sh.map(x=>x[2])); n++ } } ADM_PROM[k]=n?Math.round(s/n):80 } return ADM_PROM[k] }
-function admMedia(k,n,y){ const x=((DATA[y]||{})[k]||[]).find(z=>z[0]===n); return x?x[2]:0 }
-// las casillas elegidas con su media real (en los modos a ciegas el juego guarda la media en 0)
-function admPicks(){ const o={}; for(const [k,p] of Object.entries(picks||{})) if(p) o[k]={n:p.n,y:p.y,r:p.r||admMedia(k,p.n,p.y)}; return o }
-function admBox(html){
-  let b=$('admBox'); if(!html&&!b) return;
-  if(!b){ b=document.createElement('div'); b.id='admBox'; b.setAttribute('translate','no');
-    b.style.cssText='position:fixed;left:12px;bottom:12px;z-index:9999;max-width:min(360px,calc(100vw - 24px));background:#0d0f13;border:2px solid #ffb31a;border-radius:10px;padding:10px 12px;font:13px/1.4 system-ui,sans-serif;color:#f3efe2;box-shadow:0 6px 24px #0008';
-    document.body.appendChild(b) }
-  b.style.display=html?'block':'none'; b.innerHTML=html?`<div style="font-weight:800;color:#ffb31a;margin-bottom:4px">🔧 Admin</div>${html}`:'';
-}
-const admPuesto=s=>s.dnf?40+(20-Math.min(20,s.laps||0)):s.pos+(s.time||0)/1e7;
-function admCorrer(pk,seed,dec){
-  const full={}; for(const [k] of SLOTS) full[k]=pk[k]||{n:'?',y:2000,r:admProm(k)};
-  const race=E.runRace({DATA,tracks:TRACKS,seed,humans:[E.humanFromPicks('me','#ff3b30',full)],laps:LAPS,decisions:dec||{},...raceOpts()});
-  return E.summary(race,'me');
-}
-const admTxt=s=>s.dnf?'abandona':'P'+s.pos;
-const admProm2=a=>a.reduce((x,y)=>x+y,0)/a.length;
-// La mano entera es conocida (desafío del día, o un día del archivo): se busca la mejor forma de repartir las tiradas que faltan.
-function admPlan(rolls,seed,desde){
-  const fijo=admPicks(), libres=SLOTS.map(([k])=>k).filter(k=>!fijo[k]), quedan=rolls.slice(desde);
-  const perms=a=>a.length<=1?[a]:a.flatMap((x,i)=>perms([...a.slice(0,i),...a.slice(i+1)]).map(p=>[x,...p]));
-  let mejor=null;
-  for(const orden of perms(libres)){
-    if(orden.some((k,i)=>!quedan[i]||!quedan[i].offer[k].shown.length)) continue;
-    const ops=orden.map((k,i)=>quedan[i].offer[k].shown.map((x,j)=>({j,n:x[0],y:quedan[i].year,r:admMedia(k,x[0],quedan[i].year)})).sort((a,b)=>b.r-a.r).slice(0,2));
-    const idx=orden.map(()=>0);
-    for(;;){
-      const pk={...fijo}; orden.forEach((k,i)=>pk[k]=ops[i][idx[i]]);
-      const s=admCorrer(pk,seed), v=admPuesto(s);
-      if(!mejor||v<mejor.v) mejor={v,s,orden:[...orden],elec:orden.map((k,i)=>ops[i][idx[i]])};
-      let q=orden.length-1; while(q>=0&&++idx[q]>=ops[q].length) idx[q--]=0; if(q<0) break;
-    }
-  }
-  return mejor;
-}
-async function admHint(){
-  if(!(await admCheck())||!year||!offer){ return }
-  const hechas=Object.keys(picks||{}).filter(k=>picks[k]).length, clave=[MODE,year,hechas,rerolls,SLOTS.map(([k])=>(offer[k]&&offer[k].shown||[]).map(x=>x[0]).join()).join("|")].join("/");
-  if(clave===admHint.clave){ admMarcar(); return } admHint.clave=clave;
-  const n=++ADM_N;
-  // ¿se conoce la mano entera?
-  let rolls=null, seed=null;
-  if(MODE==='daily'){
-    const dia=E.dayKey(Date.now()+DOFF);
-    if(!ADM_MANO||ADM_MANO.day!==dia){ if(ADM_PEDIDA!==dia){ ADM_PEDIDA=dia; admBox('Calculando la mejor jugada…'); try{ ADM_MANO=await dApi('admin_mano') }catch(e){ admBox('No pude pedir la mano: '+esc(e.message)); return } } else return }
-    rolls=ADM_MANO.rolls; seed=ADM_MANO.raceSeed;
-  } else if(MODE==='friendly'&&FRIENDLY&&FRIENDLY.rolls){ rolls=FRIENDLY.rolls; seed=FRIENDLY.seed }
-  if(n!==ADM_N) return;
-  if(rolls){
-    admBox('Calculando la mejor jugada…'); await new Promise(r=>setTimeout(r,30));
-    const m=admPlan(rolls,seed,hechas); if(n!==ADM_N) return;
-    if(!m){ admBox('No encontré una jugada posible.'); return }
-    const k=m.orden[0], e=m.elec[0], L=Object.fromEntries(SLOTS);
-    ADM_PLAN={k,j:e.j};
-    admBox(`Esta tirada: <b>${L[k]} · ${esc(e.n)}</b> (${e.r})<br>Con la mejor jugada terminás <b>${admTxt(m.s)}</b>.`+
-      `<div style="color:#9fb3a8;margin-top:4px">${m.orden.map((kk,i)=>`Tirada ${hechas+i+1}: ${L[kk]} · ${esc(m.elec[i].n)} (${m.elec[i].r})`).join('<br>')}</div>`);
-    admMarcar(); return;
-  }
-  // Mano desconocida: cada opción de esta tirada se prueba en varias carreras. Lo que falta del auto se completa con lo que
-  // normalmente sale eligiendo la mejor pieza de una tirada. También se prueba re-sortear: varias tiradas posibles, eligiendo lo mejor de cada una.
-  admBox('Calculando…'); await new Promise(r=>setTimeout(r,30)); if(n!==ADM_N) return;
-  const fijo=admPicks(), semillas=Array.from({length:12},(_,i)=>'adm'+i+'-'+hechas), L=Object.fromEntries(SLOTS);
-  const evaluar=(of,y,todas)=>{ const ops=[];
-    for(const [k] of SLOTS){ if(fijo[k]||!of[k]||!of[k].shown.length) continue;
-      const lista=of[k].shown.map((x,j)=>({j,p:{n:x[0],y,r:BLIND?admMedia(k,x[0],y):x[2]}})).sort((a,b)=>b.p.r-a.p.r).slice(0,todas?99:1);
-      for(const {j,p} of lista){ const res=semillas.map(s=>admCorrer({...fijo,[k]:p},s)); ops.push({k,j,p,v:admProm2(res.map(admPuesto)),pos:admProm2(res.map(s=>s.dnf?20:s.pos))}) } }
-    return ops.sort((a,b)=>a.v-b.v) };
-  const ops=evaluar(offer,year,true); if(n!==ADM_N) return;
-  if(!ops.length){ admBox(''); return }
-  let rer=null;
-  if(!BLIND&&rerolls>0){
-    const vs=[], ps=[];
-    for(let i=0;i<10;i++){ const ys=E.yearsFor(DATA,freeSlots()), y=ys[Math.floor(Math.random()*ys.length)], o=evaluar(E.makeOffer(DATA,Math.random,y),y,false)[0]; if(o){ vs.push(o.v); ps.push(o.pos) } }
-    if(vs.length) rer={v:admProm2(vs),pos:admProm2(ps)};
-  }
-  if(n!==ADM_N) return;
-  const conviene=rer&&rer.v<ops[0].v-0.5;
-  ADM_PLAN=conviene?{reroll:true}:{k:ops[0].k,j:ops[0].j};
-  admBox((conviene?`Mejor: <b>RE-SORTEAR</b> → puesto medio ${rer.pos.toFixed(1)}<br>Lo mejor de esta tirada: ${L[ops[0].k]} · ${esc(ops[0].p.n)} (${ops[0].p.r}) → ${ops[0].pos.toFixed(1)}`
-      :`Mejor en esta tirada: <b>${L[ops[0].k]} · ${esc(ops[0].p.n)}</b> (${ops[0].p.r})`)+
-    `<div style="color:#9fb3a8;margin-top:4px">${ops.slice(0,4).map(o=>`${L[o.k]} · ${esc(o.p.n)} (${o.p.r}) → puesto medio ${o.pos.toFixed(1)}`).join('<br>')}${rer&&!conviene?`<br>Re-sortear → puesto medio ${rer.pos.toFixed(1)}`:''}</div>`+
-    `<div style="color:#7fa08f;font-size:11px;margin-top:4px">Las próximas tiradas no se conocen: se prueba en 12 carreras.</div>`);
-  admMarcar();
-}
-// resalta la pieza recomendada en la lista (o el botón de re-sortear)
-function admMarcar(){
-  if(!esAdmin()||!ADM_PLAN) return;
-  $('rollBtn').style.outline=ADM_PLAN.reroll?'3px solid #ffb31a':'';
-  document.querySelectorAll('.tab').forEach(t=>t.style.boxShadow=!ADM_PLAN.reroll&&t.dataset.k===ADM_PLAN.k?'inset 0 -3px 0 #ffb31a':'');
-  document.querySelectorAll('.pick').forEach(el=>el.style.outline=!ADM_PLAN.reroll&&cat===ADM_PLAN.k&&+el.dataset.i===ADM_PLAN.j?'2px solid #ffb31a':'');
-}
-// estrategia de gomas, safety car y lluvia: se prueba cada opción con la carrera real
-function admDecision(titulo,opciones){
-  if(!esAdmin()||!RACE) return;
-  const res=opciones.map(([txt,dec])=>{ const r=newRace({...DECISIONS,...dec}); return {txt,s:E.summary(r,MEKEY.slice(2))} });
-  res.sort((a,b)=>admPuesto(a.s)-admPuesto(b.s));
-  admBox(`${titulo}: <b>${esc(res[0].txt)}</b> → ${admTxt(res[0].s)}<div style="color:#9fb3a8;margin-top:4px">${res.slice(1).map(r=>`${esc(r.txt)} → ${admTxt(r.s)}`).join('<br>')}</div>`);
-}
-function admEstrategia(){ if(!esAdmin()||!STRAT) return; admDecision('Mejor estrategia',STRAT.opts.map(o=>[STRAT_INFO[o.id][0],{['s:'+myId()]:o.id}])) }
-function admSC(){ admDecision('Safety car',[['Entrar a boxes',{[myId()]:'pit'}],['Seguir en pista',{[myId()]:'stay'}]]) }
-function admLluvia(){ admDecision('Lluvia',[['Entrar por gomas de lluvia',{['r:'+myId()]:'pit'}],['Seguir con slicks',{['r:'+myId()]:'stay'}]]) }
 
 // ---------- IDIOMA ----------
 // El juego está escrito en español (idioma por defecto). Cada idioma es un diccionario en lang/xx.js:
