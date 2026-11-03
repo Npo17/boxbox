@@ -60,7 +60,7 @@ function renderList(){
   fichaSync();   // al aparecer una lista nueva se borra cualquier vista previa que haya quedado
   const {shown,total}=offer[cat];
   $('list').innerHTML=`<div class="note" style="margin:0 0 4px">${shown.length} de ${total} disponibles en esta tirada</div>`+
-    shown.map((it,i)=>`<div class="pick" data-i="${i}"><div class="who"><b>${it[0]}</b><small>${it[1]||year}</small></div><div class="rt ${BLIND?'r0':rc(it[2])}">${BLIND?'?':it[2]}</div></div>`).join('');
+    shown.map((it,i)=>`<div class="pick" data-i="${i}"><div class="who"><b>${it[0]}</b><small>${BLIND?year:(it[1]||year)}</small></div><div class="rt ${BLIND?'r0':rc(it[2])}">${BLIND?'?':it[2]}</div></div>`).join('');
   if((cat==='piloto'||cat==='coche'||cat==='jefe')&&!BLIND) document.querySelectorAll('.pick').forEach(el=>{ el.onmouseenter=()=>(cat==='piloto'?fichaPreview:cat==='coche'?fichaPreviewCar:fichaPreviewJefe)(shown[+el.dataset.i][0],year); el.onmouseleave=fichaSync });   // vista previa de la ficha (no en los modos a ciegas)
   document.querySelectorAll('.pick').forEach(el=>el.onclick=()=>{
     if(MODE==='room'){roomPick(cat,+el.dataset.i,shown[+el.dataset.i]);return}
