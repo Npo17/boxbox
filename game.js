@@ -815,14 +815,18 @@ const calTxt=cal=>cal?`Calendario a medida (${cal.length} fechas)`:'Temporada co
 $('fCalBtn').onclick=()=>openCalBuilder(CUSTOM_CAL,cal=>{ CUSTOM_CAL=cal; $('fCalTxt').textContent=calTxt(cal) });
 $('carFriends').onclick=()=>{ $('fCareer').checked=true; $('fCalRow').style.display='flex'; $('fErr').textContent=''; openM('mFriends'); pubStart() };   // sala de carrera con amigos (o unirse con un código)
 
-// ---------- MODO ADMIN (solo la cuenta del dueño, para probar) ----------
+// ---------- AYUDA DE PRUEBAS (una sola cuenta) ----------
 // Muestra en un recuadro la mejor opción: qué pieza elegir en cada tirada, qué estrategia de gomas, qué hacer con el safety car y con la lluvia.
 // Se calcula con el mismo motor del juego. En el desafío del día el servidor le pasa la mano entera y la carrera (solo a esta cuenta).
-const ADMIN_EMAIL='nicolaspozzi00@gmail.com';
-const esAdmin=()=>{ try{ return !!USER&&USER.email===ADMIN_EMAIL }catch(e){ return false } };
+const ADM_H="345878e635d6be2b421e7764c79dbe9730d089dfda1647ed99f048c75b14750c";   // huella (sha-256) del mail de la cuenta habilitada
+let ADM_E=null, ADM_P=Promise.resolve(false), ADM_OK=false;
+function admCheck(){ let e=""; try{ e=(USER&&USER.email||"").toLowerCase() }catch(_){}
+  if(e!==ADM_E){ ADM_E=e; ADM_OK=false; ADM_P=e&&crypto.subtle?crypto.subtle.digest("SHA-256",new TextEncoder().encode(e)).then(b=>ADM_OK=[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")===ADM_H).catch(()=>false):Promise.resolve(false) }
+  return ADM_P }
+const esAdmin=()=>{ admCheck(); return ADM_OK };
 let ADM_MANO=null, ADM_PEDIDA='', ADM_PLAN=null, ADM_N=0;
 const ADM_PROM={};
-function admProm(k){ if(ADM_PROM[k]==null){ let s=0,n=0; for(const y in DATA) for(const x of DATA[y][k]||[]){ s+=x[2]; n++ } ADM_PROM[k]=n?s/n:75 } return ADM_PROM[k] }
+function admProm(k){ if(ADM_PROM[k]==null){ let s=0,n=0; const ys=Object.keys(DATA); for(let i=0;i<300;i++){ const y=ys[Math.floor(Math.random()*ys.length)], sh=E.makeOffer(DATA,Math.random,y)[k].shown; if(sh.length){ s+=Math.max(...sh.map(x=>x[2])); n++ } } ADM_PROM[k]=n?Math.round(s/n):80 } return ADM_PROM[k] }
 function admMedia(k,n,y){ const x=((DATA[y]||{})[k]||[]).find(z=>z[0]===n); return x?x[2]:0 }
 // las casillas elegidas con su media real (en los modos a ciegas el juego guarda la media en 0)
 function admPicks(){ const o={}; for(const [k,p] of Object.entries(picks||{})) if(p) o[k]={n:p.n,y:p.y,r:p.r||admMedia(k,p.n,p.y)}; return o }
@@ -860,7 +864,7 @@ function admPlan(rolls,seed,desde){
   return mejor;
 }
 async function admHint(){
-  if(!esAdmin()||!year||!offer){ return }
+  if(!(await admCheck())||!year||!offer){ return }
   const hechas=Object.keys(picks||{}).filter(k=>picks[k]).length, clave=[MODE,year,hechas,rerolls,SLOTS.map(([k])=>(offer[k]&&offer[k].shown||[]).map(x=>x[0]).join()).join("|")].join("/");
   if(clave===admHint.clave){ admMarcar(); return } admHint.clave=clave;
   const n=++ADM_N;
@@ -882,25 +886,38 @@ async function admHint(){
       `<div style="color:#9fb3a8;margin-top:4px">${m.orden.map((kk,i)=>`Tirada ${hechas+i+1}: ${L[kk]} · ${esc(m.elec[i].n)} (${m.elec[i].r})`).join('<br>')}</div>`);
     admMarcar(); return;
   }
-  // Mano desconocida: cada opción de esta tirada se prueba en varias carreras, con lo que falta del auto en una media normal.
+  // Mano desconocida: cada opción de esta tirada se prueba en varias carreras. Lo que falta del auto se completa con lo que
+  // normalmente sale eligiendo la mejor pieza de una tirada. También se prueba re-sortear: varias tiradas posibles, eligiendo lo mejor de cada una.
   admBox('Calculando…'); await new Promise(r=>setTimeout(r,30)); if(n!==ADM_N) return;
-  const fijo=admPicks(), semillas=Array.from({length:12},(_,i)=>'adm'+i+'-'+hechas), L=Object.fromEntries(SLOTS), ops=[];
-  for(const [k] of SLOTS){ if(fijo[k]||!offer[k]) continue;
-    offer[k].shown.forEach((x,j)=>{ const p={n:x[0],y:year,r:BLIND?admMedia(k,x[0],year):x[2]}, pk={...fijo,[k]:p};
-      const res=semillas.map(s=>admCorrer(pk,s)); ops.push({k,j,p,v:admProm2(res.map(admPuesto)),pos:admProm2(res.map(s=>s.dnf?20:s.pos))}) }) }
+  const fijo=admPicks(), semillas=Array.from({length:12},(_,i)=>'adm'+i+'-'+hechas), L=Object.fromEntries(SLOTS);
+  const evaluar=(of,y,todas)=>{ const ops=[];
+    for(const [k] of SLOTS){ if(fijo[k]||!of[k]||!of[k].shown.length) continue;
+      const lista=of[k].shown.map((x,j)=>({j,p:{n:x[0],y,r:BLIND?admMedia(k,x[0],y):x[2]}})).sort((a,b)=>b.p.r-a.p.r).slice(0,todas?99:1);
+      for(const {j,p} of lista){ const res=semillas.map(s=>admCorrer({...fijo,[k]:p},s)); ops.push({k,j,p,v:admProm2(res.map(admPuesto)),pos:admProm2(res.map(s=>s.dnf?20:s.pos))}) } }
+    return ops.sort((a,b)=>a.v-b.v) };
+  const ops=evaluar(offer,year,true); if(n!==ADM_N) return;
+  if(!ops.length){ admBox(''); return }
+  let rer=null;
+  if(!BLIND&&rerolls>0){
+    const vs=[], ps=[];
+    for(let i=0;i<10;i++){ const ys=E.yearsFor(DATA,freeSlots()), y=ys[Math.floor(Math.random()*ys.length)], o=evaluar(E.makeOffer(DATA,Math.random,y),y,false)[0]; if(o){ vs.push(o.v); ps.push(o.pos) } }
+    if(vs.length) rer={v:admProm2(vs),pos:admProm2(ps)};
+  }
   if(n!==ADM_N) return;
-  ops.sort((a,b)=>a.v-b.v); if(!ops.length){ admBox(''); return }
-  ADM_PLAN={k:ops[0].k,j:ops[0].j};
-  admBox(`Mejor en esta tirada: <b>${L[ops[0].k]} · ${esc(ops[0].p.n)}</b> (${ops[0].p.r})`+
-    `<div style="color:#9fb3a8;margin-top:4px">${ops.slice(0,4).map(o=>`${L[o.k]} · ${esc(o.p.n)} (${o.p.r}) → puesto medio ${o.pos.toFixed(1)}`).join('<br>')}</div>`+
+  const conviene=rer&&rer.v<ops[0].v-0.5;
+  ADM_PLAN=conviene?{reroll:true}:{k:ops[0].k,j:ops[0].j};
+  admBox((conviene?`Mejor: <b>RE-SORTEAR</b> → puesto medio ${rer.pos.toFixed(1)}<br>Lo mejor de esta tirada: ${L[ops[0].k]} · ${esc(ops[0].p.n)} (${ops[0].p.r}) → ${ops[0].pos.toFixed(1)}`
+      :`Mejor en esta tirada: <b>${L[ops[0].k]} · ${esc(ops[0].p.n)}</b> (${ops[0].p.r})`)+
+    `<div style="color:#9fb3a8;margin-top:4px">${ops.slice(0,4).map(o=>`${L[o.k]} · ${esc(o.p.n)} (${o.p.r}) → puesto medio ${o.pos.toFixed(1)}`).join('<br>')}${rer&&!conviene?`<br>Re-sortear → puesto medio ${rer.pos.toFixed(1)}`:''}</div>`+
     `<div style="color:#7fa08f;font-size:11px;margin-top:4px">Las próximas tiradas no se conocen: se prueba en 12 carreras.</div>`);
   admMarcar();
 }
-// resalta la pieza recomendada en la lista
+// resalta la pieza recomendada en la lista (o el botón de re-sortear)
 function admMarcar(){
   if(!esAdmin()||!ADM_PLAN) return;
-  document.querySelectorAll('.tab').forEach(t=>t.style.boxShadow=t.dataset.k===ADM_PLAN.k?'inset 0 -3px 0 #ffb31a':'');
-  if(cat===ADM_PLAN.k) document.querySelectorAll('.pick').forEach(el=>el.style.outline=+el.dataset.i===ADM_PLAN.j?'2px solid #ffb31a':'');
+  $('rollBtn').style.outline=ADM_PLAN.reroll?'3px solid #ffb31a':'';
+  document.querySelectorAll('.tab').forEach(t=>t.style.boxShadow=!ADM_PLAN.reroll&&t.dataset.k===ADM_PLAN.k?'inset 0 -3px 0 #ffb31a':'');
+  document.querySelectorAll('.pick').forEach(el=>el.style.outline=!ADM_PLAN.reroll&&cat===ADM_PLAN.k&&+el.dataset.i===ADM_PLAN.j?'2px solid #ffb31a':'');
 }
 // estrategia de gomas, safety car y lluvia: se prueba cada opción con la carrera real
 function admDecision(titulo,opciones){
