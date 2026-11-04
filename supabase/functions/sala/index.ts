@@ -242,6 +242,7 @@ async function stateFor(room: Record<string, any>, me: Record<string, any> | nul
   // Estrategias de gomas: se eligen hasta 4 s antes de largar y se muestran 3 s antes, para que todos corran la misma carrera.
   const showEst = racing && !!room.race_start && Date.now() >= Date.parse(room.race_start) - EST_REVEAL_MS;
   const estOf = (p: Record<string, any>) => (p.rolls ?? []).find((r: any) => r.k === "est")?.v;
+  const revOf = (p: Record<string, any>) => (p.rolls ?? []).some((r: any) => r.k === "rev");
   const velLog = velLogOf(players.find((p: any) => p.pid === room.host)?.rolls);
   const current = me ? (me.rolls as Roll[]).find((r) => !r.used) ?? null : null;
   return {
@@ -272,6 +273,7 @@ async function stateFor(room: Record<string, any>, me: Record<string, any> | nul
       picks: racing ? p.picks : undefined,          // ocultas hasta la largada
       sc: showSc ? scOf(p) : undefined,
       est: showEst ? estOf(p) : undefined,
+      rev: racing && room.modo !== "carrera" ? revOf(p) : undefined,   // ya aceptó la revancha
     })),
     me: me ? { pid: me.pid, picks: me.picks, rerolls: me.rerolls, current } : null,
   };
@@ -505,6 +507,34 @@ async function handle(body: Record<string, any>) {
       ok = await db.from("salas").update({ ...common, status: "lobby", dice_seed, dice_hash: await sha256Hex(dice_seed), deadline: null, race_start: null })
         .eq("code", code).eq("ronda", room.ronda).select("code").maybeSingle();
       if (ok.data) await db.from("jugadores").update({ picks: {}, rolls: [], rerolls: 0, done: false }).eq("sala", code);
+    }
+    return await stateFor(await getRoom(code), await auth(code, body.pid, body.secret));
+  }
+
+  if (action === "revancha") {
+    // Partida rápida: al terminar, cada jugador acepta la revancha. Cuando aceptan todos (o el anfitrión arranca con los que
+    // aceptaron, si son 2 o más), la misma sala vuelve al armado con dados y carrera nuevos. Los que no aceptaron salen de la sala.
+    if (room.modo === "carrera") throw new Fail("En el modo carrera se pasa a la siguiente fecha.", 409);
+    if (room.status !== "racing" || !room.race_start || Date.now() < Date.parse(room.race_start)) throw new Fail("La carrera todavía no terminó.", 409);
+    const players = await getPlayers(code, true) as any[];
+    const yo = players.find((p) => p.pid === me.pid);
+    const acepto = (p: any) => (p.rolls ?? []).some((r: any) => r.k === "rev");
+    if (yo && !acepto(yo)) {
+      yo.rolls = [...(yo.rolls ?? []), { k: "rev", v: 1 }];
+      await db.from("jugadores").update({ rolls: yo.rolls }).eq("sala", code).eq("pid", me.pid);
+    }
+    const si = players.filter(acepto), fuera = players.filter((p) => !acepto(p));
+    const forzar = body.forzar === true && room.host === me.pid && si.length >= 2;
+    const sigue = async () => { const r = await getRoom(code); return r.status === "racing" && r.race_seed === room.race_seed; };   // otro pedido ya la arrancó
+    if ((!fuera.length || forzar) && await sigue()) {
+      // primero se vacían los autos (si la sala pasara antes a "building" con los autos completos, se cerraría sola)
+      if (fuera.length) await db.from("jugadores").delete().eq("sala", code).in("pid", fuera.map((p) => p.pid));
+      await db.from("jugadores").update({ picks: {}, rolls: [], rerolls: 0, done: false }).eq("sala", code);
+      const dice_seed = String(randU32()), race_seed = String(randU32());
+      await db.from("salas").update({
+        status: "building", deadline: new Date(Date.now() + BUILD_MS).toISOString(), race_start: null,
+        dice_seed, dice_hash: await sha256Hex(dice_seed), race_seed, race_hash: await sha256Hex(race_seed),
+      }).eq("code", code).eq("status", "racing").eq("race_seed", room.race_seed);
     }
     return await stateFor(await getRoom(code), await auth(code, body.pid, body.secret));
   }

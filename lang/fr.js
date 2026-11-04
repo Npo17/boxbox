@@ -430,7 +430,18 @@ export default {
     "El resultado oficial lo calcula el servidor, no tu navegador.": "Le résultat officiel est calculé par le serveur, pas par ton navigateur.",
     "Una sola partida por cuenta y por día.": "Une seule partie par compte et par jour.",
     "¿Viste algo raro? Cuéntanos desde": "Tu as vu quelque chose de bizarre ? Dis-le-nous via",
-    "Sugerencias": "Suggestions"
+    "Sugerencias": "Suggestions",
+    "¿Otra carrera con los mismos amigos?": "Une autre course avec les mêmes amis ?",
+    "Esperando a": "En attente de",
+    "¡Arranca la revancha!": "La revanche commence !",
+    "pide revancha": "demande une revanche",
+    "piden revancha": "demandent une revanche",
+    "✅ Aceptar revancha": "✅ Accepter la revanche",
+    "🔁 Revancha": "🔁 Revanche",
+    "Arrancar con los que aceptaron": "Lancer avec ceux qui ont accepté",
+    "La revancha arrancó con los que aceptaron.": "La revanche a commencé avec ceux qui ont accepté.",
+    "La carrera todavía no terminó.": "La course n’est pas encore finie.",
+    "En el modo carrera se pasa a la siguiente fecha.": "En mode carrière, on passe à la manche suivante."
   },
   p: {
     "👥 Amigos ({0})": "👥 Amis ({0})",

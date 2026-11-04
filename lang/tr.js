@@ -430,7 +430,18 @@ export default {
     "El resultado oficial lo calcula el servidor, no tu navegador.": "Resmi sonucu tarayıcın değil, sunucu hesaplar.",
     "Una sola partida por cuenta y por día.": "Hesap başına günde tek oyun.",
     "¿Viste algo raro? Cuéntanos desde": "Garip bir şey mi gördün? Bize şuradan anlat:",
-    "Sugerencias": "Öneriler"
+    "Sugerencias": "Öneriler",
+    "¿Otra carrera con los mismos amigos?": "Aynı arkadaşlarla bir yarış daha?",
+    "Esperando a": "Bekleniyor:",
+    "¡Arranca la revancha!": "Rövanş başlıyor!",
+    "pide revancha": "rövanş istiyor",
+    "piden revancha": "rövanş istiyor",
+    "✅ Aceptar revancha": "✅ Rövanşı kabul et",
+    "🔁 Revancha": "🔁 Rövanş",
+    "Arrancar con los que aceptaron": "Kabul edenlerle başla",
+    "La revancha arrancó con los que aceptaron.": "Rövanş kabul edenlerle başladı.",
+    "La carrera todavía no terminó.": "Yarış henüz bitmedi.",
+    "En el modo carrera se pasa a la siguiente fecha.": "Kariyer modunda bir sonraki yarışa geçilir."
   },
   p: {
     "👥 Amigos ({0})": "👥 Arkadaşlar ({0})",

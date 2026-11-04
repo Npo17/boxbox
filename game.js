@@ -665,6 +665,7 @@ $('toResult').onclick=()=>{
     $('roomRes').innerHTML=`<h3 style="margin:0 0 8px;font-size:13px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase">Resultado de la sala ${esc(ROOM.code)}</h3>`+
       rows.map(({c,i})=>`<div class="trow ${c.me?'me':''}" style="margin-bottom:4px"><span class="p">${c.dnf?'—':i+1}</span><span class="c" style="background:${c.color}"></span><span>${c.name}</span><span class="g">${c.dnf?'DNF':(ptsTable()[i]?'+'+ptsTable()[i]+' pts':'')}</span></div>`).join('');
     $('roomRes').style.display='block'; $('again').querySelector('span').textContent='Volver al inicio';
+    if(!(RS&&RS.room.modo==='carrera')){ $('roomRes').insertAdjacentHTML('beforeend','<div id="revBox" style="margin-top:12px"></div>'); revInit() }
   }
   $('roomRes').style.display=MODE==='room'?'block':'none'; $('dailyRes').style.display='none';
   $('again').querySelector('span').textContent=career?'Volver al calendario':special?'Volver al desafío':MODE==='room'?(RS&&RS.room.modo==='carrera'?'Volver a la sala':'Volver al inicio'):'Otra tirada';
@@ -1164,7 +1165,7 @@ async function api(action,extra={}){
   catch(e){ throw new Error('Sin conexión con el servidor. Revisa tu internet.'); }
   if(!r.ok) throw Object.assign(new Error(j.error||'Error del servidor'),{status:r.status});
   if(j.now) OFF=j.now-Date.now();
-  if(ROOM&&(/^(start|leave|next)$/.test(action)||(action==='pick'&&j.done))) rtPing();   // avisar a la sala solo cuando algo cambia para todos (no por cada tirada o elección)
+  if(ROOM&&(/^(start|leave|next|revancha)$/.test(action)||(action==='pick'&&j.done))) rtPing();   // avisar a la sala solo cuando algo cambia para todos (no por cada tirada o elección)
   return j;
 }
 const srvToLocal=t=>Date.parse(t)-OFF;
@@ -1214,6 +1215,7 @@ function enterRoom(state){
 }
 let PICKING=false, MUT=0;        // PICKING: hay una elección en camino; MUT cambia con cada elección (para descartar respuestas viejas)
 async function poll(){
+  if(raceShown&&REV_FIN&&Date.now()<REV_FIN) return revPoll();   // pantalla de resultado con la revancha abierta
   try{ const m0=MUT, s=await api('state'); if(PICKING||MUT!==m0) return; onState(s) }      // una consulta que salió antes de tu elección no puede borrarla
   catch(e){ if(e.status===403||e.status===404||e.status===410){forgetRoom();toast(e.message);location.href=location.pathname} }
 }
@@ -1456,6 +1458,33 @@ function startRoomRace(s){
       if(left<=3&&!estLoad) setTimeout(loadEst,300);                                                  // ya se pueden ver las estrategias de todos
       if(left<=0){clearInterval(t);toRace()} else $('qWait').textContent=`La carrera larga en ${left}s…`; },250);
   });
+}
+
+// --- revancha (partida rápida en sala): al terminar, cada uno la acepta; cuando aceptan todos, la misma sala vuelve a armar ---
+let revT=0, REV_YO=false, REV_FIN=0;
+function revInit(){
+  if(!ROOM) return; REV_YO=false; REV_FIN=Date.now()+15*60*1000;
+  rtOpen(); revPaint(RS); revPoll();
+  clearInterval(revT); revT=setInterval(()=>{ if(!document.hidden) revPoll() },3000);
+}
+async function revPoll(){
+  if(!ROOM||Date.now()>REV_FIN){ clearInterval(revT); return }
+  try{ const s=await api('state'); RS=s;
+    if(s.room.status==='building'){ clearInterval(revT); rememberRoom(); location.href=location.pathname+'?sala='+encodeURIComponent(ROOM.code); return }   // arrancó la revancha
+    revPaint(s);
+  }catch(e){ if(e.status===403||e.status===404||e.status===410){ clearInterval(revT); const b=$('revBox'); if(b) b.innerHTML='<div class="note" style="margin:0">La revancha arrancó con los que aceptaron.</div>' } }
+}
+function revPaint(s){
+  const b=$('revBox'); if(!b||!s||!s.players) return;
+  const si=s.players.filter(p=>p.rev), no=s.players.filter(p=>!p.rev), yo=REV_YO||si.some(p=>p.pid===ROOM.pid), host=s.room.host===ROOM.pid;
+  const nombres=a=>a.map(p=>`<b style="color:${esc(p.color)}">${esc(p.name)}</b>`).join(', ');
+  const txt=!si.length?'¿Otra carrera con los mismos amigos?':yo?(no.length?`Esperando a ${nombres(no)}…`:'¡Arranca la revancha!'):`${nombres(si)} ${si.length===1?'pide':'piden'} revancha`;
+  b.innerHTML=`<div class="note" style="margin:0 0 8px">${txt}</div>`+
+    (yo?'':`<button class="btn" id="revBtn"><span>${si.length?'✅ Aceptar revancha':'🔁 Revancha'}</span></button>`)+
+    (yo&&host&&si.length>=2&&no.length?` <button class="btn ghost" id="revGo"><span>Arrancar con los que aceptaron</span></button>`:'');
+  const go=async forzar=>{ try{ REV_YO=true; ev('revancha',{forzar:!!forzar}); const r=await api('revancha',forzar?{forzar:true}:{}); RS=r; if(r.room.status==='building'){ clearInterval(revT); rememberRoom(); location.href=location.pathname+'?sala='+encodeURIComponent(ROOM.code); return } revPaint(r) }catch(e){ REV_YO=false; toast(e.message) } };
+  if($('revBtn')) $('revBtn').onclick=()=>{ $('revBtn').disabled=true; go(false) };
+  if($('revGo')) $('revGo').onclick=()=>{ $('revGo').disabled=true; go(true) };
 }
 
 // --- volver a la sala al recargar, o entrar por link ---

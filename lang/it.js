@@ -430,7 +430,18 @@ export default {
     "El resultado oficial lo calcula el servidor, no tu navegador.": "Il risultato ufficiale lo calcola il server, non il tuo browser.",
     "Una sola partida por cuenta y por día.": "Una sola partita per account al giorno.",
     "¿Viste algo raro? Cuéntanos desde": "Hai visto qualcosa di strano? Raccontacelo da",
-    "Sugerencias": "Suggerimenti"
+    "Sugerencias": "Suggerimenti",
+    "¿Otra carrera con los mismos amigos?": "Un’altra gara con gli stessi amici?",
+    "Esperando a": "In attesa di",
+    "¡Arranca la revancha!": "Parte la rivincita!",
+    "pide revancha": "chiede la rivincita",
+    "piden revancha": "chiedono la rivincita",
+    "✅ Aceptar revancha": "✅ Accetta la rivincita",
+    "🔁 Revancha": "🔁 Rivincita",
+    "Arrancar con los que aceptaron": "Parti con chi ha accettato",
+    "La revancha arrancó con los que aceptaron.": "La rivincita è partita con chi ha accettato.",
+    "La carrera todavía no terminó.": "La gara non è ancora finita.",
+    "En el modo carrera se pasa a la siguiente fecha.": "In modalità carriera si passa alla tappa successiva."
   },
   p: {
     "👥 Amigos ({0})": "👥 Amici ({0})",

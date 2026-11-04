@@ -432,7 +432,18 @@ export default {
     "El resultado oficial lo calcula el servidor, no tu navegador.": "The official result is calculated by the server, not your browser.",
     "Una sola partida por cuenta y por día.": "One game per account per day.",
     "¿Viste algo raro? Cuéntanos desde": "Noticed something odd? Tell us via",
-    "Sugerencias": "Suggestions"
+    "Sugerencias": "Suggestions",
+    "¿Otra carrera con los mismos amigos?": "Another race with the same friends?",
+    "Esperando a": "Waiting for",
+    "¡Arranca la revancha!": "The rematch is on!",
+    "pide revancha": "wants a rematch",
+    "piden revancha": "want a rematch",
+    "✅ Aceptar revancha": "✅ Accept rematch",
+    "🔁 Revancha": "🔁 Rematch",
+    "Arrancar con los que aceptaron": "Start with those who accepted",
+    "La revancha arrancó con los que aceptaron.": "The rematch started with those who accepted.",
+    "La carrera todavía no terminó.": "The race hasn’t finished yet.",
+    "En el modo carrera se pasa a la siguiente fecha.": "In career mode you move on to the next round."
   },
   p: {
     "👥 Amigos ({0})": "👥 Friends ({0})",
