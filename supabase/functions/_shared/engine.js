@@ -279,21 +279,24 @@ export function runRace({ DATA, tracks, seed, humans, laps = LAPS, decisions = {
         else if (!c.stopped) { if (r[6] < clamp((c.s - 65) / 30, 0.15, 0.95)) why = "sc"; }
         else if (age >= 8 * K && laps - lap >= 6 * K && r[6] < 0.25 * clamp((c.s - 60) / 35, 0, 1)) why = "sc";
       }
-      if (!why && !c.stopped && lap === c.pits[c.stopIdx]) why = scNow ? "sc" : "plan";
+      if (!why && !c.stopped && lap === c.pits[c.stopIdx] && !(storm && c.tyre === "wet")) why = scNow ? "sc" : "plan";
       if (!why && c.extra && lap === c.extra && c.stopped && !scNow) why = "extra";
       if (why) {
         tp = (scNow ? PIT_LOSS_SC : PIT_LOSS) + c.stat; c.stops++;
         const late = why === "plan" && !c.strat && Math.abs(c.pit - OPT) >= 3 * K ? (c.pit > OPT ? " (tarde: las gomas ya estaban muertas)" : " (demasiado pronto)") : "";
         const nxt = c.comps[Math.min(c.stops, c.comps.length - 1)];
-        const txt = why === "wet" ? `Box, box: gomas de lluvia por el pronóstico. Parada de ${c.stat}s`
+        // Tormenta: si llueve (o ya tiene gomas de lluvia y la lluvia no se fue), cualquier otra parada pone gomas de lluvia, no slicks
+        const toWet = !!storm && !rain && (why === "sc" || why === "plan" || why === "extra") && (wetNow || c.tyre === "wet");
+        const txt = toWet ? `Box, box: ${why === "sc" ? "aprovechamos el safety car, " : ""}gomas de lluvia otra vez. Parada de ${c.stat}s`
+          : why === "wet" ? `Box, box: gomas de lluvia por el pronóstico. Parada de ${c.stat}s`
           : why === "wetlate" ? `¡Ya llueve fuerte! Box, box: gomas de lluvia, entramos tarde. Parada de ${c.stat}s`
           : why === "dryback" ? `La lluvia no llegó: volvemos a slicks. Parada de ${c.stat}s`
           : why === "sc" ? `Box, box: aprovechamos el safety car. Parada de ${c.stat}s`
           : why === "extra" ? `Box, box… ¿otra vez? Parada de ${c.stat}s y las gomas estaban bien`
           : c.strat && c.human && (why === "plan" || why === "sc") && !rain ? `Box, box: gomas ${nxt === "S" ? "blandas" : nxt === "M" ? "medias" : "duras"}. Parada de ${c.stat}s`
           : `Box, box. Parada de ${c.stat}s${late}`;
-        ev(c, T0 + t0, lap, "pit", txt, { why, tyre: c.strat && !rain ? nxt : undefined });
-        c._why = why; c._stop = true; c._tyre = why === "wet" || why === "wetlate" ? "wet" : why === "dryback" ? "slick" : null;
+        ev(c, T0 + t0, lap, "pit", txt, { why, tyre: toWet ? "I" : c.strat && !rain ? nxt : undefined });
+        c._why = why; c._stop = true; c._tyre = toWet || why === "wet" || why === "wetlate" ? "wet" : why === "dryback" ? "slick" : null;
       } else { c._stop = false; c._tyre = null; }
       if (c.human && lap === OPT + Math.round(2 * K) && c.pit > OPT + Math.round(2 * K) && !c.stopped && !scNow && !c.strat) ev(c, T0 + t0, lap, "radio", "¡Estas gomas no dan más! ¿Cuándo paro?", { who: "pilot" });
 

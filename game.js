@@ -440,7 +440,7 @@ function startRace(syncAt,interactive){
     const pits=(me.ev||[]).filter(e=>e.k==='pit'&&e.lap<=lapNow).sort((x,y)=>x.lap-y.lap);
     for(const e of pits){
       out.push({c:cur,a,b:e.lap}); a=e.lap+1; stops++;
-      if(e.why==='wet'||e.why==='wetlate'){ cur='I'; sigue=false }
+      if(e.why==='wet'||e.why==='wetlate'||e.tyre==='I'){ cur='I'; sigue=false; if(e.tyre==='I') idx++ }
       else if(e.why==='plan'||e.why==='sc'){ cur=e.tyre||comps[Math.min(stops,comps.length-1)]; idx++ }
       else { cur=comps[Math.min(stops,comps.length-1)]; sigue=false }   // vuelta a slicks o parada de más: el resto del plan ya no corre
     }
