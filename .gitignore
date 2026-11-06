@@ -3,3 +3,4 @@
 supabase/.temp/
 scripts/.cache/
 promocion/
+scripts/_engine_anterior.mjs
