@@ -434,8 +434,8 @@ export const nextResetMs = (ms = Date.now()) => Date.parse(dayKey(ms) + "T00:00:
 // y saca no más de 2 años de la misma década. Los días anteriores se siguen armando como antes
 // (así el archivo y el ranking de esos días no cambian).
 export const DAILY_V2 = "2026-11-09";
-// Desde DAILY_TODAS (10/11) entran todas las temporadas de 1950 a 2026; el 09/11 fue solo con las curadas.
-export const DAILY_TODAS = "2026-11-10";
+// Desde DAILY_TODAS (09/11) entran todas las temporadas de 1950 a 2026.
+export const DAILY_TODAS = "2026-11-09";
 export const dailyYears = (DATA, secret, day = null) => {
   const pool = fullYears(DATA).filter((y) => !day || day >= DAILY_TODAS || DATA[y].curada).sort();
   const rng = rngFor(secret, "años");
