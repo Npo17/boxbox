@@ -432,7 +432,7 @@ export const nextResetMs = (ms = Date.now()) => Date.parse(dayKey(ms) + "T00:00:
 // Desde DAILY_V2 el desafío usa todas las temporadas (no solo las 7 curadas), sin repetir año en el
 // día y con no más de 2 años de la misma década. Los días anteriores se siguen armando como antes
 // (así el archivo y el ranking de esos días no cambian).
-export const DAILY_V2 = "2026-11-10";
+export const DAILY_V2 = "2026-11-09";
 export const dailyYears = (DATA, secret) => {
   const pool = Object.keys(DATA).filter((y) => SLOTS.every((k) => (DATA[y][k] || []).length >= 2)).sort();
   const rng = rngFor(secret, "años");
