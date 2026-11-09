@@ -429,10 +429,23 @@ export const nextResetMs = (ms = Date.now()) => Date.parse(dayKey(ms) + "T00:00:
 // Tirada i del desafío: la misma para todos los que comparten el secreto. Solo sortea años con las
 // 5 casillas completas (así nadie se queda sin piezas) y mezcla el orden de cada lista para que no
 // se pueda adivinar la media por la posición (las ofertas normales salen ordenadas de mejor a peor).
-export function dailyRoll(DATA, secret, i) {
-  const years = fullYears(DATA).sort();
+// Desde DAILY_V2 el desafío usa todas las temporadas (no solo las 7 curadas), sin repetir año en el
+// día y con no más de 2 años de la misma década. Los días anteriores se siguen armando como antes
+// (así el archivo y el ranking de esos días no cambian).
+export const DAILY_V2 = "2026-11-10";
+export const dailyYears = (DATA, secret) => {
+  const pool = Object.keys(DATA).filter((y) => SLOTS.every((k) => (DATA[y][k] || []).length >= 2)).sort();
+  const rng = rngFor(secret, "años");
+  for (let a = pool.length - 1; a > 0; a--) { const b = Math.floor(rng() * (a + 1)); [pool[a], pool[b]] = [pool[b], pool[a]]; }
+  const out = [], dec = {};
+  for (const y of pool) { const d = y.slice(0, 3); if ((dec[d] || 0) >= 2) continue; dec[d] = (dec[d] || 0) + 1; out.push(y); if (out.length === 5) break; }
+  return out;
+};
+export function dailyRoll(DATA, secret, i, day = null) {
+  const v2 = !day || day >= DAILY_V2;
+  const years = v2 ? null : fullYears(DATA).sort();
   const rng = rngFor(secret, "tirada", i);
-  const year = rollYear(DATA, rng, years);
+  const year = v2 ? dailyYears(DATA, secret)[i % 5] : rollYear(DATA, rng, years);
   const offer = makeOffer(DATA, rng, year);
   for (const k of SLOTS) {
     const sh = offer[k].shown, r2 = rngFor(secret, "orden", i, k);

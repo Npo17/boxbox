@@ -168,7 +168,7 @@ async function handle(req: Request, body: Record<string, any>) {
     const d = String(body.dia ?? "");
     if (!DIA_RE.test(d) || d < PRIMER_DIA || d >= day) throw new Fail("Ese desafío no está en el archivo.");
     const dice = await diceSecret(d);
-    return { day: d, rolls: [0, 1, 2, 3, 4].map((i) => E.dailyRoll(DATA, dice, i)), raceSeed: await raceSecret(d) };
+    return { day: d, rolls: [0, 1, 2, 3, 4].map((i) => E.dailyRoll(DATA, dice, i, d)), raceSeed: await raceSecret(d) };
   }
 
   // Desafío del archivo jugado como amistoso: en qué puesto habría quedado ese día (no se guarda nada).
@@ -241,7 +241,7 @@ async function handle(req: Request, body: Record<string, any>) {
     const rolls = entry.rolls as any[], i = Object.keys(entry.picks).length;
     let open = rolls.find((r) => !r.used);
     if (!open) {
-      open = { ...E.dailyRoll(DATA, await diceSecret(day), i), used: false };
+      open = { ...E.dailyRoll(DATA, await diceSecret(day), i, day), used: false };
       rolls.push(open);
       await db.from("desafios").update({ rolls, updated_at: new Date().toISOString() }).eq("user_id", u.id).eq("day", day);
     }
