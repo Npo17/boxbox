@@ -59,8 +59,11 @@ function renderList(){
   if(!year) return;
   fichaSync();   // al aparecer una lista nueva se borra cualquier vista previa que haya quedado
   const {shown,total}=offer[cat];
+  // A ciegas: equipo y año, nunca las notas ("15 de 16 victorias") ni "media estimada". En coches no va nada más
+  // que el año: el nombre ya dice el equipo y lo de abajo son justamente esas notas.
+  const blindSub=it=>{ const t=cat==='coche'?'':String(it[1]||'').split(' · ')[0].trim(); return t?`${t} · ${year}`:year };
   $('list').innerHTML=`<div class="note" style="margin:0 0 4px">${shown.length} de ${total} disponibles en esta tirada</div>`+
-    shown.map((it,i)=>`<div class="pick" data-i="${i}"><div class="who"><b>${it[0]}</b><small>${BLIND?year:(it[1]||year)}</small></div><div class="rt ${BLIND?'r0':rc(it[2])}">${BLIND?'?':it[2]}</div></div>`).join('');
+    shown.map((it,i)=>`<div class="pick" data-i="${i}"><div class="who"><b>${it[0]}</b><small>${BLIND?blindSub(it):(it[1]||year)}</small></div><div class="rt ${BLIND?'r0':rc(it[2])}">${BLIND?'?':it[2]}</div></div>`).join('');
   if((cat==='piloto'||cat==='coche'||cat==='jefe')&&!BLIND) document.querySelectorAll('.pick').forEach(el=>{ el.onmouseenter=()=>(cat==='piloto'?fichaPreview:cat==='coche'?fichaPreviewCar:fichaPreviewJefe)(shown[+el.dataset.i][0],year); el.onmouseleave=fichaSync });   // vista previa de la ficha (no en los modos a ciegas)
   document.querySelectorAll('.pick').forEach(el=>el.onclick=()=>{
     if(MODE==='room'){roomPick(cat,+el.dataset.i,shown[+el.dataset.i]);return}
@@ -243,8 +246,12 @@ const teamColor=n=>{ const k=String(n).toLowerCase().replace(/[^a-z0-9]/g,''); f
 const carMini=c=>`<svg viewBox="0 0 250 120"><rect x="18" y="8" width="34" height="26" rx="5" fill="#111"/><rect x="18" y="86" width="34" height="26" rx="5" fill="#111"/><rect x="172" y="4" width="40" height="30" rx="6" fill="#111"/><rect x="172" y="86" width="40" height="30" rx="6" fill="#111"/><rect x="2" y="22" width="12" height="76" rx="3" fill="${c}"/><rect x="228" y="18" width="18" height="84" rx="3" fill="${c}"/><path d="M10 52 L70 44 L120 38 L190 40 L232 48 L232 72 L190 80 L120 82 L70 76 L10 68 Z" fill="${c}"/><path d="M95 46 L150 42 L175 50 L175 70 L150 78 L95 74 Z" fill="#000" opacity=".25"/><ellipse cx="130" cy="60" rx="18" ry="11" fill="#0d0d12"/><circle cx="132" cy="60" r="7" fill="#ffd23f"/></svg>`;
 const norm0=s=>String(s).toLowerCase().replace(/[^a-z0-9]/g,'');
 function cocheHtml(name,year){
-  const hit=COCHES&&COCHES.s[year]&&COCHES.s[year][name], team=hit?COCHES.c[hit[0]]:'', foto=FOTOSC.p&&FOTOSC.k[year+'|'+name]!=null?FOTOSC.p[FOTOSC.k[year+'|'+name]]:null, col=teamColor(team||name);
-  const head=`<div class="fh"><div class="fph car">${foto?`<img src="${esc(foto[0])}" alt="" width="96" height="64" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" style="object-position:center">`:carMini(col)}</div><div class="ftx"><b class="fn">${esc(name)}</b>${foto&&foto[4]&&norm0(foto[4])!==norm0(name)?`<span class="fm">${esc(foto[4])}</span>`:(team&&team!==name?`<span class="fm">${esc(team)}</span>`:'')}</div></div>`;
+  // El coche se llama por su chasis ("Ferrari 312T4"); las fichas y fotos están guardadas por escudería ("Ferrari"), que va debajo.
+  let key=name, esc2=null;
+  if(!(COCHES&&COCHES.s[year]&&COCHES.s[year][name])&&!(FOTOSC.k&&FOTOSC.k[year+'|'+name]!=null)){ const it=DATA[year]&&DATA[year].coche.find(c=>c[0]===name); if(it&&it[1]&&!/^auto de /.test(it[1])){ key=it[1]; esc2=it[1] } }
+  const hit=COCHES&&COCHES.s[year]&&COCHES.s[year][key], team=hit?COCHES.c[hit[0]]:'', foto=FOTOSC.p&&FOTOSC.k[year+'|'+key]!=null?FOTOSC.p[FOTOSC.k[year+'|'+key]]:null, col=teamColor(team||key);
+  const sub=esc2?(team||esc2):(foto&&foto[4]&&norm0(foto[4])!==norm0(name)?foto[4]:(team&&team!==name?team:''));
+  const head=`<div class="fh"><div class="fph car">${foto?`<img src="${esc(foto[0])}" alt="" width="96" height="64" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()" style="object-position:center">`:carMini(col)}</div><div class="ftx"><b class="fn">${esc(name)}</b>${sub?`<span class="fm">${esc(sub)}</span>`:''}</div></div>`;
   const cred=foto?`<div class="fcred"><span>Foto:</span> ${esc(foto[1])}${foto[2]?` · <a href="${esc(foto[3])}" target="_blank" rel="noopener">${esc(foto[2])}</a>`:''}</div>`:'';
   if(!hit) return head+cred;
   const t=(v,l)=>`<div class="ft"><b>${v}</b><span>${l}</span></div>`, pos=hit[1], antes=+year<1958;

@@ -29,6 +29,12 @@ for (const line of fs.readFileSync(path.join(ROOT, 'nombres-equipos.txt'), 'utf8
   const m = line.match(/^(\d{4}) (.+?) = ([^;]*?)\s*(?:;\s*(.+?))?\s*$/);
   if (m) (EQUIPOS[m[1]] ??= {})[m[2]] = { e: m[3] || null, j: m[4] || null };
 }
+// Chasis y motor reales por escudería y año (scripts/nombres-autos.txt).
+const AUTOS = {};
+for (const line of fs.readFileSync(path.join(ROOT, 'nombres-autos.txt'), 'utf8').split(/\r?\n/)) {
+  const m = line.match(/^(\d{4}) (.+?) = ([^;]*?)\s*;\s*(.*?)\s*$/);
+  if (m) (AUTOS[m[1]] ??= {})[m[2]] = { c: m[3] || null, m: m[4] || null };
+}
 const norm = (s) => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/-/g, ' ').replace(/ f1 team| racing|\bteam\b|scuderia/g, '').trim().replace(/\s+/g, ' ').trim();
 const same = (a, b) => { const x = norm(a), z = norm(b); return x === z || x.split(' ')[0] === z.split(' ')[0]; };
 
@@ -163,6 +169,17 @@ for (let y = FIRST; y <= LAST; y++) {
     season.motor = cur.motor; season.jefe = cur.jefe; season.estratega = cur.estratega;
   }
   if (cur) season.curada = true;     // temporada ajustada a mano: la usa el desafío del día
+  if (cur) {
+    // Curadas: los coches que vienen sin chasis ("auto de 1988") toman el de nombres-autos.txt; debajo queda la escudería.
+    const usados = new Set(season.coche.map((c) => c[0]));
+    season.coche = season.coche.map(([n, sub, r]) => {
+      const c = /^auto de /.test(sub) && AUTOS[y]?.[n]?.c;
+      if (!c) return [n, sub, r];
+      const nn = usados.has(c) ? `${c}-${n}` : c;
+      usados.add(nn);
+      return [nn, n, r];
+    });
+  }
   else {
     // Sin datos públicos de motores, jefes de equipo ni estrategas: se estiman a partir del resultado de cada
     // escudería (su coche) con una variación fija por pieza. Así todas las temporadas tienen las 5 casillas.
@@ -173,7 +190,8 @@ for (let y = FIRST; y <= LAST; y++) {
       // Sin fila en la tabla de constructores (1950-1957 y algunas escuderías): se busca la escudería por nombre.
       const slugs = row ? [row.slug] : [norm(team).replace(/ /g, '-'), norm(team).split(' ')[0]];
       const boss = NOMBRES && slugs.flatMap((s) => (NOMBRES.principals[s] ?? []).filter((p) => p.from <= y && y <= p.to)).pop();
-      season.motor.push([row?.engine ? `Motor ${row.engine}` : `Motor ${team}`, `${team} · media estimada`, clamp(r + wob(y + 'm' + team), 55, 96)]);
+      const auto = AUTOS[y]?.[team];
+      season.motor.push([auto?.m || (row?.engine ? `Motor ${row.engine}` : `Motor ${team}`), `${team} · media estimada`, clamp(r + wob(y + 'm' + team), 55, 96)]);
       // Jefe y estratega: solo personas reales (nombres-equipos.txt, si no StatsF1). Sin dato, la escudería no
       // tiene pieza en esa casilla: nunca un "Jefe de X" ni un "Estratega de X". Una persona, una pieza por año.
       const eq = EQUIPOS[y]?.[team];
@@ -182,6 +200,16 @@ for (let y = FIRST; y <= LAST; y++) {
       if (estr && !season.estratega.some((p) => p[0] === estr)) season.estratega.push([estr, `${team} · media estimada`, clamp(r + wob(y + 'e' + team), 55, 96)]);
     }
     for (const t of Object.keys(EQUIPOS[y] ?? {})) if (!season.coche.some((c) => c[0] === t)) console.log(`  ⚠️ ${y}: "${t}" de nombres-equipos.txt no está entre las escuderías`);
+    for (const t of Object.keys(AUTOS[y] ?? {})) if (!season.coche.some((c) => c[0] === t)) console.log(`  ⚠️ ${y}: "${t}" de nombres-autos.txt no está entre las escuderías`);
+    // Coche: el chasis real ("Ferrari 312T4"); debajo queda la escudería (las fichas y fotos se buscan por ella).
+    // Si dos escuderías usan el mismo chasis, se le agrega el motor: "Cooper T51-Maserati".
+    const usados = new Set();
+    season.coche = season.coche.map(([team, , r]) => {
+      let n = AUTOS[y]?.[team]?.c || team;
+      if (usados.has(n)) n = `${n}-${team.includes('-') ? team.split('-').pop() : team}`;
+      usados.add(n);
+      return [n, team, r];
+    });
   }
   for (const k of ['piloto', 'coche', 'motor', 'jefe', 'estratega']) season[k].sort((a, b) => b[2] - a[2]);
   out[y] = season;
