@@ -429,12 +429,12 @@ export const nextResetMs = (ms = Date.now()) => Date.parse(dayKey(ms) + "T00:00:
 // Tirada i del desafío: la misma para todos los que comparten el secreto. Solo sortea años con las
 // 5 casillas completas (así nadie se queda sin piezas) y mezcla el orden de cada lista para que no
 // se pueda adivinar la media por la posición (las ofertas normales salen ordenadas de mejor a peor).
-// Desde DAILY_V2 el desafío usa todas las temporadas (no solo las 7 curadas), sin repetir año en el
-// día y con no más de 2 años de la misma década. Los días anteriores se siguen armando como antes
+// Desde DAILY_V2 el desafío no repite año en el día (antes podían salir tres 2023)
+// y saca no más de 2 años de la misma década. Los días anteriores se siguen armando como antes
 // (así el archivo y el ranking de esos días no cambian).
 export const DAILY_V2 = "2026-11-09";
 export const dailyYears = (DATA, secret) => {
-  const pool = Object.keys(DATA).filter((y) => SLOTS.every((k) => (DATA[y][k] || []).length >= 2)).sort();
+  const pool = fullYears(DATA).sort();   // solo temporadas con todos los nombres reales (curadas); cada una que se cure entra sola
   const rng = rngFor(secret, "años");
   for (let a = pool.length - 1; a > 0; a--) { const b = Math.floor(rng() * (a + 1)); [pool[a], pool[b]] = [pool[b], pool[a]]; }
   const out = [], dec = {};
