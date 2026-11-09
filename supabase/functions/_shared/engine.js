@@ -69,9 +69,10 @@ export function makeOffer(DATA, rng, year) {
 // Años que tienen alguna pieza para las casillas libres (motor, jefe y estratega solo existen
 // en las temporadas curadas a mano).
 export const yearsFor = (DATA, free) => Object.keys(DATA).filter((y) => free.some((k) => (DATA[y][k] || []).length));
-// Años curados a mano (con motores, jefes y estrategas reales): son los que usa el desafío del día.
-// Las demás temporadas tienen esas tres casillas estimadas a partir del resultado de cada escudería.
-export const fullYears = (DATA) => Object.keys(DATA).filter((y) => DATA[y].curada && SLOTS.every((k) => (DATA[y][k] || []).length >= 2));
+// Años que puede usar el desafío del día: con al menos 2 piezas en cada casilla y sin piezas genéricas
+// ("Jefe de X", "Estratega de X"): desde el 09/11 son todas las temporadas de 1950 a 2026.
+const GENERIC = /^(Jefe|Estratega) de /;
+export const fullYears = (DATA) => Object.keys(DATA).filter((y) => SLOTS.every((k) => (DATA[y][k] || []).length >= 2) && !["jefe", "estratega"].some((k) => DATA[y][k].some((p) => GENERIC.test(p[0]))));
 export const rollYear = (DATA, rng, years) => years[Math.floor(rng() * years.length)];
 
 // ---------- autos ----------
@@ -433,8 +434,10 @@ export const nextResetMs = (ms = Date.now()) => Date.parse(dayKey(ms) + "T00:00:
 // y saca no más de 2 años de la misma década. Los días anteriores se siguen armando como antes
 // (así el archivo y el ranking de esos días no cambian).
 export const DAILY_V2 = "2026-11-09";
-export const dailyYears = (DATA, secret) => {
-  const pool = fullYears(DATA).sort();   // solo temporadas con todos los nombres reales (curadas); cada una que se cure entra sola
+// Desde DAILY_TODAS (10/11) entran todas las temporadas de 1950 a 2026; el 09/11 fue solo con las curadas.
+export const DAILY_TODAS = "2026-11-10";
+export const dailyYears = (DATA, secret, day = null) => {
+  const pool = fullYears(DATA).filter((y) => !day || day >= DAILY_TODAS || DATA[y].curada).sort();
   const rng = rngFor(secret, "años");
   for (let a = pool.length - 1; a > 0; a--) { const b = Math.floor(rng() * (a + 1)); [pool[a], pool[b]] = [pool[b], pool[a]]; }
   const out = [], dec = {};
@@ -443,9 +446,9 @@ export const dailyYears = (DATA, secret) => {
 };
 export function dailyRoll(DATA, secret, i, day = null) {
   const v2 = !day || day >= DAILY_V2;
-  const years = v2 ? null : fullYears(DATA).sort();
+  const years = v2 ? null : fullYears(DATA).filter((y) => DATA[y].curada).sort();   // días anteriores: solo las curadas, como entonces
   const rng = rngFor(secret, "tirada", i);
-  const year = v2 ? dailyYears(DATA, secret)[i % 5] : rollYear(DATA, rng, years);
+  const year = v2 ? dailyYears(DATA, secret, day)[i % 5] : rollYear(DATA, rng, years);
   const offer = makeOffer(DATA, rng, year);
   for (const k of SLOTS) {
     const sh = offer[k].shown, r2 = rngFor(secret, "orden", i, k);

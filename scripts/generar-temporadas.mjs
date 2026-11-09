@@ -5,7 +5,8 @@
 //   su compañero de equipo. El campeón tiene al menos 95.
 // - Coches: posición y puntos en el campeonato de constructores (desde 1958); antes de
 //   1958 se usa el mejor piloto de cada escudería.
-// - Motores, jefes de equipo y estrategas: no hay datos públicos; salen solo de
+// - Motores: proveedor real (StatsF1). Jefes y estrategas: personas reales de scripts/nombres-equipos.txt
+//   (o StatsF1 para jefes); sin dato no hay pieza. En las temporadas curadas salen de
 //   scripts/temporadas-curadas.json.
 // - En las temporadas curadas, las medias curadas pisan a las calculadas.
 //
@@ -22,6 +23,12 @@ const CURATED = JSON.parse(fs.readFileSync(path.join(ROOT, 'temporadas-curadas.j
 fs.mkdirSync(CACHE, { recursive: true });
 // Motores y jefes de equipo reales por temporada (scripts/generar-nombres.mjs); opcional.
 const NOMBRES = fs.existsSync(path.join(ROOT, 'nombres-statsf1.json')) ? JSON.parse(fs.readFileSync(path.join(ROOT, 'nombres-statsf1.json'), 'utf8')) : null;
+// Estrategas (directores técnicos) y jefes de equipo reales por escudería y año (scripts/nombres-equipos.txt).
+const EQUIPOS = {};
+for (const line of fs.readFileSync(path.join(ROOT, 'nombres-equipos.txt'), 'utf8').split(/\r?\n/)) {
+  const m = line.match(/^(\d{4}) (.+?) = ([^;]*?)\s*(?:;\s*(.+?))?\s*$/);
+  if (m) (EQUIPOS[m[1]] ??= {})[m[2]] = { e: m[3] || null, j: m[4] || null };
+}
 const norm = (s) => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/-/g, ' ').replace(/ f1 team| racing|\bteam\b|scuderia/g, '').trim().replace(/\s+/g, ' ').trim();
 const same = (a, b) => { const x = norm(a), z = norm(b); return x === z || x.split(' ')[0] === z.split(' ')[0]; };
 
@@ -166,11 +173,15 @@ for (let y = FIRST; y <= LAST; y++) {
       // Sin fila en la tabla de constructores (1950-1957 y algunas escuderías): se busca la escudería por nombre.
       const slugs = row ? [row.slug] : [norm(team).replace(/ /g, '-'), norm(team).split(' ')[0]];
       const boss = NOMBRES && slugs.flatMap((s) => (NOMBRES.principals[s] ?? []).filter((p) => p.from <= y && y <= p.to)).pop();
-      const usedBoss = season.jefe.some((j) => j[0] === boss?.name);
       season.motor.push([row?.engine ? `Motor ${row.engine}` : `Motor ${team}`, `${team} · media estimada`, clamp(r + wob(y + 'm' + team), 55, 96)]);
-      season.jefe.push([boss && !usedBoss ? boss.name : `Jefe de ${team}`, `${team} · media estimada`, clamp(r + wob(y + 'j' + team), 55, 96)]);
-      season.estratega.push([`Estratega de ${team}`, 'Media estimada', clamp(r + wob(y + 'e' + team), 55, 96)]);
+      // Jefe y estratega: solo personas reales (nombres-equipos.txt, si no StatsF1). Sin dato, la escudería no
+      // tiene pieza en esa casilla: nunca un "Jefe de X" ni un "Estratega de X". Una persona, una pieza por año.
+      const eq = EQUIPOS[y]?.[team];
+      const jefe = eq?.j || boss?.name, estr = eq?.e;
+      if (jefe && !season.jefe.some((p) => p[0] === jefe)) season.jefe.push([jefe, `${team} · media estimada`, clamp(r + wob(y + 'j' + team), 55, 96)]);
+      if (estr && !season.estratega.some((p) => p[0] === estr)) season.estratega.push([estr, `${team} · media estimada`, clamp(r + wob(y + 'e' + team), 55, 96)]);
     }
+    for (const t of Object.keys(EQUIPOS[y] ?? {})) if (!season.coche.some((c) => c[0] === t)) console.log(`  ⚠️ ${y}: "${t}" de nombres-equipos.txt no está entre las escuderías`);
   }
   for (const k of ['piloto', 'coche', 'motor', 'jefe', 'estratega']) season[k].sort((a, b) => b[2] - a[2]);
   out[y] = season;
