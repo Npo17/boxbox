@@ -230,7 +230,7 @@ function fichaHtml(name,year){
   const cred=foto?`<div class="fcred"><span>Foto:</span> ${esc(foto[1])}${foto[2]?` · <a href="${esc(foto[3])}" target="_blank" rel="noopener">${esc(foto[2])}</a>`:''}</div>`:'';
   if(!p) return head+(FICHAS?'<div class="fm">Sin datos de este piloto.</div>':'');
   const t=(v,l)=>`<div class="ft"><b>${v}</b><span>${l}</span></div>`;
-  const pos=hit[1], titulo=pos===1&&year<2026?'<span class="fchip">Campeón del mundo</span>':pos===2&&year<2026?'<span class="fchip">Subcampeón</span>':'';
+  const pos=hit[1], titulo=pos===1&&(year<2026||p[3].includes(+year))?'<span class="fchip">Campeón del mundo</span>':pos===2&&year<2026?'<span class="fchip">Subcampeón</span>':'';
   const activo=p[9]>=2026;
   return head+`<div class="fsec"><span>Temporada</span> <b>${year}</b>${team?' · '+esc(team):''}</div>${titulo}
     <div class="fgrid" style="margin-top:6px">${t(pos||'—','Puesto')}${t(String(hit[2]).replace('.',','),'Puntos')}${t(hit[3],'Victorias')}</div>

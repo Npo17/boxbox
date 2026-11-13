@@ -20,6 +20,8 @@ const norm = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toL
 // nacionalidad (como la devuelve la API) -> código de país (el navegador lo traduce a cada idioma)
 const NAT = { American: "US", Argentine: "AR", "Argentinian": "AR", Australian: "AU", Austrian: "AT", Belgian: "BE", Brazilian: "BR", British: "GB", Canadian: "CA", Chilean: "CL", Chinese: "CN", Colombian: "CO", Czech: "CZ", Danish: "DK", Dutch: "NL", Finnish: "FI", French: "FR", German: "DE", Hungarian: "HU", Indian: "IN", Indonesian: "ID", Irish: "IE", Italian: "IT", Japanese: "JP", Liechtensteiner: "LI", Malaysian: "MY", Mexican: "MX", Monegasque: "MC", "New Zealander": "NZ", Polish: "PL", Portuguese: "PT", Rhodesian: "ZW", Russian: "RU", "South African": "ZA", Spanish: "ES", Swedish: "SE", Swiss: "CH", Thai: "TH", Uruguayan: "UY", Venezuelan: "VE", "East German": "DE", Corean: "KR", Korean: "KR", Egyptian: "EG", Moroccan: "MA", Cuban: "CU", Peruvian: "PE", Bolivian: "BO", Estonian: "EE", Lithuanian: "LT", Romanian: "RO", Slovenian: "SI", Turkish: "TR", Luxembourger: "LU", Latvian: "LV", Ukrainian: "UA", Israeli: "IL", "Hong Konger": "HK", Singaporean: "SG", Emirati: "AE", Saudi: "SA", Qatari: "QA", Bahraini: "BH", Kuwaiti: "KW", Greek: "GR", Albanian: "AL", Croatian: "HR", Serbian: "RS", Bulgarian: "BG", Slovak: "SK", Norwegian: "NO", Icelandic: "IS", Philippine: "PH", Vietnamese: "VN", Taiwanese: "TW", Pakistani: "PK", Costa: "CR" };
 
+// temporadas en curso con el título de pilotos ya asegurado matemáticamente
+const CAMPEON_DEFINIDO = [2026];
 const years = Object.keys(DATA).map(Number).sort((a, b) => a - b);
 const season = {};     // año -> {drivers: Map id -> {...}}, standings: Map id -> {pos, pts, wins}
 const drivers = {};    // id -> ficha
@@ -44,7 +46,7 @@ for (const y of years) {
     if (x.position === "1") D.w++; if (+x.position >= 1 && +x.position <= 3) D.p++; if (x.grid === "1") D.pl++;
     const e = S.get(id) || { r: 0, w: 0, pts: 0 }; e.r++; if (x.position === "1") e.w++; e.pts += +x.points || 0; S.set(id, e);
   }
-  for (const [id, s] of standings) if (s.pos === 1 && y < 2026 && drivers[id]) drivers[id].t.push(y);
+  for (const [id, s] of standings) if (s.pos === 1 && (y < 2026 || CAMPEON_DEFINIDO.includes(y)) && drivers[id]) drivers[id].t.push(y);
   season[y] = { S, standings };
   process.stdout.write(`\r${y} ok (${pedidos} pedidos)  `);
 }
